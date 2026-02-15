@@ -1,0 +1,9 @@
+[submodule "backend"]
+	path = backend
+	url = git@github.com:Eleanor1018/lycoris-backend.git
+[submodule "frontend"]
+	path = frontend
+	url = git@github.com:Eleanor1018/lycoris-frontend.git
+[submodule "mobile"]
+	path = mobile
+	url = git@github.com:Eleanor1018/lycoris-mobile.git
