@@ -42,24 +42,17 @@
 
 本项目采用 [MIT License](./LICENSE) 开源。
 
-## 克隆与初始化（含子模块）
+## 克隆与初始化
 
-本仓库为总仓库，`backend` / `frontend` / `mobile` 为子模块，建议使用以下命令克隆：
+本仓库已采用单仓库（Monorepo）结构，`backend` / `frontend` / `mobile` 都在同一个仓库中。
 
 ```bash
-git clone --recurse-submodules git@github.com:Eleanor1018/lycoris.git
+git clone git@github.com:Eleanor1018/lycoris.git
 cd lycoris
 ```
 
-如果你已经 clone 过主仓库，可执行：
+更新代码时：
 
 ```bash
-git submodule update --init --recursive
-```
-
-更新主仓库后，建议同步子模块：
-
-```bash
-git pull --recurse-submodules
-git submodule update --init --recursive
+git pull
 ```
