@@ -1,0 +1,35 @@
+html, body, #root {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+}
+
+body {
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+}
+
+a {
+    color: #7a4b8f;
+    text-decoration-color: rgba(122, 75, 143, 0.35);
+}
+
+a:hover {
+    color: #643a78;
+}
+
+/* Prevent iOS Safari from auto-zooming form controls */
+input,
+textarea,
+select,
+button {
+    font-size: 16px;
+}
+
+/* MUI inputs */
+.MuiInputBase-input,
+.MuiOutlinedInput-input,
+.MuiFilledInput-input,
+.MuiInput-input {
+    font-size: 16px;
+}
