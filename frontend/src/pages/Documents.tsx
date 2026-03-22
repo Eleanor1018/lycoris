@@ -141,6 +141,8 @@ export default function Documents() {
         () => fontOptions.find((f) => f.value === fontFamilyKey)?.stack ?? fontOptions[0].stack,
         [fontFamilyKey]
     )
+    const hrtToggleId = `documents-${activeSlug}-toc-toggle`
+    const hrtSectionId = `documents-${activeSlug}-toc-section`
 
     // 如果访问 /documents（没有 slug），自动跳到默认文档
     useEffect(() => {
@@ -198,6 +200,9 @@ export default function Documents() {
                 <List dense>
                     <ListItemButton
                         onClick={() => setHrtOpen((prev) => !prev)}
+                        id={hrtToggleId}
+                        aria-expanded={hrtOpen}
+                        aria-controls={hrtSectionId}
                         sx={{
                             mt: 1,
                             borderRadius: 2,
@@ -209,7 +214,7 @@ export default function Documents() {
                         {hrtOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </ListItemButton>
 
-                    <Collapse in={hrtOpen} timeout="auto" unmountOnExit>
+                    <Collapse in={hrtOpen} timeout="auto" unmountOnExit id={hrtSectionId} aria-labelledby={hrtToggleId}>
                         <Box
                             sx={{
                                 mt: 0.5,
@@ -220,7 +225,7 @@ export default function Documents() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding>
+                            <List dense disablePadding aria-label="文档目录">
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -320,7 +325,7 @@ export default function Documents() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="open toc"
+                    aria-label="打开文档目录"
                     sx={{
                         position: 'fixed',
                         right: 16,

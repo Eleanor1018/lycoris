@@ -163,6 +163,8 @@ export default function About() {
         if (typeof window === 'undefined') return
         window.localStorage.setItem(READING_PREFS_KEY, JSON.stringify({ fontSize, fontFamilyKey }))
     }, [fontSize, fontFamilyKey])
+    const aboutToggleId = 'about-toc-toggle'
+    const aboutSectionId = 'about-toc-section'
 
     const drawer = useMemo(
         () => (
@@ -170,6 +172,9 @@ export default function About() {
                 <List dense>
                     <ListItemButton
                         onClick={() => setAboutOpen((prev) => !prev)}
+                        id={aboutToggleId}
+                        aria-expanded={aboutOpen}
+                        aria-controls={aboutSectionId}
                         sx={{
                             mt: 1,
                             borderRadius: 2,
@@ -181,7 +186,7 @@ export default function About() {
                         {aboutOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </ListItemButton>
 
-                    <Collapse in={aboutOpen} timeout="auto" unmountOnExit>
+                    <Collapse in={aboutOpen} timeout="auto" unmountOnExit id={aboutSectionId} aria-labelledby={aboutToggleId}>
                         <Box
                             sx={{
                                 mt: 0.5,
@@ -192,7 +197,7 @@ export default function About() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding>
+                            <List dense disablePadding aria-label="关于页目录">
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -283,7 +288,7 @@ export default function About() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="open toc"
+                    aria-label="打开关于页目录"
                     sx={{
                         position: 'fixed',
                         right: 16,

@@ -97,8 +97,8 @@ export default function Home() {
                             paddingBottom: 3,
                         }}
                     >
-                        一个为跨性别者提供
-                        <strong>无障碍设施信息和互助信息</strong>的平台
+                    一个为跨性别者提供
+                    <strong>无障碍设施信息和互助信息</strong>的平台
                     </Typography>
                     <Typography
                         variant="body1"
@@ -111,8 +111,8 @@ export default function Home() {
                             paddingBottom: 3,
                         }}
                     >
-                        一个为跨性别者提供<br/>
-                        <strong>无障碍设施信息和互助信息</strong>的平台
+                    一个为跨性别者提供<br></br>
+                    <strong>无障碍设施信息和互助信息</strong>的平台
                     </Typography>
                 </Box>
                 <Button

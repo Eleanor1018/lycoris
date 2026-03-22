@@ -23,7 +23,12 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
     if (isMobile) {
         if (isLoggedIn){
             return (
-                <IconButton onClick={() => navigate('/me')} size='small' sx={{ p: 0.5 }}>
+                <IconButton
+                    onClick={() => navigate('/me')}
+                    size='small'
+                    sx={{ p: 0.5 }}
+                    aria-label="打开个人中心"
+                >
                     <Avatar src={avatarUrl} sx={{ width: 40, height: 40, bgcolor: 'rgba(116,73,136,0.12)' }}>
                         <PersonOutlineIcon sx={{ color: '#744988' }} />
                     </Avatar>
@@ -36,7 +41,7 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
                     onClick={() => navigate('/login')}
                     size="small"
                     sx={{ p: 0.5 }}
-                    aria-label="login"
+                    aria-label="打开登录页"
                 >
                     <Avatar src={avatarUrl} sx={{ width: 40, height: 40 }} />
                 </IconButton>
@@ -48,7 +53,12 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
     else{
         if(isLoggedIn){
             return (
-                <IconButton onClick={() => navigate('/me')} size="small" sx={{ p: 0.5 }}>
+                <IconButton
+                    onClick={() => navigate('/me')}
+                    size="small"
+                    sx={{ p: 0.5 }}
+                    aria-label="打开个人中心"
+                >
                     <Avatar src={avatarUrl} sx={{ width: 40, height: 40, bgcolor: 'rgba(116,73,136,0.12)' }}>
                         <PersonOutlineIcon sx={{ color: '#744988' }} />
                     </Avatar>

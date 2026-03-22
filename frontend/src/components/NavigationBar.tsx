@@ -44,7 +44,7 @@ export default function NavigationBar() {
     const navItems: NavItem[] = useMemo(
         () => [
             { label: '地图', to: '/maps' },
-            { label: 'HRT指南', to: '/documents' },
+            { label: '文档', to: '/documents' },
             { label: '关于', to: '/about' },
         ],
         []
@@ -241,7 +241,9 @@ export default function NavigationBar() {
                 </Drawer>
 
                 <Box
-                    onClick={() => navigate('/')}
+                    component={RouterLink}
+                    to="/"
+                    aria-label="返回首页"
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
@@ -249,6 +251,8 @@ export default function NavigationBar() {
                         userSelect: 'none',
                         flexShrink: 0,
                         paddingRight: {xs: 0, md: 2 , xl: 4},
+                        textDecoration: 'none',
+                        color: 'inherit',
                     }}
                 >
                     <Box
@@ -289,19 +293,7 @@ export default function NavigationBar() {
                             </Button>
                         )
                     })}
-                </Stack>
-                <Chip
-                    label="工具模块筹备中 · 将以独立 App 上线"
-                    size="small"
-                    sx={{
-                        display: { xs: 'none', md: 'inline-flex' },
-                        ml: 0.8,
-                        borderRadius: 999,
-                        bgcolor: 'rgba(116, 73, 136, 0.10)',
-                        color: '#744988',
-                        fontWeight: 600,
-                    }}
-                />
+                </Stack>             
 
                 <Box sx={{ flex: 1 }} />
                 <Box
@@ -322,6 +314,9 @@ export default function NavigationBar() {
                         }}
                         placeholder="搜索"
                         fullWidth
+                        inputProps={{
+                            'aria-label': '搜索站内内容',
+                        }}
                         sx={{
                             '& .MuiOutlinedInput-root': {
                                 borderRadius: 999,
@@ -339,7 +334,7 @@ export default function NavigationBar() {
 
                 <IconButton
                     sx={{ display: { xs: 'inline-flex', md: 'none' } }}
-                    aria-label="search"
+                    aria-label="打开搜索页"
                     onClick={() => navigate('/search')}
                 >
                     <SearchIcon />

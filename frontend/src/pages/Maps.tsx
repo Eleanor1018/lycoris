@@ -1479,7 +1479,7 @@ export default function Maps() {
                                 <Popup>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {isLoggedIn ? (
-                                            <IconButton size="small" onClick={() => openEdit(m)} aria-label="edit">
+                                            <IconButton size="small" onClick={() => openEdit(m)} aria-label="编辑点位">
                                                 <EditRoundedIcon fontSize="small" />
                                             </IconButton>
                                         ) : null}
@@ -1507,7 +1507,7 @@ export default function Maps() {
                                                     await loadFavorites()
                                                 }
                                             }}
-                                            aria-label="favorite"
+                                            aria-label={favoriteIds.has(m.id) ? '取消收藏点位' : '收藏点位'}
                                         >
                                             {favoriteIds.has(m.id) ? (
                                                 <StarIcon sx={{ color: '#f6c344' }} />

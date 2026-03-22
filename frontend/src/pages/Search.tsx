@@ -185,6 +185,9 @@ export default function Search() {
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="输入关键词"
                     fullWidth
+                    inputProps={{
+                        'aria-label': '搜索关键词',
+                    }}
                     sx={{
                         mt: 2,
                         '& .MuiOutlinedInput-root': {
@@ -202,6 +205,7 @@ export default function Search() {
                             <IconButton
                                 onClick={() => navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
                                 disabled={!query.trim()}
+                                aria-label="执行搜索"
                                 sx={{
                                     ml: 1,
                                     bgcolor: '#744988',

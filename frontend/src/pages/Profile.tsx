@@ -176,6 +176,15 @@ export default function Profile() {
         goToMapMarker(row)
     }
 
+    const handleRowKeyDown = (event: React.KeyboardEvent<HTMLTableRowElement>, row: MarkerRow) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        onMarkerRowClick(row)
+    }
+
+    const getRowAriaLabel = (row: MarkerRow) =>
+        `点位 ${row.title}，类型 ${row.category}，更新于 ${row.updatedAt || '未知'}。按回车键查看地图位置。`
+
     useEffect(() => {
         return () => {
             if (rowClickTimerRef.current != null) {
@@ -330,7 +339,17 @@ export default function Profile() {
                                                     hover
                                                     onClick={() => handleRowClick(row)}
                                                     onDoubleClick={() => handleRowDoubleClick(row)}
-                                                    sx={{ cursor: 'pointer' }}
+                                                    onKeyDown={(event) => handleRowKeyDown(event, row)}
+                                                    tabIndex={0}
+                                                    role="button"
+                                                    aria-label={getRowAriaLabel(row)}
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        '&:focus-visible': {
+                                                            outline: '2px solid #744988',
+                                                            outlineOffset: '-2px',
+                                                        },
+                                                    }}
                                                 >
                                                     <TableCell>{row.title}</TableCell>
                                                     <TableCell>{row.category}</TableCell>
@@ -383,7 +402,17 @@ export default function Profile() {
                                                     hover
                                                     onClick={() => handleRowClick(row)}
                                                     onDoubleClick={() => handleRowDoubleClick(row)}
-                                                    sx={{ cursor: 'pointer' }}
+                                                    onKeyDown={(event) => handleRowKeyDown(event, row)}
+                                                    tabIndex={0}
+                                                    role="button"
+                                                    aria-label={getRowAriaLabel(row)}
+                                                    sx={{
+                                                        cursor: 'pointer',
+                                                        '&:focus-visible': {
+                                                            outline: '2px solid #744988',
+                                                            outlineOffset: '-2px',
+                                                        },
+                                                    }}
                                                 >
                                                     <TableCell>{row.title}</TableCell>
                                                     <TableCell>{row.category}</TableCell>
