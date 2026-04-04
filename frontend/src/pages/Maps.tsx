@@ -147,6 +147,9 @@ const INACTIVE_MARKER_COLOR = '#9e9e9e'
 const MAP_LAST_VIEW_KEY = 'map.lastView'
 const MAP_NEARBY_CATEGORY_KEY = 'map.nearbyCategory'
 const MAP_ADD_MARKER_HINT_SEEN_KEY = 'map.addMarkerHintSeen'
+const MAP_VISUAL_VIEWPORT_TOP_VAR = '--ly-map-vv-top'
+const MAP_VISUAL_VIEWPORT_BOTTOM_VAR = '--ly-map-vv-bottom'
+const MAP_VISUAL_VIEWPORT_HEIGHT_VAR = '--ly-map-vv-height'
 const THUNDERFOREST_API_KEY = (import.meta.env.VITE_THUNDERFOREST_API_KEY ?? '').trim()
 const TIANDITU_API_KEY = (import.meta.env.VITE_TIANDITU_API_KEY ?? '').trim()
 const hasThunderforestKey = THUNDERFOREST_API_KEY.length > 0
@@ -392,8 +395,8 @@ export default function Maps() {
     const [addHintPulse, setAddHintPulse] = useState(false)
     const [canDeleteDraft, setCanDeleteDraft] = useState(true)
     const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<Set<number>>(new Set())
-    const overlayTopOffset = 'calc(env(safe-area-inset-top, 0px) + 12px)'
-    const overlayBottomOffset = 'calc(env(safe-area-inset-bottom, 0px) + 20px)'
+    const overlayTopOffset = `calc(env(safe-area-inset-top, 0px) + var(${MAP_VISUAL_VIEWPORT_TOP_VAR}, 0px) + 12px)`
+    const overlayBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + var(${MAP_VISUAL_VIEWPORT_BOTTOM_VAR}, 0px) + 20px)`
     const markerViewportRequestSeq = useRef(0)
     const markerImageUrlRef = useRef<Map<number, string>>(new Map())
     const targetFocusDoneRef = useRef<string | null>(null)
@@ -727,6 +730,51 @@ export default function Maps() {
     }, [isIOSWebKit, hasScaleResetFlag])
 
     useEffect(() => {
+        if (!isIOSWebKit || typeof window === 'undefined' || typeof document === 'undefined') return
+
+        const root = document.documentElement
+        const syncViewportInsets = () => {
+            const vv = window.visualViewport
+            const top = vv ? Math.max(0, vv.offsetTop) : 0
+            const height = vv ? vv.height : window.innerHeight
+            const bottom = vv ? Math.max(0, window.innerHeight - vv.height - vv.offsetTop) : 0
+            root.style.setProperty(MAP_VISUAL_VIEWPORT_TOP_VAR, `${Math.round(top)}px`)
+            root.style.setProperty(MAP_VISUAL_VIEWPORT_BOTTOM_VAR, `${Math.round(bottom)}px`)
+            root.style.setProperty(MAP_VISUAL_VIEWPORT_HEIGHT_VAR, `${Math.round(height)}px`)
+            if (map) {
+                map.invalidateSize(false)
+            }
+        }
+
+        let frame = 0
+        const scheduleSync = () => {
+            if (frame) window.cancelAnimationFrame(frame)
+            frame = window.requestAnimationFrame(() => {
+                frame = 0
+                syncViewportInsets()
+            })
+        }
+
+        scheduleSync()
+
+        const vv = window.visualViewport
+        vv?.addEventListener('resize', scheduleSync)
+        vv?.addEventListener('scroll', scheduleSync)
+        window.addEventListener('resize', scheduleSync)
+        window.addEventListener('orientationchange', scheduleSync)
+
+        return () => {
+            if (frame) window.cancelAnimationFrame(frame)
+            vv?.removeEventListener('resize', scheduleSync)
+            vv?.removeEventListener('scroll', scheduleSync)
+            window.removeEventListener('resize', scheduleSync)
+            window.removeEventListener('orientationchange', scheduleSync)
+            root.style.removeProperty(MAP_VISUAL_VIEWPORT_TOP_VAR)
+            root.style.removeProperty(MAP_VISUAL_VIEWPORT_BOTTOM_VAR)
+            root.style.removeProperty(MAP_VISUAL_VIEWPORT_HEIGHT_VAR)
+        }
+    }, [isIOSWebKit, map])
+    useEffect(() => {
         if (!isIOSWebKit || typeof document === 'undefined') return
 
         const preventGestureZoom = (event: Event) => {
@@ -757,6 +805,17 @@ export default function Maps() {
         }
     }, [isIOSWebKit])
 
+    useEffect(() => {
+        if (!isIOSWebKit || dialogOpen || typeof window === 'undefined') return
+
+        const resetAfterDialogClose = () => {
+            window.scrollTo({ top: 0, left: 0, behavior: 'instant' as ScrollBehavior })
+            map?.invalidateSize(false)
+        }
+
+        const timer = window.setTimeout(resetAfterDialogClose, 48)
+        return () => window.clearTimeout(timer)
+    }, [dialogOpen, isIOSWebKit, map])
     useEffect(() => {
         if (!hasScaleResetFlag) return
         const next = new URLSearchParams(searchParams)
@@ -1002,7 +1061,12 @@ export default function Maps() {
         : '登录后点击左上角按钮可在地图上标记点位。'
 
     return (
-        <Box sx={{ height: 'calc(100dvh - var(--nav-offset, var(--nav-height, 64px)))', width: '100%' }}>
+        <Box
+            sx={{
+                height: `calc(var(${MAP_VISUAL_VIEWPORT_HEIGHT_VAR}, 100dvh) - var(--nav-offset, var(--nav-height, 64px)))`, 
+                width: '100%',
+            }}
+        >
             <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>
                     <Box
                         sx={{

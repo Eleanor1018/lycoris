@@ -177,7 +177,13 @@ export default function MarkerFormDialog({
             onClose={onClose}
             maxWidth="sm"
             fullWidth
-            PaperProps={{ sx: { borderRadius: 4 } }}
+            PaperProps={{
+                sx: {
+                    borderRadius: 4,
+                    touchAction: { xs: 'pan-y', sm: 'auto' },
+                    overscrollBehavior: 'contain',
+                },
+            }}
         >
             <DialogTitle
                 sx={{
@@ -189,7 +195,14 @@ export default function MarkerFormDialog({
             >
                 {editingId ? '编辑点位' : '新增点位'}
             </DialogTitle>
-            <DialogContent sx={{ px: { xs: 2.5, md: 4 }, pb: 3 }}>
+            <DialogContent
+                sx={{
+                    px: { xs: 2.5, md: 4 },
+                    pb: 3,
+                    overscrollBehavior: 'contain',
+                    WebkitOverflowScrolling: 'touch',
+                }}
+            >
                 <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
                     {draft ? `${draft.lat.toFixed(6)}, ${draft.lng.toFixed(6)}` : ''}
                 </Typography>
