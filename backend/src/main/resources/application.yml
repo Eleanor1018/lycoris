@@ -9,9 +9,9 @@ server:
     session:
       cookie:
         name: ${SESSION_COOKIE_NAME:LYCORIS_SESSION}
-        secure: ${SESSION_COOKIE_SECURE:true}
+        secure: ${SESSION_COOKIE_SECURE:false}
         http-only: ${SESSION_COOKIE_HTTP_ONLY:true}
-        same-site: ${SESSION_COOKIE_SAME_SITE:none}
+        same-site: ${SESSION_COOKIE_SAME_SITE:lax}
         domain: ${SESSION_COOKIE_DOMAIN:}
 
 spring:

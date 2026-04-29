@@ -6,6 +6,7 @@ import React, {
   useMemo,
   useState,
 } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {toBackendAssetUrl} from '../config/runtime';
 import {ApiError, requestJson} from '../lib/http';
 import type {ApiResponse, Me} from '../types/auth';
@@ -27,11 +28,36 @@ type AuthContextValue = {
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
+const AUTH_USER_STORAGE_KEY = 'lycoris.auth.user.v1';
 
 const normalizeUser = (user: Me): Me => ({
   ...user,
   avatarUrl: toBackendAssetUrl(user.avatarUrl),
 });
+
+const readCachedUser = async (): Promise<Me | null> => {
+  try {
+    const raw = await AsyncStorage.getItem(AUTH_USER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Me;
+    if (!parsed?.publicId || !parsed?.username || !parsed?.email) return null;
+    return normalizeUser(parsed);
+  } catch {
+    return null;
+  }
+};
+
+const writeCachedUser = async (user: Me | null): Promise<void> => {
+  try {
+    if (user) {
+      await AsyncStorage.setItem(AUTH_USER_STORAGE_KEY, JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem(AUTH_USER_STORAGE_KEY);
+    }
+  } catch {
+    // Storage failures should not break runtime auth.
+  }
+};
 
 const getPayloadData = <T,>(payload: ApiResponse<T> | T): T | null => {
   if (!payload) return null;
@@ -45,19 +71,23 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
   const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const setAuthUser = useCallback((next: Me | null) => {
+    const normalized = next ? normalizeUser(next) : null;
+    setUser(normalized);
+    writeCachedUser(normalized).catch(() => undefined);
+  }, []);
+
   const refresh = useCallback(async () => {
     try {
       const payload = await requestJson<ApiResponse<Me>>('/api/me');
       const me = getPayloadData(payload);
-      setUser(me ? normalizeUser(me) : null);
+      setAuthUser(me ?? null);
     } catch (error) {
       if (error instanceof ApiError && error.status === 401) {
-        setUser(null);
-        return;
+        setAuthUser(null);
       }
-      setUser(null);
     }
-  }, []);
+  }, [setAuthUser]);
 
   const login = useCallback(async (username: string, password: string) => {
     const payload = await requestJson<ApiResponse<Me>>('/api/login', {
@@ -68,8 +98,8 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     if (!me) {
       throw new ApiError(500, 'Login succeeded but user payload is empty');
     }
-    setUser(normalizeUser(me));
-  }, []);
+    setAuthUser(me);
+  }, [setAuthUser]);
 
   const register = useCallback(
     async (payload: {
@@ -93,9 +123,9 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       if (!me) {
         throw new ApiError(500, 'Register succeeded but user payload is empty');
       }
-      setUser(normalizeUser(me));
+      setAuthUser(me);
     },
-    [],
+    [setAuthUser],
   );
 
   const logout = useCallback(async () => {
@@ -106,13 +136,17 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     } catch {
       // Ignore backend logout failure and always clear local auth state.
     }
-    setUser(null);
-  }, []);
+    setAuthUser(null);
+  }, [setAuthUser]);
 
   useEffect(() => {
     let alive = true;
     (async () => {
       setLoading(true);
+      const cached = await readCachedUser();
+      if (alive && cached) {
+        setUser(cached);
+      }
       await refresh();
       if (alive) {
         setLoading(false);

@@ -13,6 +13,7 @@ import {
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
+import { toBackendAssetUrl } from '../config/runtime'
 
 type AdminMarker = {
     id: number
@@ -358,7 +359,7 @@ export default function Admin() {
                                         </Typography>
                                         <Box
                                             component="img"
-                                            src={item.imageUrl}
+                                            src={toBackendAssetUrl(item.imageUrl)}
                                             alt={item.markerTitle}
                                             sx={{
                                                 width: '100%',

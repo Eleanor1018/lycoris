@@ -253,7 +253,7 @@ export default function Documents() {
                 </List>
             </Box>
         ),
-        [activeSlug, hrtOpen, isMobile, navigate, tocItems, location.hash]
+        [activeSlug, hrtOpen, hrtSectionId, hrtToggleId, isMobile, navigate, tocItems, location.hash]
     )
 
     return (

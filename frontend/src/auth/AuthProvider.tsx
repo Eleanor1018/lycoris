@@ -68,8 +68,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const [loading, setLoading] = useState(true)
 
     const setUser = useCallback((next: Me | null) => {
-        setUserState(next)
-        writeCachedUser(next)
+        const normalized = next ? normalizeUser(next) : null
+        setUserState(normalized)
+        writeCachedUser(normalized)
     }, [])
 
     const refresh = useCallback(async () => {

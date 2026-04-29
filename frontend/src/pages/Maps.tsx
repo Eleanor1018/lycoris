@@ -1063,8 +1063,15 @@ export default function Maps() {
     return (
         <Box
             sx={{
-                height: `calc(var(${MAP_VISUAL_VIEWPORT_HEIGHT_VAR}, 100dvh) - var(--nav-offset, var(--nav-height, 64px)))`, 
+                position: 'fixed',
+                top: 'var(--nav-offset, var(--nav-height, 64px))',
+                left: 0,
+                right: 0,
+                bottom: 0,
+                height: 'auto',
                 width: '100%',
+                overflow: 'hidden',
+                overscrollBehavior: 'none',
             }}
         >
             <Box sx={{ position: 'relative', height: '100%', width: '100%' }}>

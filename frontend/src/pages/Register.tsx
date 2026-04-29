@@ -2,8 +2,13 @@ import { useState } from 'react'
 import axios from "axios";
 import {useNavigate, Link as RouterLink} from "react-router-dom";
 import {Button, TextField, Stack, Typography, Alert, Box} from '@mui/material'
-import {useAuth} from "../auth/AuthProvider.tsx";
+import {useAuth, type Me} from "../auth/AuthProvider.tsx";
 
+type RegisterResponse = {
+    code: number
+    data?: Me | null
+    message?: string
+}
 
 export default function Register() {
     const getErrorMessage = (err: unknown, fallback: string) => {
@@ -29,7 +34,7 @@ export default function Register() {
     const [errorMessage, setErrorMessage] = useState('')
     const [password2, setPassword2] = useState("")
     const navigate = useNavigate();
-    const {refresh} = useAuth();
+    const {refresh, setUser} = useAuth();
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
             borderRadius: 3,
@@ -43,15 +48,19 @@ export default function Register() {
             return;
         }
         try{
-            const response = await axios.post("/api/register", registerForm, {withCredentials: true});
-            console.log('Register OK', response.data);
+            const response = await axios.post<RegisterResponse>("/api/register", registerForm, {withCredentials: true});
             if (response.data.code === 0) {
-                await refresh();
+                if (response.data.data) {
+                    setUser(response.data.data);
+                    void refresh();
+                } else {
+                    await refresh();
+                }
                 window.localStorage.setItem('onboarding.editProfileAfterRegister', '1')
                 navigate('/');
             }
             else{
-                setErrorMessage(response.data);
+                setErrorMessage(response.data.message ?? "注册失败，请检查用户名和密码是否正确");
             }
 
             }

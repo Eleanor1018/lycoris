@@ -226,7 +226,7 @@ export default function AdminUsers() {
                                                 variant="text"
                                                 color="success"
                                                 onClick={() => void restoreUser(user)}
-                                                disabled={!Boolean(user.deleted)}
+                                                disabled={!user.deleted}
                                             >
                                                 恢复用户
                                             </Button>

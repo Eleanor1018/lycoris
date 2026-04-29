@@ -2,7 +2,13 @@ import axios from 'axios'
 import { useState } from 'react'
 import {useNavigate, Link as RouterLink} from "react-router-dom";
 import { Button, TextField, Stack, Typography, Alert, Box } from '@mui/material'
-import {useAuth} from "../auth/AuthProvider.tsx";
+import {useAuth, type Me} from "../auth/AuthProvider.tsx";
+
+type LoginResponse = {
+    code: number
+    data?: Me | null
+    message?: string
+}
 
 export default function Login(){
     const getErrorMessage = (err: unknown, fallback: string) => {
@@ -24,7 +30,7 @@ export default function Login(){
     })
     const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
-    const {refresh} = useAuth();
+    const {refresh, setUser} = useAuth();
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
             borderRadius: 3,
@@ -35,14 +41,18 @@ export default function Login(){
         e.preventDefault();
         setErrorMessage('');
         try{
-            const response = await axios.post('/api/login', loginForm, {withCredentials: true});
-            console.log('login OK', response.data);
+            const response = await axios.post<LoginResponse>('/api/login', loginForm, {withCredentials: true});
             if (response.data.code === 0) {
-                await refresh();
+                if (response.data.data) {
+                    setUser(response.data.data);
+                    void refresh();
+                } else {
+                    await refresh();
+                }
                 navigate('/');
             }
             else{
-                setErrorMessage(response.data);
+                setErrorMessage(response.data.message ?? 'login failed.');
             }
         }catch(err: unknown){
             const errorMSG = getErrorMessage(err, 'login failed.')

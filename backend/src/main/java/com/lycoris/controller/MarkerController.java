@@ -148,7 +148,7 @@ public class MarkerController {
         }
     }
 
-    // 你调试用：查看全部（上线前再关掉）
+    // 管理员诊断接口：权限由 SecurityConfig 限制为 ROLE_ADMIN。
     @GetMapping("/all")
     public List<MapMarker> listAll() {
         return markerService.listAll();

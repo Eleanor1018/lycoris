@@ -177,6 +177,7 @@ export default function MarkerFormDialog({
             onClose={onClose}
             maxWidth="sm"
             fullWidth
+            disableScrollLock
             PaperProps={{
                 sx: {
                     borderRadius: 4,
