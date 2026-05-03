@@ -1,3 +1,20 @@
+:root {
+    --ly-color-ink: #5a3850;
+    --ly-color-muted: rgba(90, 56, 80, 0.76);
+    --ly-color-lilac: #d0bcff;
+    --ly-color-blush: #fcddec;
+    --ly-color-pin: #eca7ce;
+    --ly-font-logo: "Fredoka", "Roboto", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --ly-font-display: "Novah", "Fredoka", "Roboto", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+    --ly-font-body: "Roboto", "Noto Sans SC", "Source Han Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+
+@font-face {
+    font-family: "Novah";
+    src: local("Novah"), local("Novah Regular");
+    font-display: swap;
+}
+
 html, body, #root {
     margin: 0;
     padding: 0;
@@ -7,6 +24,7 @@ html, body, #root {
 body {
     line-height: 1.5;
     -webkit-text-size-adjust: 100%;
+    overflow-x: hidden;
 }
 
 a {
