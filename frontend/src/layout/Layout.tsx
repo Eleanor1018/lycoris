@@ -6,6 +6,8 @@ import { Box } from '@mui/material'
 export default function Layout(){
     const location = useLocation()
     const isMapPage = location.pathname.startsWith('/maps')
+    const usesWhitePageBackground =
+        location.pathname === '/about' || location.pathname.startsWith('/documents')
 
     return (
         <>
@@ -15,6 +17,7 @@ export default function Layout(){
                 sx={{
                     pt: isMapPage ? 0 : 'var(--nav-height, 80px)',
                     minHeight: '100vh',
+                    bgcolor: usesWhitePageBackground ? '#fff' : 'transparent',
                 }}
             >
                 <Outlet></Outlet>

@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import MarkerFormDialog, { type DraftMarker } from '../components/MarkerFormDialog'
 import AdminNav from '../components/AdminNav'
+import { adminContainedButtonSx, adminOutlinedButtonSx, adminPaginationSx } from '../styles/adminButtons'
 
 type AdminMarker = {
     id: number
@@ -169,7 +170,7 @@ export default function AdminAll() {
                             <Typography color="error">{String(error)}</Typography>
                         </Paper>
                         {String(error).includes('二级密码') ? (
-                            <Button variant="contained" onClick={() => navigate('/admin')}>
+                            <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
                                 去管理入口验证二级密码
                             </Button>
                         ) : null}
@@ -206,7 +207,7 @@ export default function AdminAll() {
                                         </Typography>
                                     ) : null}
                                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                                        <Button variant="outlined" onClick={() => openEditor(item)}>
+                                        <Button variant="outlined" onClick={() => openEditor(item)} sx={adminOutlinedButtonSx}>
                                             编辑
                                         </Button>
                                         <Button variant="text" color="error" onClick={() => openEditor(item)}>
@@ -222,6 +223,7 @@ export default function AdminAll() {
                                 page={page}
                                 onChange={(_, p) => setPage(p)}
                                 color="primary"
+                                sx={adminPaginationSx}
                             />
                         ) : null}
                     </Stack>
