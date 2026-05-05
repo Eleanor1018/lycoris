@@ -1,7 +1,7 @@
 export type MarkerCategory =
   | 'accessible_toilet'
   | 'friendly_clinic'
-  | 'conversion_therapy'
+  | 'baby_room'
   | 'self_definition';
 
 export type MapMarker = {

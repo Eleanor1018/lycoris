@@ -14,14 +14,14 @@ import {
     ListItemButton,
     ListItemText,
     Typography,
-    useMediaQuery,
-    useTheme,
+    Avatar,
 } from '@mui/material'
-import MenuIcon from '@mui/icons-material/Menu'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
+import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
+import chisatoAvatar from '../../chisato.png'
 
 type NavItem = { label: string; to: string }
 
@@ -30,22 +30,18 @@ export default function NavigationBar() {
     const navigate = useNavigate()
     const { isLoggedIn, user, logout } = useAuth()
     const navShellRef = useRef<HTMLDivElement | null>(null)
-    const lastScrollYRef = useRef(0)
-    const theme = useTheme()
-    const isDesktop = useMediaQuery(theme.breakpoints.up('md'))
-    const [isNavCollapsed, setIsNavCollapsed] = useState(false)
     const [navOpen, setNavOpen] = useState(false)
-    const navCollapsed = isDesktop && isNavCollapsed
 
     const navItems: NavItem[] = useMemo(
         () => [
             { label: '地图', to: '/maps' },
-            { label: 'HRT 指南', to: '/documents' },
+            { label: '文档', to: '/documents' },
             { label: '关于', to: '/about' },
         ],
         []
     )
 
+    const mobileAvatarUrl = isLoggedIn ? user?.avatarUrl || chisatoAvatar : undefined
     const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(`${to}/`)
     const closeNavMenu = () => setNavOpen(false)
 
@@ -57,6 +53,7 @@ export default function NavigationBar() {
             const height = Math.round(el.getBoundingClientRect().height)
             if (height > 0) {
                 document.documentElement.style.setProperty('--nav-height', `${height}px`)
+                document.documentElement.style.setProperty('--nav-offset', `${height}px`)
             }
         }
 
@@ -68,37 +65,8 @@ export default function NavigationBar() {
         return () => observer.disconnect()
     }, [])
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-        if (!isDesktop) return
-
-        lastScrollYRef.current = window.scrollY
-        const onScroll = () => {
-            const current = window.scrollY
-            const delta = current - lastScrollYRef.current
-
-            if (current <= 12) {
-                setIsNavCollapsed(false)
-            } else if (delta > 8) {
-                setIsNavCollapsed(true)
-            } else if (delta < -8) {
-                setIsNavCollapsed(false)
-            }
-            lastScrollYRef.current = current
-        }
-
-        window.addEventListener('scroll', onScroll, { passive: true })
-        return () => window.removeEventListener('scroll', onScroll)
-    }, [isDesktop])
-
-    useEffect(() => {
-        document.documentElement.style.setProperty(
-            '--nav-offset',
-            navCollapsed ? '0px' : 'var(--nav-height, 104px)'
-        )
-    }, [navCollapsed])
-
     return (
+        <>
         <AppBar
             position="fixed"
             elevation={0}
@@ -111,16 +79,16 @@ export default function NavigationBar() {
                 top: 0,
                 left: 0,
                 right: 0,
-                transform: navCollapsed ? 'translateY(calc(-1 * var(--nav-height, 104px)))' : 'translateY(0)',
-                transition: 'transform 220ms ease',
             }}
         >
             <Box
                 ref={navShellRef}
                 sx={{
-                    px: { xs: 1.5, md: 'clamp(28px, 4.6vw, 66px)' },
-                    pt: { xs: 1.5, md: 'clamp(20px, 3.4vw, 49px)' },
+                    px: { xs: 1.5, md: 'clamp(20px, 2.5vw, 36px)' },
+                    pt: { xs: 1, md: 1.5 },
                     pb: { xs: 1.25, md: 1.75 },
+                    width: '100%',
+                    boxSizing: 'border-box',
                     pointerEvents: 'none',
                 }}
             >
@@ -128,11 +96,14 @@ export default function NavigationBar() {
                     disableGutters
                     sx={{
                         minHeight: { xs: 70, md: 82 },
-                        width: { xs: 'calc(100vw - 24px)', md: '100%' },
-                        maxWidth: { xs: 'calc(100vw - 24px)', md: 1308 },
+                        width: '100%',
+                        maxWidth: '100%',
                         mx: 'auto',
                         px: { xs: 2, md: 3, lg: 4 },
                         gap: { xs: 1, md: 2.4 },
+                        display: { xs: 'grid', md: 'flex' },
+                        gridTemplateColumns: { xs: '54px minmax(0, 1fr) 54px', md: 'none' },
+                        alignItems: 'center',
                         position: 'relative',
                         pointerEvents: 'auto',
                         borderRadius: 999,
@@ -152,13 +123,28 @@ export default function NavigationBar() {
                             display: { xs: 'inline-flex', md: 'none' },
                             width: 54,
                             height: 54,
-                            bgcolor: 'var(--ly-color-blush)',
+                            gridColumn: { xs: 1, md: 'auto' },
+                            justifySelf: { xs: 'start', md: 'auto' },
+                            p: 0,
+                            bgcolor: 'var(--ly-color-lilac)',
                             color: '#1d1b20',
-                            '&:hover': { bgcolor: '#f8cfe3' },
+                            '&:hover': { bgcolor: '#c8afff' },
                         }}
-                        aria-label="打开导航菜单"
+                        aria-label={isLoggedIn ? '打开个人导航菜单' : '打开登录导航菜单'}
+                        aria-expanded={navOpen}
                     >
-                        {navOpen ? <CloseIcon /> : <MenuIcon />}
+                        <Avatar
+                            src={mobileAvatarUrl}
+                            sx={{
+                                width: isLoggedIn ? 54 : 44,
+                                height: isLoggedIn ? 54 : 44,
+                                bgcolor: isLoggedIn ? 'transparent' : 'var(--ly-color-lilac)',
+                                color: 'var(--ly-color-ink)',
+                                border: 0,
+                            }}
+                        >
+                            <PersonOutlineIcon />
+                        </Avatar>
                     </IconButton>
 
                     <Box
@@ -172,10 +158,9 @@ export default function NavigationBar() {
                             flexShrink: 0,
                             textDecoration: 'none',
                             color: '#000',
-                            position: { xs: 'absolute', md: 'static' },
-                            left: { xs: '50%', md: 'auto' },
-                            top: { xs: '50%', md: 'auto' },
-                            transform: { xs: 'translate(-50%, -50%)', md: 'none' },
+                            position: 'static',
+                            gridColumn: { xs: 2, md: 'auto' },
+                            justifySelf: { xs: 'center', md: 'auto' },
                         }}
                     >
                         <Typography
@@ -183,7 +168,7 @@ export default function NavigationBar() {
                             sx={{
                                 fontFamily: 'var(--ly-font-logo)',
                                 fontWeight: 700,
-                                fontSize: { xs: 38, md: 38 },
+                                fontSize: { xs: 36, md: 34, lg: 36 },
                                 lineHeight: 1,
                                 letterSpacing: '-0.03em',
                             }}
@@ -192,16 +177,14 @@ export default function NavigationBar() {
                         </Typography>
                     </Box>
 
-                    <Divider
-                        orientation="vertical"
-                        flexItem
+                    <Box
+                        aria-hidden="true"
                         sx={{
                             display: { xs: 'none', md: 'block' },
-                            mx: { md: 1.4, lg: 2 },
-                            borderColor: 'var(--ly-color-ink)',
-                            borderRightWidth: 3,
-                            opacity: 0.95,
-                            borderRadius: 999,
+                            flex: '0 0 auto',
+                            width: { md: '25.4px', lg: '35px' },
+                            height: 1,
+                            pointerEvents: 'none',
                         }}
                     />
 
@@ -220,11 +203,11 @@ export default function NavigationBar() {
                                     variant="text"
                                     sx={{
                                         fontFamily: 'var(--ly-font-body)',
-                                        fontSize: { md: 22, lg: 26 },
+                                        fontSize: { md: 19, lg: 21 },
                                         fontWeight: 700,
                                         textTransform: 'none',
                                         borderRadius: 999,
-                                        px: 1.25,
+                                        px: 1,
                                         color: 'var(--ly-color-ink)',
                                         bgcolor: active ? 'rgba(208, 188, 255, 0.42)' : 'transparent',
                                         '&:hover': {
@@ -238,22 +221,22 @@ export default function NavigationBar() {
                         })}
                     </Stack>
 
-                    <Box sx={{ flex: 1 }} />
+                    <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
 
                     <IconButton
                         aria-label="打开搜索页"
                         onClick={() => navigate('/search')}
                         sx={{
+                            display: { xs: navOpen ? 'none' : 'inline-flex', md: 'inline-flex' },
                             width: 54,
                             height: 54,
-                            position: { xs: 'fixed', md: 'static' },
-                            right: { xs: 56, md: 'auto' },
-                            top: { xs: 20, md: 'auto' },
-                            transform: 'none',
+                            gridColumn: { xs: 3, md: 'auto' },
+                            justifySelf: { xs: 'end', md: 'auto' },
+                            position: 'static',
                             pointerEvents: 'auto',
-                            bgcolor: { xs: '#e8def8', md: '#f4b3cc' },
+                            bgcolor: '#f4b3cc',
                             color: '#1d1b20',
-                            '&:hover': { bgcolor: { xs: '#ded1f2', md: '#efa7c5' } },
+                            '&:hover': { bgcolor: '#efa7c5' },
                         }}
                     >
                         <SearchIcon />
@@ -291,7 +274,7 @@ export default function NavigationBar() {
                         sx={{
                             fontFamily: 'var(--ly-font-logo)',
                             fontWeight: 700,
-                            fontSize: 34,
+                            fontSize: 32,
                             letterSpacing: '-0.03em',
                             color: '#000',
                         }}
@@ -302,6 +285,53 @@ export default function NavigationBar() {
                         <CloseIcon />
                     </IconButton>
                 </Box>
+
+                {!isLoggedIn ? (
+                    <List sx={{ px: 2, py: 1.5 }}>
+                        <ListItemButton
+                            onClick={() => {
+                                closeNavMenu()
+                                navigate('/login')
+                            }}
+                            sx={{ borderRadius: 999 }}
+                        >
+                            <ListItemText primary="登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                        </ListItemButton>
+                        <ListItemButton
+                            onClick={() => {
+                                closeNavMenu()
+                                navigate('/register')
+                            }}
+                            sx={{ borderRadius: 999 }}
+                        >
+                            <ListItemText primary="注册" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                        </ListItemButton>
+                    </List>
+                ) : (
+                    <List sx={{ px: 2, py: 1.5 }}>
+                        <ListItemButton
+                            onClick={() => {
+                                closeNavMenu()
+                                navigate('/me')
+                            }}
+                            sx={{ borderRadius: 999 }}
+                        >
+                            <ListItemText primary="个人中心" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                        </ListItemButton>
+                        <ListItemButton
+                            onClick={async () => {
+                                closeNavMenu()
+                                await logout()
+                                navigate('/maps')
+                            }}
+                            sx={{ borderRadius: 999 }}
+                        >
+                            <ListItemText primary="退出登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                        </ListItemButton>
+                    </List>
+                )}
+
+                <Divider />
 
                 <List sx={{ px: 2, py: 1.5 }}>
                     {navItems.map((item) => (
@@ -320,58 +350,12 @@ export default function NavigationBar() {
                                 },
                             }}
                         >
-                            <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 700 }} />
+                            <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     ))}
                 </List>
-
-                <Divider />
-
-                {!isLoggedIn ? (
-                    <List sx={{ px: 2, py: 1.5 }}>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/login')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary="登录" primaryTypographyProps={{ fontWeight: 700 }} />
-                        </ListItemButton>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/register')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary="注册" primaryTypographyProps={{ fontWeight: 700 }} />
-                        </ListItemButton>
-                    </List>
-                ) : (
-                    <List sx={{ px: 2, py: 1.5 }}>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/me')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary="个人中心" primaryTypographyProps={{ fontWeight: 700 }} />
-                        </ListItemButton>
-                        <ListItemButton
-                            onClick={async () => {
-                                closeNavMenu()
-                                await logout()
-                                navigate('/maps')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary="退出登录" primaryTypographyProps={{ fontWeight: 700 }} />
-                        </ListItemButton>
-                    </List>
-                )}
             </Drawer>
         </AppBar>
+        </>
     )
 }

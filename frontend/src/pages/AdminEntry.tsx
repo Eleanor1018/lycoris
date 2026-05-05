@@ -41,8 +41,8 @@ export default function AdminEntry() {
     }
 
     return (
-        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 } }}>
-            <Stack spacing={2}>
+        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                     管理后台入口
                 </Typography>
@@ -66,14 +66,14 @@ export default function AdminEntry() {
                                 {error}
                             </Typography>
                         ) : null}
-                        <Stack direction="row" spacing={1}>
-                            <Button variant="contained" onClick={() => void handleVerify()} disabled={loading}>
+                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
+                            <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 {loading ? '验证中...' : '验证并进入审核中心'}
                             </Button>
-                            <Button variant="outlined" onClick={() => navigate('/admin/all')}>
+                            <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 直接去全量点位
                             </Button>
-                            <Button variant="outlined" onClick={() => navigate('/admin/usr')}>
+                            <Button variant="outlined" onClick={() => navigate('/admin/usr')} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                                 直接去用户管理
                             </Button>
                         </Stack>

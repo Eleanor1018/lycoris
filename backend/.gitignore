@@ -34,5 +34,6 @@ build/
 
 # Local environment overrides
 .env
+local-backend*.log
 PING
 ping

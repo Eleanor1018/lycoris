@@ -11,12 +11,6 @@ import {
     Typography,
     useMediaQuery,
     useTheme,
-    Divider,
-    FormControl,
-    InputLabel,
-    MenuItem,
-    Select,
-    Slider,
 } from '@mui/material'
 import MenuIcon from '@mui/icons-material/Menu'
 import ExpandLessIcon from '@mui/icons-material/ExpandLess'
@@ -34,18 +28,9 @@ async function loadAboutDoc(): Promise<string> {
     return await loader()
 }
 
-const drawerWidth = 280
-const NAV_OFFSET_VAR = 'var(--nav-offset, var(--nav-height, 72px))'
-const NAV_HEIGHT_VAR_MOBILE = 'var(--nav-height, 56px)'
-const READING_PREFS_KEY = 'docs.readingPrefs'
-
-const fontOptions = [
-    { value: 'default', label: '默认无衬线', stack: '"Inter","Noto Sans SC","Source Han Sans SC","PingFang SC","Microsoft YaHei",sans-serif' },
-    { value: 'serif', label: '衬线体', stack: '"Source Han Serif SC","Noto Serif SC","Songti SC","STSong","SimSun",serif' },
-    { value: 'mono', label: '等宽体', stack: '"JetBrains Mono","Fira Code","Noto Sans Mono CJK SC","Cascadia Mono",monospace' },
-] as const
-
-type FontOptionValue = (typeof fontOptions)[number]['value']
+const drawerWidth = 292
+const NAV_OFFSET_VAR = 'var(--nav-height, 96px)'
+const NAV_HEIGHT_VAR_MOBILE = 'var(--nav-height, 94px)'
 
 type TocItem = {
     level: 2 | 3 | 4
@@ -95,37 +80,9 @@ export default function About() {
     const [tocItems, setTocItems] = useState<TocItem[]>([])
     const [mobileOpen, setMobileOpen] = useState(false)
     const [aboutOpen, setAboutOpen] = useState(true)
-    const [fontSize, setFontSize] = useState<number>(() => {
-        if (typeof window === 'undefined') return 15
-        try {
-            const raw = window.localStorage.getItem(READING_PREFS_KEY)
-            if (!raw) return 15
-            const parsed = JSON.parse(raw) as { fontSize?: number }
-            const n = Number(parsed.fontSize)
-            if (!Number.isFinite(n)) return 15
-            return Math.max(13, Math.min(22, Math.round(n)))
-        } catch {
-            return 15
-        }
-    })
-    const [fontFamilyKey, setFontFamilyKey] = useState<FontOptionValue>(() => {
-        if (typeof window === 'undefined') return 'default'
-        try {
-            const raw = window.localStorage.getItem(READING_PREFS_KEY)
-            if (!raw) return 'default'
-            const parsed = JSON.parse(raw) as { fontFamilyKey?: string }
-            return fontOptions.some((f) => f.value === parsed.fontFamilyKey)
-                ? (parsed.fontFamilyKey as FontOptionValue)
-                : 'default'
-        } catch {
-            return 'default'
-        }
-    })
-    const fontScale = useMemo(() => fontSize / 15, [fontSize])
-    const selectedFontFamily = useMemo(
-        () => fontOptions.find((f) => f.value === fontFamilyKey)?.stack ?? fontOptions[0].stack,
-        [fontFamilyKey]
-    )
+    const fontSize = 16
+    const fontScale = fontSize / 16
+    const selectedFontFamily = 'var(--ly-font-body)'
 
     useEffect(() => {
         let alive = true
@@ -159,30 +116,30 @@ export default function About() {
         return () => window.clearTimeout(handle)
     }, [location.hash, content])
 
-    useEffect(() => {
-        if (typeof window === 'undefined') return
-        window.localStorage.setItem(READING_PREFS_KEY, JSON.stringify({ fontSize, fontFamilyKey }))
-    }, [fontSize, fontFamilyKey])
     const aboutToggleId = 'about-toc-toggle'
     const aboutSectionId = 'about-toc-section'
 
     const drawer = useMemo(
         () => (
-            <Box sx={{ width: drawerWidth, px: 1.5 }}>
-                <List dense>
+            <Box sx={{ width: '100%', px: 1.25, py: 1 }}>
+                <List dense disablePadding>
                     <ListItemButton
                         onClick={() => setAboutOpen((prev) => !prev)}
                         id={aboutToggleId}
                         aria-expanded={aboutOpen}
                         aria-controls={aboutSectionId}
                         sx={{
-                            mt: 1,
-                            borderRadius: 2,
+                            borderRadius: 999,
                             fontWeight: 700,
-                            bgcolor: 'rgba(25, 118, 210, 0.08)',
+                            color: 'var(--ly-color-ink)',
+                            bgcolor: 'rgba(208, 188, 255, 0.34)',
+                            '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.48)' },
                         }}
                     >
-                        <ListItemText primary="关于夏水仙" />
+                        <ListItemText
+                            primary="关于夏水仙"
+                            primaryTypographyProps={{ fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}
+                        />
                         {aboutOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
                     </ListItemButton>
 
@@ -191,8 +148,8 @@ export default function About() {
                             sx={{
                                 mt: 0.5,
                                 mb: 0.5,
-                                borderRadius: 3,
-                                bgcolor: 'rgba(0, 0, 0, 0.04)',
+                                borderRadius: 4,
+                                bgcolor: 'rgba(255, 255, 255, 0.48)',
                                 px: 0.5,
                                 py: 0.5,
                             }}
@@ -206,8 +163,15 @@ export default function About() {
                                             if (isMobile) setMobileOpen(false)
                                         }}
                                         sx={{
-                                            borderRadius: 2,
+                                            borderRadius: 999,
                                             px: item.level === 2 ? 2 : item.level === 3 ? 3 : 4,
+                                            color: 'var(--ly-color-ink)',
+                                            '&:hover': { bgcolor: 'rgba(252, 221, 236, 0.58)' },
+                                            '& .MuiListItemText-primary': {
+                                                fontSize: item.level === 2 ? 16 : 14,
+                                                fontWeight: item.level === 2 ? 700 : 500,
+                                                lineHeight: 1.55,
+                                            },
                                         }}
                                     >
                                         <ListItemText primary={item.text} />
@@ -223,45 +187,65 @@ export default function About() {
     )
 
     return (
-        <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+        <Box
+            sx={{
+                display: { xs: 'block', md: 'grid' },
+                gridTemplateColumns: { md: `${drawerWidth}px minmax(0, 1fr)` },
+                gap: { md: 3, lg: 4 },
+                minHeight: '100vh',
+                px: { xs: 0, md: 'clamp(20px, 2.5vw, 36px)' },
+                py: { xs: 0, md: 1.5 },
+                background: '#fff',
+            }}
+        >
             {!isMobile && (
-                <Drawer
-                    variant="permanent"
+                <Box
+                    component="aside"
                     sx={{
-                        width: drawerWidth,
-                        flexShrink: 0,
-                        '& .MuiDrawer-paper': {
-                            width: drawerWidth,
-                            boxSizing: 'border-box',
-                            borderRadius: 0,
-                            top: NAV_OFFSET_VAR,
-                            height: `calc(100vh - ${NAV_OFFSET_VAR})`,
-                            paddingTop: 0,
-                        },
+                        position: 'sticky',
+                        top: `calc(${NAV_OFFSET_VAR} + 12px)`,
+                        alignSelf: 'start',
+                        height: `calc(100vh - ${NAV_OFFSET_VAR} - 24px)`,
+                        overflow: 'hidden',
+                        borderRadius: 5,
+                        border: '2px solid rgba(221, 165, 196, 0.31)',
+                        background: '#fff',
+                        boxShadow: '0 20px 42px rgba(221, 165, 196, 0.18)',
+                        backdropFilter: 'blur(18px)',
+                        WebkitBackdropFilter: 'blur(18px)',
                     }}
                 >
                     <Box
                         sx={{
-                            px: 2.75,
-                            py: 1.2,
-                            bgcolor: '#fff',
-                            borderBottom: '1px solid rgba(15, 23, 42, 0.08)',
+                            px: 2.5,
+                            pt: 'clamp(34px, 4vw, 56px)',
+                            pb: 2,
+                            borderBottom: '1px solid rgba(221, 165, 196, 0.28)',
                         }}
                     >
                         <Typography
                             sx={{
-                                fontWeight: 800,
-                                letterSpacing: '0.04em',
-                                color: 'text.primary',
-                                fontSize: '0.95rem',
+                                fontFamily: 'var(--ly-font-logo)',
+                                fontWeight: 700,
+                                letterSpacing: '-0.02em',
+                                color: 'var(--ly-color-ink)',
+                                fontSize: 30,
+                                lineHeight: 1,
                             }}
                         >
-                            目录
+                            About
+                        </Typography>
+                        <Typography
+                            variant="body2"
+                            sx={{ mt: 0.75, color: 'var(--ly-color-muted)' }}
+                        >
+                            关于目录
                         </Typography>
                     </Box>
-                    <Divider />
-                    {drawer}
-                </Drawer>
+                    <Box sx={{ height: 'calc(100% - 78px)', overflowY: 'auto', py: 0.75 }}>
+                        {drawer}
+                    </Box>
+                </Box>
             )}
 
             {isMobile && (
@@ -272,12 +256,14 @@ export default function About() {
                     ModalProps={{ keepMounted: true }}
                     sx={{
                         '& .MuiDrawer-paper': {
-                            width: drawerWidth,
+                            width: `min(${drawerWidth}px, calc(100vw - 32px))`,
                             boxSizing: 'border-box',
-                            borderRadius: 0,
-                            top: NAV_HEIGHT_VAR_MOBILE,
-                            height: `calc(100vh - ${NAV_HEIGHT_VAR_MOBILE})`,
-                            paddingTop: 0,
+                            borderRadius: '0 28px 28px 0',
+                            top: `calc(${NAV_HEIGHT_VAR_MOBILE} + 8px)`,
+                            height: `calc(100vh - ${NAV_HEIGHT_VAR_MOBILE} - 24px)`,
+                            border: '2px solid rgba(221, 165, 196, 0.31)',
+                            borderLeft: 0,
+                            background: '#fff',
                         },
                     }}
                 >
@@ -298,7 +284,7 @@ export default function About() {
                         height: 46,
                         bgcolor: '#7a4b8f',
                         color: '#fff',
-                        boxShadow: '0 10px 24px rgba(122, 75, 143, 0.34)',
+                        boxShadow: '0 12px 26px rgba(122, 75, 143, 0.34)',
                         '&:hover': { bgcolor: '#6b3f80' },
                     }}
                 >
@@ -306,8 +292,29 @@ export default function About() {
                 </IconButton>
             )}
 
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-                <Box sx={{ px: { xs: 2, md: 6, xl: 9 }, py: { xs: 1.25, md: 3 } }}>
+            <Box
+                component="article"
+                sx={{
+                    minWidth: 0,
+                    width: '100%',
+                    px: { xs: 2, md: 0 },
+                    pb: { xs: 8, md: 6 },
+                    display: 'flex',
+                    justifyContent: 'center',
+                }}
+            >
+                <Box
+                    sx={{
+                        width: '100%',
+                        maxWidth: { xs: '100%', md: 900, xl: 980 },
+                        px: { xs: 0, md: 'clamp(38px, 5vw, 72px)' },
+                        py: { xs: 1.25, md: 'clamp(34px, 4vw, 56px)' },
+                        borderRadius: { xs: 0, md: 6 },
+                        bgcolor: { xs: 'transparent', md: '#fff' },
+                        border: { xs: 'none', md: '1px solid rgba(221, 165, 196, 0.28)' },
+                        boxShadow: { xs: 'none', md: '0 22px 60px rgba(90, 56, 80, 0.08)' },
+                    }}
+                >
                     {err ? (
                         <Typography color="error" sx={{ mb: 2 }}>
                             {err}
@@ -318,16 +325,38 @@ export default function About() {
                         sx={{
                             fontSize,
                             fontFamily: selectedFontFamily,
-                            lineHeight: 1.72,
-                            '& h1': { fontSize: { xs: `${Math.round(26 * fontScale)}px`, md: `${Math.round(30 * fontScale)}px` }, lineHeight: 1.25, mb: 1.25 },
-                            '& h2': { fontSize: { xs: `${Math.round(20 * fontScale)}px`, md: `${Math.round(22 * fontScale)}px` }, lineHeight: 1.3, mt: 2.5, mb: 1.1, scrollMarginTop: 90 },
-                            '& h3': { fontSize: { xs: `${Math.round(17 * fontScale)}px`, md: `${Math.round(18 * fontScale)}px` }, lineHeight: 1.35, mt: 2, mb: 0.9, scrollMarginTop: 90 },
+                            lineHeight: 1.78,
+                            maxWidth: '100%',
+                            overflowWrap: 'anywhere',
+                            wordBreak: 'break-word',
+                            color: '#111827',
+                            '& h1': { fontSize: { xs: `${Math.round(28 * fontScale)}px`, md: `${Math.round(38 * fontScale)}px` }, lineHeight: 1.16, mb: 2.2, letterSpacing: '-0.035em' },
+                            '& h2': { fontSize: { xs: `${Math.round(22 * fontScale)}px`, md: `${Math.round(28 * fontScale)}px` }, lineHeight: 1.22, mt: 4, mb: 1.4, scrollMarginTop: 110, letterSpacing: '-0.02em' },
+                            '& h3': { fontSize: { xs: `${Math.round(18 * fontScale)}px`, md: `${Math.round(21 * fontScale)}px` }, lineHeight: 1.35, mt: 2.5, mb: 1, scrollMarginTop: 110 },
                             '& h4': { scrollMarginTop: 90 },
-                            '& p': { my: 1.1, fontSize: `${fontSize}px` },
-                            '& li': { my: 0.5, fontSize: `${fontSize}px` },
+                            '& p': { my: 1.25, fontSize: `${fontSize}px`, maxWidth: '100%', overflowWrap: 'anywhere' },
+                            '& li': { my: 0.65, fontSize: `${fontSize}px`, maxWidth: '100%', overflowWrap: 'anywhere' },
+                            '& ul, & ol': { pl: { xs: 2.4, md: 3.5 } },
                             '& code': {
                                 fontFamily: '"JetBrains Mono", "Fira Code", Consolas, monospace',
                                 fontSize: '0.92em',
+                                whiteSpace: 'pre-wrap',
+                                bgcolor: 'rgba(122, 75, 143, 0.08)',
+                                borderRadius: 1,
+                                px: 0.45,
+                            },
+                            '& pre': {
+                                maxWidth: '100%',
+                                overflowX: 'auto',
+                                whiteSpace: 'pre',
+                                p: 2,
+                                borderRadius: 3,
+                                bgcolor: 'rgba(17, 24, 39, 0.04)',
+                            },
+                            '& table': {
+                                display: 'block',
+                                maxWidth: '100%',
+                                overflowX: 'auto',
                             },
                             '& img': {
                                 width: { xs: '260px', md: '600px', xl: '900px' },
@@ -344,65 +373,6 @@ export default function About() {
                     </Box>
                 </Box>
             </Box>
-
-            {!isMobile && (
-                <Box
-                    sx={{
-                        width: drawerWidth,
-                        flexShrink: 0,
-                        borderLeft: '1px solid rgba(122, 75, 143, 0.14)',
-                        bgcolor: 'rgba(255,255,255,0.82)',
-                        backdropFilter: 'blur(8px)',
-                    }}
-                >
-                    <Box
-                        sx={{
-                            position: 'sticky',
-                            top: NAV_OFFSET_VAR,
-                            height: `calc(100vh - ${NAV_OFFSET_VAR})`,
-                            overflowY: 'auto',
-                            px: 2,
-                            py: 2,
-                        }}
-                    >
-                        <Typography fontWeight={800} sx={{ mb: 1.6 }}>
-                            阅读设置
-                        </Typography>
-                        <Typography variant="body2" sx={{ opacity: 0.72, mb: 1.6 }}>
-                            仅影响当前文档排版
-                        </Typography>
-
-                        <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
-                            字号
-                        </Typography>
-                        <Slider
-                            value={fontSize}
-                            min={13}
-                            max={22}
-                            step={1}
-                            valueLabelDisplay="auto"
-                            onChange={(_, value) => setFontSize(value as number)}
-                            sx={{ mb: 2.4 }}
-                        />
-
-                        <FormControl fullWidth size="small">
-                            <InputLabel id="about-font-label">字体</InputLabel>
-                            <Select
-                                labelId="about-font-label"
-                                label="字体"
-                                value={fontFamilyKey}
-                                onChange={(e) => setFontFamilyKey(e.target.value as FontOptionValue)}
-                            >
-                                {fontOptions.map((f) => (
-                                    <MenuItem key={f.value} value={f.value}>
-                                        {f.label}
-                                    </MenuItem>
-                                ))}
-                            </Select>
-                        </FormControl>
-                    </Box>
-                </Box>
-            )}
         </Box>
     )
 }

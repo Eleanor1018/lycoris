@@ -89,8 +89,34 @@ export default function MarkerFormDialog({
     }, [open, draft?.tempId, draft?.openTimeStart, draft?.openTimeEnd])
 
     const fieldSx = {
+        '& .MuiInputLabel-root': {
+            color: 'rgba(90, 56, 80, 0.68)',
+            fontWeight: 600,
+        },
+        '& .MuiInputLabel-root.Mui-focused': {
+            color: 'var(--ly-color-ink)',
+        },
         '& .MuiOutlinedInput-root': {
-            borderRadius: 3,
+            borderRadius: '18px',
+            bgcolor: 'rgba(255, 255, 255, 0.78)',
+            color: 'var(--ly-color-ink)',
+            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.72)',
+            backdropFilter: 'blur(10px)',
+            transition: 'border-color 160ms ease, box-shadow 160ms ease, background 160ms ease',
+            '& fieldset': {
+                borderColor: 'rgba(90, 56, 80, 0.16)',
+            },
+            '&:hover fieldset': {
+                borderColor: 'rgba(236, 167, 206, 0.72)',
+            },
+            '&.Mui-focused': {
+                bgcolor: 'rgba(255, 255, 255, 0.92)',
+                boxShadow: '0 0 0 4px rgba(208, 188, 255, 0.26)',
+            },
+            '&.Mui-focused fieldset': {
+                borderColor: 'var(--ly-color-lilac)',
+                borderWidth: 1.5,
+            },
         },
     }
     const MAX_MARKER_IMAGE_SIZE = 5 * 1024 * 1024
@@ -178,9 +204,22 @@ export default function MarkerFormDialog({
             maxWidth="sm"
             fullWidth
             disableScrollLock
+            slotProps={{
+                backdrop: {
+                    sx: {
+                        bgcolor: 'rgba(90, 56, 80, 0.16)',
+                        backdropFilter: 'blur(5px)',
+                    },
+                },
+            }}
             PaperProps={{
                 sx: {
-                    borderRadius: 4,
+                    borderRadius: '28px',
+                    border: '1px solid rgba(236, 167, 206, 0.56)',
+                    color: 'var(--ly-color-ink)',
+                    background: '#fff',
+                    boxShadow: '0 26px 70px rgba(90, 56, 80, 0.22), 0 8px 24px rgba(236, 167, 206, 0.22)',
+                    overflow: 'hidden',
                     touchAction: { xs: 'pan-y', sm: 'auto' },
                     overscrollBehavior: 'contain',
                 },
@@ -190,8 +229,13 @@ export default function MarkerFormDialog({
                 sx={{
                     fontWeight: 800,
                     textAlign: 'center',
-                    fontSize: { xs: 24, md: 30 },
-                    pt: 3,
+                    fontSize: { xs: 22, md: 26 },
+                    color: 'var(--ly-color-ink)',
+                    pt: { xs: 3, md: 3.5 },
+                    pb: 1,
+                    letterSpacing: '-0.02em',
+                    background:
+                        'radial-gradient(circle at 50% 0%, rgba(252, 221, 236, 0.8), rgba(252, 221, 236, 0) 58%)',
                 }}
             >
                 {editingId ? '编辑点位' : '新增点位'}
@@ -199,16 +243,24 @@ export default function MarkerFormDialog({
             <DialogContent
                 sx={{
                     px: { xs: 2.5, md: 4 },
-                    pb: 3,
+                    pb: { xs: 3, md: 3.5 },
                     overscrollBehavior: 'contain',
                     WebkitOverflowScrolling: 'touch',
                 }}
             >
-                <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
+                <Typography
+                    variant="body2"
+                    sx={{
+                        color: 'rgba(90, 56, 80, 0.68)',
+                        mt: 0.5,
+                        textAlign: 'center',
+                        fontWeight: 600,
+                    }}
+                >
                     {draft ? `${draft.lat.toFixed(6)}, ${draft.lng.toFixed(6)}` : ''}
                 </Typography>
 
-                <Divider sx={{ my: 1.5 }} />
+                <Divider sx={{ my: 1.8, borderColor: 'rgba(236, 167, 206, 0.34)' }} />
 
                 <Stack spacing={2}>
                     <FormControl fullWidth>
@@ -257,8 +309,21 @@ export default function MarkerFormDialog({
                         sx={{
                             borderRadius: 999,
                             textTransform: 'none',
-                            borderColor: 'rgba(116, 73, 136, 0.5)',
-                            color: '#744988',
+                            py: 1.15,
+                            borderColor: 'rgba(208, 188, 255, 0.85)',
+                            bgcolor: 'rgba(208, 188, 255, 0.28)',
+                            color: 'var(--ly-color-ink)',
+                            fontWeight: 700,
+                            boxShadow: '0 10px 22px rgba(208, 188, 255, 0.2)',
+                            '&:hover': {
+                                borderColor: 'rgba(236, 167, 206, 0.92)',
+                                bgcolor: 'rgba(252, 221, 236, 0.48)',
+                            },
+                            '&.Mui-disabled': {
+                                color: 'rgba(90, 56, 80, 0.42)',
+                                borderColor: 'rgba(90, 56, 80, 0.12)',
+                                bgcolor: 'rgba(255, 255, 255, 0.44)',
+                            },
                         }}
                     >
                         {canUploadImage ? '选择图片（可选）' : '仅创建者可上传图片'}
@@ -365,6 +430,17 @@ export default function MarkerFormDialog({
                         control={
                             <Switch
                                 checked={Boolean(draft?.isPublic)}
+                                sx={{
+                                    '& .MuiSwitch-switchBase.Mui-checked': {
+                                        color: 'var(--ly-color-lilac)',
+                                        '& + .MuiSwitch-track': {
+                                            bgcolor: 'rgba(208, 188, 255, 0.72)',
+                                        },
+                                    },
+                                    '& .MuiSwitch-track': {
+                                        bgcolor: 'rgba(90, 56, 80, 0.24)',
+                                    },
+                                }}
                                 onChange={(e) =>
                                     setDraft((d) => (d ? { ...d, isPublic: e.target.checked } : d))
                                 }
@@ -432,15 +508,30 @@ export default function MarkerFormDialog({
                         两项都留空表示全天可用；若填写需同时填写开始和结束时间（每日重复）。
                     </Typography>
 
-                    <Stack direction="row" spacing={1} justifyContent="flex-end">
-                        <Button onClick={onClose} sx={{ borderRadius: 999, textTransform: 'none' }}>
+                    <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
+                        <Button
+                            onClick={onClose}
+                            sx={{
+                                borderRadius: 999,
+                                textTransform: 'none',
+                                color: 'rgba(90, 56, 80, 0.76)',
+                                fontWeight: 700,
+                                '&:hover': { bgcolor: 'rgba(252, 221, 236, 0.38)' },
+                            }}
+                        >
                             取消
                         </Button>
                         {editingId && canDelete ? (
                             <Button
                                 color="error"
                                 onClick={onDelete}
-                                sx={{ borderRadius: 999, textTransform: 'none' }}
+                                sx={{
+                                    borderRadius: 999,
+                                    textTransform: 'none',
+                                    fontWeight: 700,
+                                    bgcolor: 'rgba(255, 235, 238, 0.84)',
+                                    '&:hover': { bgcolor: 'rgba(255, 205, 210, 0.86)' },
+                                }}
                             >
                                 删除
                             </Button>
@@ -451,8 +542,11 @@ export default function MarkerFormDialog({
                             sx={{
                                 borderRadius: 999,
                                 textTransform: 'none',
-                                bgcolor: '#b784a7',
-                                '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
+                                color: 'var(--ly-color-ink)',
+                                bgcolor: 'var(--ly-color-lilac)',
+                                fontWeight: 800,
+                                boxShadow: '0 12px 24px rgba(208, 188, 255, 0.36)',
+                                '&:hover': { bgcolor: '#c8afff', boxShadow: '0 14px 28px rgba(208, 188, 255, 0.44)' },
                             }}
                         >
                             保存

@@ -81,9 +81,14 @@ export default function Home() {
                 sx={{
                     position: 'relative',
                     overflow: { xs: 'visible', md: 'hidden' },
-                    minHeight: 'calc(100svh - var(--nav-offset, var(--nav-height, 104px)))',
+                    minHeight: 'calc(100svh - var(--nav-height, 94px))',
+                    boxSizing: 'border-box',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: { xs: 'center', md: 'flex-end' },
+                    alignItems: 'flex-start',
                     px: { xs: '26px', md: 'clamp(40px, 4.7vw, 68px)' },
-                    pb: { xs: 3, md: 'clamp(72px, 7.2vw, 104px)' },
+                    py: { xs: 3, md: 'clamp(72px, 7.2vw, 104px)' },
                     background: 'linear-gradient(180deg, #f6f6f6 0%, #f6f6f6 58%, #f8ebff 100%)',
                 }}
             >
@@ -92,10 +97,9 @@ export default function Home() {
                     sx={{
                         position: 'relative',
                         zIndex: 1,
-                        minHeight: 'inherit',
+                        width: '100%',
                         display: 'flex',
                         flexDirection: 'column',
-                        justifyContent: 'flex-end',
                         alignItems: 'flex-start',
                         maxWidth: { xs: 350, md: 1180 },
                         transform: 'none',
@@ -152,7 +156,7 @@ export default function Home() {
                         variant="contained"
                         to="/maps"
                         sx={{
-                            mt: { xs: 10, md: 4 },
+                            mt: { xs: 7, md: 4 },
                             alignSelf: { xs: 'flex-end', md: 'flex-start' },
                             width: 176,
                             height: 53,
