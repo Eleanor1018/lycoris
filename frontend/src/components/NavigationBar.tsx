@@ -31,8 +31,6 @@ export default function NavigationBar() {
     const { isLoggedIn, user, logout } = useAuth()
     const navShellRef = useRef<HTMLDivElement | null>(null)
     const [navOpen, setNavOpen] = useState(false)
-    const usesWhitePageBackground =
-        location.pathname === '/about' || location.pathname.startsWith('/documents')
 
     const navItems: NavItem[] = useMemo(
         () => [
@@ -73,7 +71,7 @@ export default function NavigationBar() {
             position="fixed"
             elevation={0}
             sx={{
-                bgcolor: usesWhitePageBackground ? '#fff' : 'transparent',
+                bgcolor: 'transparent',
                 color: 'var(--ly-color-ink)',
                 boxShadow: 'none',
                 pointerEvents: 'none',
