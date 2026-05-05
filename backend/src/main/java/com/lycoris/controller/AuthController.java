@@ -12,6 +12,7 @@ import com.lycoris.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.convert.DurationStyle;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +21,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,11 +33,15 @@ import java.util.concurrent.TimeUnit;
 @RestController
 @RequestMapping("/api")
 public class AuthController {
+    private static final Duration DEFAULT_SESSION_TIMEOUT = Duration.ofDays(30);
 
     private final UserService userService;
     private final RegisterRateLimitService registerRateLimitService;
     @Value("${app.upload-dir}")
     private String uploadDir;
+    @Value("${server.servlet.session.timeout:30d}")
+    private String sessionTimeout;
+
     public AuthController(UserService userService, RegisterRateLimitService registerRateLimitService) {
         this.userService = userService;
         this.registerRateLimitService = registerRateLimitService;
@@ -58,17 +64,18 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<ApiResponse<UserResponse>> login(@RequestBody LoginRequest request, HttpSession session){
+    public ResponseEntity<ApiResponse<UserResponse>> login(
+            @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest,
+            HttpSession session
+    ){
         User user = userService.login(request.getUsername(), request.getPassword());
 
         if (user == null) {
             return ResponseEntity.status(401).body(ApiResponse.error(4001, "Invalid username or password"));
         }
 
-        session.setAttribute("userId", user.getId());
-        session.setAttribute("username", user.getUsername());
-        session.setAttribute("email", user.getEmail());
-        session.setAttribute("role", user.getRole());
+        rememberUserInSession(httpRequest, session, user);
 
         UserResponse data = new UserResponse(
                 String.valueOf(user.getPublicId()),
@@ -101,10 +108,7 @@ public class AuthController {
             return ResponseEntity.status(400).body(ApiResponse.error(4002, "Username or email already exists"));
         }
 
-        session.setAttribute("userId", created.getId());
-        session.setAttribute("username", created.getUsername());
-        session.setAttribute("email", created.getEmail());
-        session.setAttribute("role", created.getRole());
+        rememberUserInSession(httpRequest, session, created);
 
         UserResponse data = new UserResponse(
                 String.valueOf(created.getPublicId()),
@@ -287,6 +291,41 @@ public class AuthController {
             }
         }
         return request.getRemoteAddr();
+    }
+
+    private void rememberUserInSession(HttpServletRequest request, HttpSession session, User user) {
+        rotateSessionId(request);
+        session.setMaxInactiveInterval(resolveSessionTimeoutSeconds());
+        session.setAttribute("userId", user.getId());
+        session.setAttribute("username", user.getUsername());
+        session.setAttribute("email", user.getEmail());
+        session.setAttribute("role", user.getRole());
+    }
+
+    private static void rotateSessionId(HttpServletRequest request) {
+        try {
+            request.changeSessionId();
+        } catch (IllegalStateException ignored) {
+            // If the container already invalidated the old session, continue with the fresh one.
+        }
+    }
+
+    private int resolveSessionTimeoutSeconds() {
+        Duration duration = parseDuration(sessionTimeout, DEFAULT_SESSION_TIMEOUT);
+        long seconds = duration.getSeconds();
+        if (seconds <= 0) {
+            seconds = DEFAULT_SESSION_TIMEOUT.getSeconds();
+        }
+        return seconds > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) seconds;
+    }
+
+    private static Duration parseDuration(String rawValue, Duration fallback) {
+        if (!StringUtils.hasText(rawValue)) return fallback;
+        try {
+            return DurationStyle.detectAndParse(rawValue.trim());
+        } catch (RuntimeException ignored) {
+            return fallback;
+        }
     }
 
     private ResponseEntity<byte[]> buildAvatarFileResponse(User user) {

@@ -1,8 +1,9 @@
-import { useState } from 'react'
+import { useState, type FormEvent } from 'react'
 import axios from "axios";
 import {useNavigate, Link as RouterLink} from "react-router-dom";
-import {Button, TextField, Stack, Typography, Alert, Box} from '@mui/material'
+import {Alert, Button, TextField, Typography} from '@mui/material'
 import {useAuth, type Me} from "../auth/AuthProvider.tsx";
+import AuthPageShell from '../components/AuthPageShell'
 
 type RegisterResponse = {
     code: number
@@ -37,7 +38,21 @@ export default function Register() {
     const {refresh, setUser} = useAuth();
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
-            borderRadius: 3,
+            borderRadius: 999,
+            bgcolor: 'rgba(255, 255, 255, 0.86)',
+            '& fieldset': {
+                borderColor: 'rgba(90, 56, 80, 0.22)',
+            },
+            '&:hover fieldset': {
+                borderColor: 'rgba(90, 56, 80, 0.42)',
+            },
+            '&.Mui-focused fieldset': {
+                borderColor: 'var(--ly-color-lilac)',
+                borderWidth: 2,
+            },
+        },
+        '& .MuiInputLabel-root.Mui-focused': {
+            color: 'var(--ly-color-ink)',
         },
     }
 
@@ -71,43 +86,22 @@ export default function Register() {
 
     }
 
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        void handleRegister()
+    }
+
     return (
-        <Box
-            sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                px: {xs: 1, md: 2},
-                py: {xs: 3, md: 6},
-            }}
+        <AuthPageShell
+            title="注册"
+            onSubmit={handleSubmit}
+            maxWidth={540}
+            footer={
+                <Typography variant="body2" sx={{ color: '#1d1b20', textAlign: 'center' }}>
+                    已经有账号？ <RouterLink to="/login">去登录</RouterLink>
+                </Typography>
+            }
         >
-            <Typography
-                variant="h5"
-                sx={{
-                    fontWeight: 800,
-                    fontSize: {xs: 32, md: 44},
-                    py: 2,
-                }}
-            >
-                注册
-            </Typography>
-            <Stack
-                component="form"
-                onSubmit={(e) => {e.preventDefault();
-                    handleRegister();
-                }}
-                // onSubmit={handleRegister}
-                spacing={3}
-                sx={{
-                    width: {xs:320, md:420},
-                    p: { xs: 2.5, md: 3 },
-                    borderRadius: 4,
-                    border: '1px solid rgba(116, 73, 136, 0.12)',
-                    bgcolor: '#fff',
-                    boxShadow: '0 12px 30px rgba(116, 73, 136, 0.08)',
-                }}
-            >
                 {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
                 <input
@@ -175,21 +169,20 @@ export default function Register() {
                     type="submit"
                     variant="contained"
                     sx={{
-                        fontSize: {xs: 14, md: 17},
+                        height: 54,
+                        fontSize: {xs: 17, md: 18},
+                        fontWeight: 700,
                         textTransform: 'none',
                         borderRadius: 999,
-                        bgcolor: '#b784a7',
-                        '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
+                        border: '1px solid var(--ly-color-ink)',
+                        bgcolor: 'var(--ly-color-lilac)',
+                        color: 'var(--ly-color-ink)',
+                        '&:hover': { bgcolor: '#c8afff' },
                     }}
                 >
                     注册
                 </Button>
-
-                <Typography variant="body2">
-                    已经有账号？ <RouterLink to="/login">去登录</RouterLink>
-                </Typography>
-            </Stack>
-        </Box>
+        </AuthPageShell>
 
     )
 }

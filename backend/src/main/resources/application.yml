@@ -7,16 +7,19 @@ server:
     certificate-private-key: ${SERVER_SSL_KEY:}
   servlet:
     session:
+      timeout: ${SESSION_TIMEOUT:30d}
       cookie:
         name: ${SESSION_COOKIE_NAME:LYCORIS_SESSION}
         secure: ${SESSION_COOKIE_SECURE:false}
         http-only: ${SESSION_COOKIE_HTTP_ONLY:true}
         same-site: ${SESSION_COOKIE_SAME_SITE:lax}
         domain: ${SESSION_COOKIE_DOMAIN:}
+        max-age: ${SESSION_COOKIE_MAX_AGE:30d}
 
 spring:
   session:
     store-type: ${SPRING_SESSION_STORE_TYPE:none}
+    timeout: ${SESSION_TIMEOUT:30d}
     redis:
       namespace: lycoris:session
   data:

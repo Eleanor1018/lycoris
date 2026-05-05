@@ -40,6 +40,7 @@ import MapOutlinedIcon from '@mui/icons-material/MapOutlined'
 import MyLocationIcon from '@mui/icons-material/MyLocation'
 import WcIcon from '@mui/icons-material/Wc'
 import LocalHospitalIcon from '@mui/icons-material/LocalHospital'
+import BabyChangingStationIcon from '@mui/icons-material/BabyChangingStation'
 import SettingsIcon from '@mui/icons-material/Settings'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'
 import MarkerFormDialog from '../components/MarkerFormDialog'
@@ -116,31 +117,75 @@ const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() 
 const supportedCategories = [
     'accessible_toilet',
     'friendly_clinic',
-    'conversion_therapy',
+    'baby_room',
     'self_definition',
 ] as const
 
 type SupportedCategory = (typeof supportedCategories)[number]
 type TileProvider = 'osm' | 'tf_atlas' | 'tianditu_vec'
-type NearbyCategory = 'accessible_toilet' | 'friendly_clinic'
+const nearbyCategories = ['accessible_toilet', 'friendly_clinic', 'baby_room'] as const
+type NearbyCategory = (typeof nearbyCategories)[number]
 
 const categoryLabel: Record<SupportedCategory, string> = {
     accessible_toilet: '无障碍卫生间',
     friendly_clinic: '友好医疗机构',
-    conversion_therapy: '扭转机构/风险点位',
+    baby_room: '母婴室',
     self_definition: '自定义',
 }
 
 const categoryColor: Record<SupportedCategory, string> = {
     accessible_toilet: '#1e88e5',
     friendly_clinic: '#43a047',
-    conversion_therapy: '#e53935',
+    baby_room: '#fb8c00',
     self_definition: '#f0bf2f',
 }
+
+const MAP_UI_INK = 'var(--ly-color-ink)'
+const MAP_UI_MUTED = 'var(--ly-color-muted)'
+const MAP_UI_LILAC = 'var(--ly-color-lilac)'
+const MAP_UI_PANEL_BG = 'rgba(255, 255, 255, 0.86)'
+const MAP_CONTROL_EDGE_OFFSET = { xs: 12, md: 'clamp(20px, 2.5vw, 36px)' } as const
+const MAP_BOTTOM_CONTROL_EDGE_OFFSET = { xs: 20, md: 'clamp(20px, 2.5vw, 36px)' } as const
+const MAP_HINT_LEFT_OFFSET = { xs: 68, md: 'calc(clamp(20px, 2.5vw, 36px) + 58px)' } as const
 
 const nearbyCategoryLabel: Record<NearbyCategory, string> = {
     accessible_toilet: '无障碍卫生间',
     friendly_clinic: '友好医疗机构',
+    baby_room: '母婴室',
+}
+
+const nearbyCategoryHoverColor: Record<NearbyCategory, string> = {
+    accessible_toilet: '#1565c0',
+    friendly_clinic: '#388e3c',
+    baby_room: '#ef6c00',
+}
+
+const nearbyCategorySoftBg: Record<NearbyCategory, string> = {
+    accessible_toilet: 'rgba(30, 136, 229, 0.10)',
+    friendly_clinic: 'rgba(67, 160, 71, 0.10)',
+    baby_room: 'rgba(251, 140, 0, 0.12)',
+}
+
+const nearbyCategoryBorderColor: Record<NearbyCategory, string> = {
+    accessible_toilet: 'rgba(30, 136, 229, 0.42)',
+    friendly_clinic: 'rgba(67, 160, 71, 0.42)',
+    baby_room: 'rgba(251, 140, 0, 0.46)',
+}
+
+const nearbyCategoryShadowColor: Record<NearbyCategory, string> = {
+    accessible_toilet: 'rgba(30, 136, 229, 0.28)',
+    friendly_clinic: 'rgba(67, 160, 71, 0.28)',
+    baby_room: 'rgba(251, 140, 0, 0.30)',
+}
+
+const renderNearbyCategoryIcon = (category: NearbyCategory) => {
+    if (category === 'friendly_clinic') {
+        return <LocalHospitalIcon sx={{ mr: 0.6 }} fontSize="small" />
+    }
+    if (category === 'baby_room') {
+        return <BabyChangingStationIcon sx={{ mr: 0.6 }} fontSize="small" />
+    }
+    return <WcIcon sx={{ mr: 0.6 }} fontSize="small" />
 }
 
 const INACTIVE_MARKER_COLOR = '#9e9e9e'
@@ -262,13 +307,13 @@ const getUserLocationIcon = (avatarUrl?: string | null) => {
     return L.divIcon({
         className: '',
         html: `
-            <svg width="56" height="56" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 8px 14px rgba(122,75,143,0.34));">
+            <svg width="56" height="56" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" style="filter: drop-shadow(0 8px 14px rgba(90,56,80,0.28));">
                 <defs>
                     <clipPath id="user-avatar-clip">
                         <circle cx="20" cy="20" r="15.6" />
                     </clipPath>
                 </defs>
-                <circle cx="20" cy="20" r="16.8" fill="none" stroke="#7a4b8f" stroke-width="1.2" opacity="0.42">
+                <circle cx="20" cy="20" r="16.8" fill="none" stroke="#d0bcff" stroke-width="1.2" opacity="0.58">
                     <animate attributeName="r" values="16.8;20.8;16.8" dur="1.9s" repeatCount="indefinite" />
                     <animate attributeName="opacity" values="0.42;0;0.42" dur="1.9s" repeatCount="indefinite" />
                 </circle>
@@ -277,12 +322,12 @@ const getUserLocationIcon = (avatarUrl?: string | null) => {
                         ? `<image href="${safeAvatarUrl}" x="4.4" y="4.4" width="31.2" height="31.2" clip-path="url(#user-avatar-clip)" preserveAspectRatio="xMidYMid slice" />`
                         : `
                             <circle cx="20" cy="20" r="14.7" fill="#fff" />
-                            <circle cx="20" cy="15.2" r="4.1" fill="none" stroke="#7a4b8f" stroke-width="1.8" />
-                            <path d="M13.3 25c1.6-2.8 4-4.1 6.7-4.1 2.7 0 5.1 1.3 6.7 4.1" fill="none" stroke="#7a4b8f" stroke-width="1.8" stroke-linecap="round" />
+                            <circle cx="20" cy="15.2" r="4.1" fill="none" stroke="#5a3850" stroke-width="1.8" />
+                            <path d="M13.3 25c1.6-2.8 4-4.1 6.7-4.1 2.7 0 5.1 1.3 6.7 4.1" fill="none" stroke="#5a3850" stroke-width="1.8" stroke-linecap="round" />
                         `
                 }
-                <circle cx="20" cy="20" r="15.6" fill="none" stroke="#7a4b8f" stroke-width="2" />
-                <circle cx="20" cy="37.2" r="2.2" fill="#7a4b8f" opacity="0.88" />
+                <circle cx="20" cy="20" r="15.6" fill="none" stroke="#d0bcff" stroke-width="2" />
+                <circle cx="20" cy="37.2" r="2.2" fill="#d0bcff" opacity="0.92" />
             </svg>
         `,
         iconSize: [56, 56],
@@ -340,7 +385,7 @@ export default function Maps() {
     const [visibleCats, setVisibleCats] = useState<Record<SupportedCategory, boolean>>({
         accessible_toilet: true,
         friendly_clinic: true,
-        conversion_therapy: true,
+        baby_room: true,
         self_definition: true,
     })
     const [legendOpen, setLegendOpen] = useState(false)
@@ -363,7 +408,7 @@ export default function Maps() {
     const [nearbyCategory, setNearbyCategory] = useState<NearbyCategory>(() => {
         if (typeof window === 'undefined') return 'accessible_toilet'
         const saved = window.localStorage.getItem(MAP_NEARBY_CATEGORY_KEY)
-        return saved === 'friendly_clinic' ? 'friendly_clinic' : 'accessible_toilet'
+        return nearbyCategories.includes(saved as NearbyCategory) ? (saved as NearbyCategory) : 'accessible_toilet'
     })
     const [nearbyRadiusInput, setNearbyRadiusInput] = useState<string>(String(nearbyRadius))
     const [nearbyRadiusError, setNearbyRadiusError] = useState<string>('')
@@ -395,7 +440,8 @@ export default function Maps() {
     const [addHintPulse, setAddHintPulse] = useState(false)
     const [canDeleteDraft, setCanDeleteDraft] = useState(true)
     const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<Set<number>>(new Set())
-    const overlayTopOffset = `calc(env(safe-area-inset-top, 0px) + var(${MAP_VISUAL_VIEWPORT_TOP_VAR}, 0px) + 12px)`
+    const overlayTopOffsetWithNav = `calc(var(--nav-offset, var(--nav-height, 64px)) + env(safe-area-inset-top, 0px) + var(${MAP_VISUAL_VIEWPORT_TOP_VAR}, 0px) + 12px)`
+    const desktopOverlayTopOffsetWithNav = 'calc(var(--nav-offset, var(--nav-height, 64px)) + 16px)'
     const overlayBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + var(${MAP_VISUAL_VIEWPORT_BOTTOM_VAR}, 0px) + 20px)`
     const markerViewportRequestSeq = useRef(0)
     const markerImageUrlRef = useRef<Map<number, string>>(new Map())
@@ -554,7 +600,7 @@ export default function Maps() {
         setVisibleCats({
             accessible_toilet: true,
             friendly_clinic: true,
-            conversion_therapy: true,
+            baby_room: true,
             self_definition: true,
         })
     }
@@ -563,7 +609,7 @@ export default function Maps() {
         setVisibleCats({
             accessible_toilet: false,
             friendly_clinic: false,
-            conversion_therapy: false,
+            baby_room: false,
             self_definition: false,
         })
     }
@@ -1064,11 +1110,12 @@ export default function Maps() {
         <Box
             sx={{
                 position: 'fixed',
-                top: 'var(--nav-offset, var(--nav-height, 64px))',
+                top: 0,
                 left: 0,
                 right: 0,
                 bottom: 0,
-                height: 'auto',
+                height: '100dvh',
+                minHeight: '100vh',
                 width: '100%',
                 overflow: 'hidden',
                 overscrollBehavior: 'none',
@@ -1079,8 +1126,8 @@ export default function Maps() {
                         sx={{
                             position: 'absolute',
                             zIndex: 1200,
-                            left: { xs: 12, md: 16 },
-                            top: { xs: overlayTopOffset, md: 16 },
+                            left: MAP_CONTROL_EDGE_OFFSET,
+                            top: { xs: overlayTopOffsetWithNav, md: desktopOverlayTopOffsetWithNav },
                             pointerEvents: 'none',
                         }}
                     >
@@ -1101,15 +1148,18 @@ export default function Maps() {
                                 borderRadius: 2.5,
                                 p: 0,
                                 pointerEvents: 'auto',
-                                color: addMode ? '#3b2a14' : '#fff',
-                                bgcolor: addMode ? '#f2a93b' : '#7a4b8f',
+                                color: MAP_UI_INK,
+                                bgcolor: MAP_UI_LILAC,
+                                border: '1px solid rgba(90, 56, 80, 0.14)',
                                 boxShadow: addMode
-                                    ? '0 10px 24px rgba(242, 169, 59, 0.42)'
-                                    : '0 8px 20px rgba(122, 75, 143, 0.28)',
-                                '&:hover': { bgcolor: addMode ? '#de9327' : '#6b3f80' },
+                                    ? '0 12px 28px rgba(208, 188, 255, 0.46)'
+                                    : '0 10px 24px rgba(90, 56, 80, 0.16)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                '&:hover': { bgcolor: '#c8afff' },
                                 ...(addMode
                                     ? {
-                                          outline: '2px solid rgba(255,255,255,0.9)',
+                                          outline: '2px solid rgba(255, 255, 255, 0.92)',
                                           outlineOffset: '1px',
                                       }
                                     : null),
@@ -1134,10 +1184,10 @@ export default function Maps() {
                                         right: -3,
                                         bottom: -3,
                                         fontSize: 12,
-                                        bgcolor: addMode ? '#f2a93b' : '#7a4b8f',
+                                        bgcolor: MAP_UI_LILAC,
                                         borderRadius: 999,
                                         p: '1px',
-                                        color: addMode ? '#3b2a14' : '#fff',
+                                        color: MAP_UI_INK,
                                     }}
                                 />
                             </Box>
@@ -1148,8 +1198,8 @@ export default function Maps() {
                             sx={{
                                 position: 'absolute',
                                 zIndex: 1250,
-                                left: { xs: 68, md: 74 },
-                                top: { xs: overlayTopOffset, md: 16 },
+                                left: MAP_HINT_LEFT_OFFSET,
+                                top: { xs: overlayTopOffsetWithNav, md: desktopOverlayTopOffsetWithNav },
                                 width: { xs: 220, md: 280 },
                                 pointerEvents: 'auto',
                             }}
@@ -1157,9 +1207,12 @@ export default function Maps() {
                             <Card
                                 sx={{
                                     position: 'relative',
-                                    borderRadius: 2.5,
+                                    borderRadius: 3.5,
+                                    bgcolor: MAP_UI_PANEL_BG,
                                     border: '1px solid rgba(122, 75, 143, 0.2)',
                                     boxShadow: '0 12px 26px rgba(72, 42, 92, 0.18)',
+                                    backdropFilter: 'blur(18px)',
+                                    WebkitBackdropFilter: 'blur(18px)',
                                     '&::before': {
                                         content: '""',
                                         position: 'absolute',
@@ -1169,7 +1222,7 @@ export default function Maps() {
                                         height: 0,
                                         borderTop: '8px solid transparent',
                                         borderBottom: '8px solid transparent',
-                                        borderRight: '8px solid #fff',
+                                        borderRight: `8px solid ${MAP_UI_PANEL_BG}`,
                                     },
                                 }}
                             >
@@ -1186,8 +1239,9 @@ export default function Maps() {
                                                 px: 1.1,
                                                 borderRadius: 999,
                                                 textTransform: 'none',
-                                                color: '#744988',
+                                                color: MAP_UI_INK,
                                                 fontWeight: 700,
+                                                '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.24)' },
                                             }}
                                         >
                                             我知道了
@@ -1203,7 +1257,7 @@ export default function Maps() {
                         sx={{
                             position: 'fixed',
                             zIndex: 1200,
-                            left: 20,
+                            left: MAP_BOTTOM_CONTROL_EDGE_OFFSET,
                             bottom: overlayBottomOffset,
                             pointerEvents: 'none',
                             '& .MuiButton-root': {
@@ -1219,10 +1273,13 @@ export default function Maps() {
                                     minWidth: 0,
                                     borderRadius: 2.5,
                                     px: 1.2,
-                                    bgcolor: '#fff',
-                                    color: '#7a4b8f',
+                                    bgcolor: MAP_UI_LILAC,
+                                    color: MAP_UI_INK,
                                     borderColor: 'rgba(122, 75, 143, 0.35)',
-                                    '&:hover': { bgcolor: 'rgba(122, 75, 143, 0.08)', borderColor: '#7a4b8f' },
+                                    boxShadow: '0 8px 18px rgba(90, 56, 80, 0.12)',
+                                    backdropFilter: 'blur(14px)',
+                                    WebkitBackdropFilter: 'blur(14px)',
+                                    '&:hover': { bgcolor: '#c8afff', borderColor: MAP_UI_LILAC },
                                 }}
                             >
                                 退出附近筛选
@@ -1239,13 +1296,16 @@ export default function Maps() {
                                 minWidth: 46,
                                 borderRadius: 2.5,
                                 p: 0,
-                                color: '#fff',
-                                bgcolor: '#7a4b8f',
-                                boxShadow: '0 8px 20px rgba(122, 75, 143, 0.28)',
-                                '&:hover': { bgcolor: '#6b3f80' },
+                                color: MAP_UI_INK,
+                                bgcolor: MAP_UI_LILAC,
+                                border: '1px solid rgba(90, 56, 80, 0.14)',
+                                boxShadow: '0 10px 24px rgba(90, 56, 80, 0.16)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                '&:hover': { bgcolor: '#c8afff' },
                                 '&.Mui-disabled': {
-                                    bgcolor: '#c5b5cc',
-                                    color: '#fff',
+                                    bgcolor: 'rgba(232, 222, 248, 0.68)',
+                                    color: 'rgba(90, 56, 80, 0.42)',
                                 },
                             }}
                         >
@@ -1273,36 +1333,22 @@ export default function Maps() {
                                 px: 1.3,
                                 pointerEvents: 'auto',
                                 color: '#fff',
-                                bgcolor:
-                                    nearbyCategory === 'friendly_clinic'
-                                        ? categoryColor.friendly_clinic
-                                        : categoryColor.accessible_toilet,
-                                boxShadow:
-                                    nearbyCategory === 'friendly_clinic'
-                                        ? '0 8px 20px rgba(67, 160, 71, 0.28)'
-                                        : '0 8px 20px rgba(30, 136, 229, 0.28)',
+                                bgcolor: categoryColor[nearbyCategory],
+                                border: '1px solid rgba(255, 255, 255, 0.72)',
+                                boxShadow: `0 10px 24px ${nearbyCategoryShadowColor[nearbyCategory]}`,
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
                                 '&:hover': {
-                                    bgcolor:
-                                        nearbyCategory === 'friendly_clinic'
-                                            ? '#388e3c'
-                                            : '#1565c0',
+                                    bgcolor: nearbyCategoryHoverColor[nearbyCategory],
                                 },
                                 '&.Mui-disabled': {
-                                    bgcolor: '#c5b5cc',
-                                    color: '#fff',
+                                    bgcolor: 'rgba(232, 222, 248, 0.68)',
+                                    color: 'rgba(90, 56, 80, 0.42)',
                                 },
                             }}
                         >
-                            {nearbyCategory === 'friendly_clinic' ? (
-                                <LocalHospitalIcon sx={{ mr: 0.6 }} fontSize="small" />
-                            ) : (
-                                <WcIcon sx={{ mr: 0.6 }} fontSize="small" />
-                            )}
-                            {nearbyLoading
-                                ? '查询中...'
-                                : nearbyCategory === 'friendly_clinic'
-                                    ? '附近友好医疗机构'
-                                    : '附近无障碍卫生间'}
+                            {renderNearbyCategoryIcon(nearbyCategory)}
+                            {nearbyLoading ? '查询中...' : `附近${nearbyCategoryLabel[nearbyCategory]}`}
                         </Button>
                     </Box>
 
@@ -1312,17 +1358,20 @@ export default function Maps() {
                         sx={{
                             position: 'fixed',
                             zIndex: 1200,
-                            right: 20,
+                            right: MAP_BOTTOM_CONTROL_EDGE_OFFSET,
                             bottom: overlayBottomOffset,
                             width: 46,
                             height: 46,
                             minWidth: 46,
                             borderRadius: 2.5,
                             p: 0,
-                            color: '#fff',
-                            bgcolor: '#7a4b8f',
-                            boxShadow: '0 8px 20px rgba(122, 75, 143, 0.28)',
-                            '&:hover': { bgcolor: '#6b3f80' },
+                            color: MAP_UI_INK,
+                            bgcolor: MAP_UI_LILAC,
+                            border: '1px solid rgba(90, 56, 80, 0.14)',
+                            boxShadow: '0 10px 24px rgba(90, 56, 80, 0.16)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            '&:hover': { bgcolor: '#c8afff' },
                         }}
                     >
                         <SettingsIcon fontSize="small" />
@@ -1373,15 +1422,17 @@ export default function Maps() {
                     <Box
                         sx={{
                             position: 'absolute',
-                            right: { xs: 12, md: 16 },
-                            top: { xs: overlayTopOffset, md: 16 },
+                            right: MAP_CONTROL_EDGE_OFFSET,
+                            top: { xs: overlayTopOffsetWithNav, md: desktopOverlayTopOffsetWithNav },
                             zIndex: 1200,
-                            bgcolor: '#fff',
-                            borderRadius: 3,
-                            p: legendOpen ? 1.5 : 0.5,
+                            bgcolor: legendOpen ? MAP_UI_PANEL_BG : 'transparent',
+                            borderRadius: 3.5,
+                            p: legendOpen ? 1.5 : 0,
                             minWidth: legendOpen ? 180 : 'auto',
-                            boxShadow: '0 10px 24px rgba(116, 73, 136, 0.12)',
-                            border: '1px solid rgba(116, 73, 136, 0.12)',
+                            boxShadow: legendOpen ? '0 12px 28px rgba(90, 56, 80, 0.16)' : 'none',
+                            border: legendOpen ? '1px solid rgba(90, 56, 80, 0.14)' : 'none',
+                            backdropFilter: legendOpen ? 'blur(18px)' : 'none',
+                            WebkitBackdropFilter: legendOpen ? 'blur(18px)' : 'none',
                             pointerEvents: 'none',
                         }}
                     >
@@ -1392,10 +1443,14 @@ export default function Maps() {
                                 sx={{
                                     borderRadius: 999,
                                     textTransform: 'none',
-                                    color: '#744988',
+                                    color: MAP_UI_INK,
+                                    bgcolor: MAP_UI_LILAC,
+                                    border: '1px solid rgba(90, 56, 80, 0.12)',
+                                    boxShadow: '0 8px 18px rgba(90, 56, 80, 0.12)',
                                     fontWeight: 700,
                                     px: 1.5,
                                     pointerEvents: 'auto',
+                                    '&:hover': { bgcolor: '#c8afff' },
                                 }}
                             >
                                 筛选点位 {legendOpen ? '▲' : '▼'}
@@ -1423,11 +1478,11 @@ export default function Maps() {
                                         sx={{
                                             borderRadius: 999,
                                             textTransform: 'none',
-                                            bgcolor: ownerFilter === 'all' ? '#744988' : 'transparent',
-                                            color: ownerFilter === 'all' ? '#fff' : '#744988',
+                                            bgcolor: ownerFilter === 'all' ? MAP_UI_LILAC : 'rgba(255, 255, 255, 0.62)',
+                                            color: MAP_UI_INK,
                                             borderColor: 'rgba(116, 73, 136, 0.35)',
                                             '&:hover': {
-                                                bgcolor: ownerFilter === 'all' ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                                bgcolor: ownerFilter === 'all' ? '#c8afff' : 'rgba(208, 188, 255, 0.24)',
                                             },
                                         }}
                                     >
@@ -1441,11 +1496,11 @@ export default function Maps() {
                                         sx={{
                                             borderRadius: 999,
                                             textTransform: 'none',
-                                            bgcolor: ownerFilter === 'mine' ? '#744988' : 'transparent',
-                                            color: ownerFilter === 'mine' ? '#fff' : '#744988',
+                                            bgcolor: ownerFilter === 'mine' ? MAP_UI_LILAC : 'rgba(255, 255, 255, 0.62)',
+                                            color: MAP_UI_INK,
                                             borderColor: 'rgba(116, 73, 136, 0.35)',
                                             '&:hover': {
-                                                bgcolor: ownerFilter === 'mine' ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                                bgcolor: ownerFilter === 'mine' ? '#c8afff' : 'rgba(208, 188, 255, 0.24)',
                                             },
                                         }}
                                     >
@@ -1459,11 +1514,11 @@ export default function Maps() {
                                         sx={{
                                             borderRadius: 999,
                                             textTransform: 'none',
-                                            bgcolor: ownerFilter === 'fav' ? '#744988' : 'transparent',
-                                            color: ownerFilter === 'fav' ? '#fff' : '#744988',
+                                            bgcolor: ownerFilter === 'fav' ? MAP_UI_LILAC : 'rgba(255, 255, 255, 0.62)',
+                                            color: MAP_UI_INK,
                                             borderColor: 'rgba(116, 73, 136, 0.35)',
                                             '&:hover': {
-                                                bgcolor: ownerFilter === 'fav' ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                                bgcolor: ownerFilter === 'fav' ? '#c8afff' : 'rgba(208, 188, 255, 0.24)',
                                             },
                                         }}
                                     >
@@ -1665,24 +1720,60 @@ export default function Maps() {
                 PaperProps={{
                     sx: isMobile
                         ? {
-                              borderTopLeftRadius: 16,
-                              borderTopRightRadius: 16,
+                              borderTopLeftRadius: 21,
+                              borderTopRightRadius: 21,
                               minHeight: '36vh',
+                              bgcolor: MAP_UI_PANEL_BG,
+                              backgroundImage:
+                                  'linear-gradient(180deg, rgba(252, 221, 236, 0.42), rgba(255, 255, 255, 0.88) 36%)',
+                              border: '1px solid rgba(90, 56, 80, 0.14)',
+                              borderBottom: 0,
+                              boxShadow: '0 -18px 42px rgba(90, 56, 80, 0.18)',
+                              backdropFilter: 'blur(20px)',
+                              WebkitBackdropFilter: 'blur(20px)',
                           }
                         : {
-                              width: 320,
+                              width: 344,
+                              my: 1.5,
+                              height: 'calc(100% - 24px)',
+                              borderTopLeftRadius: 21,
+                              borderBottomLeftRadius: 21,
+                              bgcolor: MAP_UI_PANEL_BG,
+                              backgroundImage:
+                                  'linear-gradient(180deg, rgba(252, 221, 236, 0.36), rgba(255, 255, 255, 0.88) 34%)',
+                              border: '1px solid rgba(90, 56, 80, 0.14)',
+                              borderRight: 0,
+                              boxShadow: '-18px 0 42px rgba(90, 56, 80, 0.16)',
+                              backdropFilter: 'blur(20px)',
+                              WebkitBackdropFilter: 'blur(20px)',
                           },
                 }}
             >
-                <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
-                    <Typography fontWeight={800}>地图设置</Typography>
-                    <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.4 }}>
+                <Box
+                    sx={{
+                        px: 2.4,
+                        pt: 2.3,
+                        pb: 1.8,
+                        borderBottom: '1px solid rgba(90, 56, 80, 0.12)',
+                    }}
+                >
+                    <Typography fontWeight={800} sx={{ color: MAP_UI_INK, fontSize: 20 }}>
+                        地图设置
+                    </Typography>
+                    <Typography variant="body2" sx={{ color: MAP_UI_MUTED, mt: 0.4 }}>
                         地图来源与附近查询范围
                     </Typography>
                 </Box>
-                <Stack spacing={2.2} sx={{ p: 2 }}>
-                    <Box>
-                        <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                <Stack spacing={1.5} sx={{ p: 2.2 }}>
+                    <Box
+                        sx={{
+                            p: 1.4,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255, 255, 255, 0.58)',
+                            border: '1px solid rgba(90, 56, 80, 0.10)',
+                        }}
+                    >
+                        <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
                             地图来源
                         </Typography>
                         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
@@ -1701,11 +1792,13 @@ export default function Maps() {
                                         textTransform: 'none',
                                         minWidth: 0,
                                         px: 1.2,
-                                        bgcolor: activeTileProvider === key ? '#744988' : 'transparent',
-                                        color: activeTileProvider === key ? '#fff' : '#744988',
-                                        borderColor: 'rgba(116, 73, 136, 0.35)',
+                                        bgcolor: activeTileProvider === key ? MAP_UI_LILAC : 'rgba(255, 255, 255, 0.62)',
+                                        color: MAP_UI_INK,
+                                        borderColor:
+                                            activeTileProvider === key ? 'transparent' : 'rgba(116, 73, 136, 0.25)',
                                         '&:hover': {
-                                            bgcolor: activeTileProvider === key ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                            bgcolor:
+                                                activeTileProvider === key ? '#c8afff' : 'rgba(208, 188, 255, 0.24)',
                                         },
                                     }}
                                 >
@@ -1715,12 +1808,19 @@ export default function Maps() {
                         </Stack>
                     </Box>
 
-                    <Box>
-                        <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                    <Box
+                        sx={{
+                            p: 1.4,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255, 255, 255, 0.58)',
+                            border: '1px solid rgba(90, 56, 80, 0.10)',
+                        }}
+                    >
+                        <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
                             附近查询类型
                         </Typography>
                         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
-                            {(['accessible_toilet', 'friendly_clinic'] as NearbyCategory[]).map((key) => (
+                            {nearbyCategories.map((key) => (
                                 <Button
                                     key={`nearby-cat-${key}`}
                                     size="small"
@@ -1731,11 +1831,17 @@ export default function Maps() {
                                         textTransform: 'none',
                                         minWidth: 0,
                                         px: 1.2,
-                                        bgcolor: nearbyCategory === key ? '#744988' : 'transparent',
-                                        color: nearbyCategory === key ? '#fff' : '#744988',
-                                        borderColor: 'rgba(116, 73, 136, 0.35)',
+                                        bgcolor: nearbyCategory === key ? categoryColor[key] : 'rgba(255, 255, 255, 0.62)',
+                                        color: nearbyCategory === key ? '#fff' : categoryColor[key],
+                                        borderColor:
+                                            nearbyCategory === key
+                                                ? 'transparent'
+                                                : nearbyCategoryBorderColor[key],
                                         '&:hover': {
-                                            bgcolor: nearbyCategory === key ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                            bgcolor:
+                                                nearbyCategory === key
+                                                    ? nearbyCategoryHoverColor[key]
+                                                    : nearbyCategorySoftBg[key],
                                         },
                                     }}
                                 >
@@ -1745,8 +1851,15 @@ export default function Maps() {
                         </Stack>
                     </Box>
 
-                    <Box>
-                        <Typography variant="body2" fontWeight={700} sx={{ mb: 1 }}>
+                    <Box
+                        sx={{
+                            p: 1.4,
+                            borderRadius: 3,
+                            bgcolor: 'rgba(255, 255, 255, 0.58)',
+                            border: '1px solid rgba(90, 56, 80, 0.10)',
+                        }}
+                    >
+                        <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
                             附近查询范围
                         </Typography>
                         <Stack direction="row" spacing={1}>
@@ -1761,11 +1874,12 @@ export default function Maps() {
                                         textTransform: 'none',
                                         minWidth: 0,
                                         px: 1.6,
-                                        bgcolor: nearbyRadius === radius ? '#744988' : 'transparent',
-                                        color: nearbyRadius === radius ? '#fff' : '#744988',
-                                        borderColor: 'rgba(116, 73, 136, 0.35)',
+                                        bgcolor: nearbyRadius === radius ? MAP_UI_LILAC : 'rgba(255, 255, 255, 0.62)',
+                                        color: MAP_UI_INK,
+                                        borderColor:
+                                            nearbyRadius === radius ? 'transparent' : 'rgba(116, 73, 136, 0.25)',
                                         '&:hover': {
-                                            bgcolor: nearbyRadius === radius ? '#6b3f80' : 'rgba(116, 73, 136, 0.08)',
+                                            bgcolor: nearbyRadius === radius ? '#c8afff' : 'rgba(208, 188, 255, 0.24)',
                                         },
                                     }}
                                 >
@@ -1792,7 +1906,17 @@ export default function Maps() {
                                 inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', min: 0, max: 10000 }}
                                 error={Boolean(nearbyRadiusError)}
                                 helperText={nearbyRadiusError || ' '}
-                                sx={{ width: 128 }}
+                                sx={{
+                                    width: 128,
+                                    '& .MuiOutlinedInput-root': {
+                                        borderRadius: 2.5,
+                                        bgcolor: 'rgba(255, 255, 255, 0.72)',
+                                        '& fieldset': { borderColor: 'rgba(116, 73, 136, 0.22)' },
+                                        '&:hover fieldset': { borderColor: 'rgba(116, 73, 136, 0.42)' },
+                                        '&.Mui-focused fieldset': { borderColor: MAP_UI_LILAC },
+                                    },
+                                    '& .MuiInputLabel-root.Mui-focused': { color: MAP_UI_INK },
+                                }}
                             />
                             <Button
                                 size="small"
@@ -1806,15 +1930,16 @@ export default function Maps() {
                                     borderRadius: 2.2,
                                     textTransform: 'none',
                                     whiteSpace: 'nowrap',
-                                    color: '#744988',
-                                    borderColor: 'rgba(116, 73, 136, 0.35)',
-                                    '&:hover': { borderColor: '#744988', bgcolor: 'rgba(116, 73, 136, 0.08)' },
+                                    color: MAP_UI_INK,
+                                    bgcolor: 'rgba(255, 255, 255, 0.62)',
+                                    borderColor: 'rgba(116, 73, 136, 0.25)',
+                                    '&:hover': { borderColor: MAP_UI_LILAC, bgcolor: 'rgba(208, 188, 255, 0.24)' },
                                 }}
                             >
                                 应用
                             </Button>
                         </Stack>
-                        <Typography variant="caption" sx={{ opacity: 0.68 }}>
+                        <Typography variant="caption" sx={{ color: MAP_UI_MUTED }}>
                             范围 0-10000m，超出会自动修正。
                         </Typography>
                     </Box>

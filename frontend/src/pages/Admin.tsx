@@ -179,8 +179,8 @@ export default function Admin() {
     }
 
     return (
-        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 } }}>
-            <Stack spacing={2}>
+        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                     管理后台 · 审核中心
                 </Typography>
@@ -217,7 +217,7 @@ export default function Admin() {
                             pendingPageItems.map(item => (
                                 <Paper key={item.id} sx={{ p: 2, borderRadius: 2 }}>
                                     <Stack spacing={1.2}>
-                                        <Stack direction="row" spacing={1} alignItems="center">
+                                        <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap" useFlexGap>
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                                 {item.title}
                                             </Typography>
@@ -243,7 +243,7 @@ export default function Admin() {
                                                 审核备注：非本人编辑
                                             </Typography>
                                         ) : null}
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                             <Button
                                                 variant="contained"
                                                 color="success"
@@ -307,7 +307,7 @@ export default function Admin() {
                                             提交者：{item.proposerUsername}
                                             {item.proposerIsOwner === false ? '（非本人编辑）' : ''}
                                         </Typography>
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                             <Button
                                                 variant="contained"
                                                 color="success"
@@ -370,7 +370,7 @@ export default function Admin() {
                                                 display: 'block',
                                             }}
                                         />
-                                        <Stack direction="row" spacing={1}>
+                                        <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                             <Button
                                                 variant="contained"
                                                 color="success"

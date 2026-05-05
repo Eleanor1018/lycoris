@@ -57,7 +57,7 @@ const rowsPerPage = 6;
 const categoryLabelMap: Record<string, string> = {
   accessible_toilet: '无障碍卫生间',
   friendly_clinic: '友好医疗机构',
-  conversion_therapy: '扭转机构/风险点位',
+  baby_room: '母婴室',
   self_definition: '自定义',
   safe_place: '自定义',
   dangerous_place: '自定义',

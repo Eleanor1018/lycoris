@@ -125,14 +125,14 @@ const MAP_ADD_MODE_HINT_SEEN_KEY = '@lycoris/mapAddModeHintSeen/v1';
 const supportedCategories: MarkerCategory[] = [
   'accessible_toilet',
   'friendly_clinic',
-  'conversion_therapy',
+  'baby_room',
   'self_definition',
 ];
 
 const categoryLabel: Record<MarkerCategory, string> = {
   accessible_toilet: '无障碍卫生间',
   friendly_clinic: '友好医疗机构',
-  conversion_therapy: '扭转机构/风险点位',
+  baby_room: '母婴室',
   self_definition: '自定义',
 };
 
@@ -144,7 +144,7 @@ const nearbyCategoryLabel: Record<NearbyCategory, string> = {
 const categoryColor: Record<MarkerCategory, string> = {
   accessible_toilet: '#1e88e5',
   friendly_clinic: '#43a047',
-  conversion_therapy: '#e53935',
+  baby_room: '#fb8c00',
   self_definition: '#f0bf2f',
 };
 
@@ -179,7 +179,7 @@ const normalizeCategory = (value: unknown): MarkerCategory => {
   if (
     value === 'accessible_toilet' ||
     value === 'friendly_clinic' ||
-    value === 'conversion_therapy' ||
+    value === 'baby_room' ||
     value === 'self_definition'
   ) {
     return value;
@@ -678,7 +678,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     {
       accessible_toilet: true,
       friendly_clinic: true,
-      conversion_therapy: true,
+      baby_room: true,
       self_definition: true,
     },
   );
@@ -1424,7 +1424,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     setVisibleCats({
       accessible_toilet: true,
       friendly_clinic: true,
-      conversion_therapy: true,
+      baby_room: true,
       self_definition: true,
     });
 
@@ -1974,7 +1974,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     setVisibleCats({
       accessible_toilet: visible,
       friendly_clinic: visible,
-      conversion_therapy: visible,
+      baby_room: visible,
       self_definition: visible,
     });
   }, []);

@@ -34,7 +34,7 @@ public class MapMarkerService {
     private static final Set<String> SUPPORTED_CATEGORIES = Set.of(
             "accessible_toilet",
             "friendly_clinic",
-            "conversion_therapy",
+            "baby_room",
             "self_definition"
     );
     private static final Set<String> LEGACY_TO_SELF_DEFINITION = Set.of(

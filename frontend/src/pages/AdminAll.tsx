@@ -37,7 +37,7 @@ type AdminMarker = {
 const categoryLabel: Record<string, string> = {
     accessible_toilet: '无障碍卫生间',
     friendly_clinic: '友好医疗机构',
-    conversion_therapy: '扭转机构/风险点位',
+    baby_room: '母婴室',
     self_definition: '自定义',
 }
 
@@ -148,8 +148,8 @@ export default function AdminAll() {
     }
 
     return (
-        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 } }}>
-            <Stack spacing={2}>
+        <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
+            <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
                     管理后台 · 全量点位
                 </Typography>
@@ -205,7 +205,7 @@ export default function AdminAll() {
                                             审核备注：非本人编辑
                                         </Typography>
                                     ) : null}
-                                    <Stack direction="row" spacing={1}>
+                                    <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                         <Button variant="outlined" onClick={() => openEditor(item)}>
                                             编辑
                                         </Button>

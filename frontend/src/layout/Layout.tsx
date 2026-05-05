@@ -1,17 +1,20 @@
-import {Outlet} from "react-router-dom";
+import {Outlet, useLocation} from "react-router-dom";
 import NavigationBar from "../components/NavigationBar.tsx";
 import { Box } from '@mui/material'
 
 
 export default function Layout(){
+    const location = useLocation()
+    const isMapPage = location.pathname.startsWith('/maps')
+
     return (
         <>
             <NavigationBar></NavigationBar>
             <Box
                 component="main"
                 sx={{
-                    pt: 'var(--nav-offset, var(--nav-height, 64px))',
-                    minHeight: 'calc(100vh - var(--nav-offset, var(--nav-height, 64px)))',
+                    pt: isMapPage ? 0 : 'var(--nav-height, 80px)',
+                    minHeight: '100vh',
                 }}
             >
                 <Outlet></Outlet>

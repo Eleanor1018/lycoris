@@ -1,14 +1,14 @@
 import { createTheme } from '@mui/material/styles'
 
 const fontStack = [
-  '"Inter"',
+  '"Roboto"',
   '"Noto Sans SC"',
   '"Source Han Sans SC"',
-  '"Segoe UI"',
   '"PingFang SC"',
   '"Hiragino Sans GB"',
   '"Microsoft YaHei"',
   '"WenQuanYi Micro Hei"',
+  '"Segoe UI"',
   '"Helvetica Neue"',
   'Arial',
   'sans-serif',
@@ -17,13 +17,13 @@ const fontStack = [
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#7a4b8f',
+      main: '#5a3850',
     },
     secondary: {
-      main: '#cf7d9f',
+      main: '#d0bcff',
     },
     background: {
-      default: '#f8f5fb',
+      default: '#f8ebff',
       paper: '#ffffff',
     },
   },
@@ -78,8 +78,8 @@ const theme = createTheme({
         },
         body: {
           background:
-            'radial-gradient(circle at 8% 0%, rgba(122, 75, 143, 0.08), transparent 26%), radial-gradient(circle at 92% 0%, rgba(207, 125, 159, 0.08), transparent 24%), #f8f5fb',
-          color: '#1e1b22',
+            'linear-gradient(180deg, #f6f6f6 0%, #f6f6f6 58%, #f8ebff 100%)',
+          color: '#1d1b20',
         },
       },
     },

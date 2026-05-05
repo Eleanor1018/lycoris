@@ -37,14 +37,19 @@ public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
             where m.is_public = true
               and m.review_status = 'APPROVED'
               and m.category = :category
-              and ST_DWithin(
-                ST_SetSRID(ST_MakePoint(m.lng, m.lat), 4326)::geography,
-                ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography,
-                :radius
-              )
-            order by ST_Distance(
-                ST_SetSRID(ST_MakePoint(m.lng, m.lat), 4326)::geography,
-                ST_SetSRID(ST_MakePoint(:lng, :lat), 4326)::geography
+              and (
+                6371000 * 2 * asin(sqrt(
+                  power(sin(radians((m.lat - :lat) / 2)), 2)
+                  + cos(radians(:lat)) * cos(radians(m.lat))
+                  * power(sin(radians((m.lng - :lng) / 2)), 2)
+                ))
+              ) <= :radius
+            order by (
+                6371000 * 2 * asin(sqrt(
+                  power(sin(radians((m.lat - :lat) / 2)), 2)
+                  + cos(radians(:lat)) * cos(radians(m.lat))
+                  * power(sin(radians((m.lng - :lng) / 2)), 2)
+                ))
             ) asc
             """, nativeQuery = true)
     List<MapMarker> findNearbyByCategory(

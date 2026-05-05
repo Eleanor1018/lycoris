@@ -27,6 +27,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded'
 import { useAuth } from '../auth/AuthProvider'
 import axios from 'axios'
 import EditProfileDialog from '../components/EditProfileDialog'
+import chisatoAvatar from '../../chisato.png'
 
 type MarkerRow = {
     id: number
@@ -50,7 +51,7 @@ type MarkerApiRow = {
 const categoryLabelMap: Record<string, string> = {
     accessible_toilet: '无障碍卫生间',
     friendly_clinic: '友好医疗机构',
-    conversion_therapy: '扭转机构/风险点位',
+    baby_room: '母婴室',
     self_definition: '自定义',
     safe_place: '自定义',
     dangerous_place: '自定义',
@@ -201,17 +202,18 @@ export default function Profile() {
                 alignItems: { xs: 'stretch', md: 'center' },
                 px: { xs: 2, md: 4 },
                 py: { xs: 2, md: 4 },
+                overflowX: 'hidden',
                 background:
                     'linear-gradient(180deg, rgba(252,248,255,0.9) 0%, rgba(248,250,255,0.9) 60%, #fff 100%)',
             }}
         >
-            <Box sx={{ width: '100%', maxWidth: 1200, mx: 'auto', display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '320px 1fr' } }}>
+            <Box sx={{ width: '100%', maxWidth: 1200, minWidth: 0, mx: 'auto', display: 'grid', gap: 3, gridTemplateColumns: { xs: '1fr', md: '320px 1fr' } }}>
                 {/* Left profile panel */}
                 <Paper
                     sx={{
                         p: 3,
                         borderRadius: 4,
-                        minHeight: { xs: 600, md: desktopCardHeight },
+                        minHeight: { xs: 460, md: desktopCardHeight },
                         position: 'relative',
                         display: 'flex',
                         alignItems: 'center',
@@ -245,7 +247,7 @@ export default function Profile() {
                         sx={{ minHeight: { xs: 'auto', md: 'calc(clamp(560px, 68vh, 68vh) - 48px)' } }}
                     >
                         <Avatar
-                            src={user?.avatarUrl}
+                            src={user?.avatarUrl || chisatoAvatar}
                             sx={{
                                 width: 140,
                                 height: 140,
@@ -302,7 +304,8 @@ export default function Profile() {
                         p: 2.5,
                         py: { xs: 3, md: 4 },
                         borderRadius: 4,
-                        minHeight: { xs: 600, md: desktopCardHeight },
+                        minHeight: { xs: 'auto', md: desktopCardHeight },
+                        minWidth: 0,
                         display: 'flex',
                         flexDirection: 'column',
                     }}

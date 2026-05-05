@@ -13,7 +13,13 @@ export default function AdminNav() {
     ]
 
     return (
-        <Stack direction="row" spacing={1} flexWrap="wrap">
+        <Stack
+            direction="row"
+            spacing={1}
+            useFlexGap
+            flexWrap="wrap"
+            sx={{ minWidth: 0, maxWidth: '100%' }}
+        >
             {items.map((item) => {
                 const active = location.pathname === item.path
                 return (
@@ -22,6 +28,12 @@ export default function AdminNav() {
                         variant={active ? 'contained' : 'outlined'}
                         size="small"
                         onClick={() => navigate(item.path)}
+                        sx={{
+                            flex: { xs: '1 1 calc(50% - 8px)', sm: '0 0 auto' },
+                            minWidth: 0,
+                            px: { xs: 1, sm: 2 },
+                            whiteSpace: 'nowrap',
+                        }}
                     >
                         {item.label}
                     </Button>
