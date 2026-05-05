@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
+import { adminContainedButtonSx, adminOutlinedButtonSx, adminPaginationSx } from '../styles/adminButtons'
 
 type AdminUser = {
     id: number
@@ -160,7 +161,7 @@ export default function AdminUsers() {
                         onChange={(e) => setQInput(e.target.value)}
                         fullWidth
                     />
-                    <Button variant="contained" onClick={onSearch}>
+                    <Button variant="contained" onClick={onSearch} sx={adminContainedButtonSx}>
                         查询
                     </Button>
                 </Stack>
@@ -175,7 +176,7 @@ export default function AdminUsers() {
                             <Typography color="error">{String(error)}</Typography>
                         </Paper>
                         {String(error).includes('二级密码') ? (
-                            <Button variant="contained" onClick={() => navigate('/admin')}>
+                            <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
                                 去管理入口验证二级密码
                             </Button>
                         ) : null}
@@ -211,6 +212,7 @@ export default function AdminUsers() {
                                                 variant="outlined"
                                                 onClick={() => void resetPassword(user)}
                                                 disabled={Boolean(user.deleted)}
+                                                sx={adminOutlinedButtonSx}
                                             >
                                                 重置默认密码
                                             </Button>
@@ -240,6 +242,7 @@ export default function AdminUsers() {
                             page={Math.min(page, Math.max(1, result.totalPages))}
                             onChange={(_, p) => setPage(p)}
                             color="primary"
+                            sx={adminPaginationSx}
                         />
                     </Stack>
                 )}

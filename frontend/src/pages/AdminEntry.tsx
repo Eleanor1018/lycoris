@@ -3,6 +3,7 @@ import axios from 'axios'
 import { Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
+import { adminContainedButtonSx, adminOutlinedButtonSx } from '../styles/adminButtons'
 
 export default function AdminEntry() {
     const navigate = useNavigate()
@@ -67,13 +68,13 @@ export default function AdminEntry() {
                             </Typography>
                         ) : null}
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-                            <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                            <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ ...adminContainedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
                                 {loading ? '验证中...' : '验证并进入审核中心'}
                             </Button>
-                            <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                            <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
                                 直接去全量点位
                             </Button>
-                            <Button variant="outlined" onClick={() => navigate('/admin/usr')} sx={{ width: { xs: '100%', sm: 'auto' } }}>
+                            <Button variant="outlined" onClick={() => navigate('/admin/usr')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
                                 直接去用户管理
                             </Button>
                         </Stack>

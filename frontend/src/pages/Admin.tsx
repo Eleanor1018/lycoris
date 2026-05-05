@@ -14,6 +14,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
 import { toBackendAssetUrl } from '../config/runtime'
+import { adminContainedButtonSx, adminPaginationSx } from '../styles/adminButtons'
 
 type AdminMarker = {
     id: number
@@ -199,7 +200,7 @@ export default function Admin() {
                             <Typography color="error">{String(error)}</Typography>
                         </Paper>
                         {String(error).includes('二级密码') ? (
-                            <Button variant="contained" onClick={() => navigate('/admin')}>
+                            <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
                                 去管理入口验证二级密码
                             </Button>
                         ) : null}
@@ -269,6 +270,7 @@ export default function Admin() {
                                 page={pendingPage}
                                 onChange={(_, p) => setPendingPage(p)}
                                 color="primary"
+                                sx={adminPaginationSx}
                             />
                         ) : null}
 
@@ -333,6 +335,7 @@ export default function Admin() {
                                 page={editPage}
                                 onChange={(_, p) => setEditPage(p)}
                                 color="primary"
+                                sx={adminPaginationSx}
                             />
                         ) : null}
 
@@ -396,6 +399,7 @@ export default function Admin() {
                                 page={imagePage}
                                 onChange={(_, p) => setImagePage(p)}
                                 color="primary"
+                                sx={adminPaginationSx}
                             />
                         ) : null}
                     </Stack>

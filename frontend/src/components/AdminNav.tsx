@@ -1,6 +1,29 @@
 import { Button, Stack } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router-dom'
 
+const adminNavButtonSx = {
+    borderRadius: 999,
+    fontWeight: 700,
+    '&.MuiButton-contained': {
+        bgcolor: '#f4b3cc',
+        color: 'var(--ly-color-ink)',
+        borderColor: '#f4b3cc',
+        boxShadow: '0 8px 18px rgba(244, 179, 204, 0.32)',
+        '&:hover': {
+            bgcolor: '#efa7c5',
+            borderColor: '#efa7c5',
+        },
+    },
+    '&.MuiButton-outlined': {
+        color: 'var(--ly-color-ink)',
+        borderColor: 'rgba(90, 56, 80, 0.28)',
+        '&:hover': {
+            bgcolor: 'rgba(252, 221, 236, 0.36)',
+            borderColor: '#f4b3cc',
+        },
+    },
+}
+
 export default function AdminNav() {
     const navigate = useNavigate()
     const location = useLocation()
@@ -33,6 +56,7 @@ export default function AdminNav() {
                             minWidth: 0,
                             px: { xs: 1, sm: 2 },
                             whiteSpace: 'nowrap',
+                            ...adminNavButtonSx,
                         }}
                     >
                         {item.label}
