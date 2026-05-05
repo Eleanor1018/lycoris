@@ -11,6 +11,18 @@ export default function Layout(){
 
     return (
         <>
+            {usesWhitePageBackground ? (
+                <Box
+                    aria-hidden="true"
+                    sx={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 0,
+                        bgcolor: '#fff',
+                        pointerEvents: 'none',
+                    }}
+                />
+            ) : null}
             <NavigationBar></NavigationBar>
             <Box
                 component="main"
@@ -18,6 +30,8 @@ export default function Layout(){
                     pt: isMapPage ? 0 : 'var(--nav-height, 80px)',
                     minHeight: '100vh',
                     bgcolor: usesWhitePageBackground ? '#fff' : 'transparent',
+                    position: usesWhitePageBackground ? 'relative' : 'static',
+                    zIndex: usesWhitePageBackground ? 1 : 'auto',
                 }}
             >
                 <Outlet></Outlet>
