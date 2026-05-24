@@ -7,10 +7,12 @@ import com.lycoris.entity.MapMarker;
 import com.lycoris.repository.MapMarkerRepository;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.LinkedHashMap;
@@ -28,6 +30,7 @@ public class MapMarkerService {
     private final MapMarkerRepository repo;
     private final StringRedisTemplate redisTemplate;
     private final ObjectMapper objectMapper;
+    private final ZoneId availabilityZone;
     private final boolean markerCacheRedisEnabled;
     private final long nearbyCacheTtlSeconds;
     private final long viewportCacheTtlSeconds;
@@ -44,11 +47,13 @@ public class MapMarkerService {
     private static final TypeReference<List<MapMarker>> MARKER_LIST_TYPE = new TypeReference<>() {};
     private static final String NEARBY_CACHE_PREFIX = "cache:marker:nearby:v1:";
     private static final String VIEWPORT_CACHE_PREFIX = "cache:marker:viewport:v1:";
+    private static final int CLIENT_REQUEST_ID_MAX_LENGTH = 64;
 
     public MapMarkerService(
             MapMarkerRepository repo,
             ObjectProvider<StringRedisTemplate> redisTemplateProvider,
             ObjectMapper objectMapper,
+            @Value("${app.availability-zone:Asia/Shanghai}") String availabilityZone,
             @Value("${cache.marker.redis-enabled:true}") boolean markerCacheRedisEnabled,
             @Value("${cache.marker.nearby-ttl-seconds:12}") long nearbyCacheTtlSeconds,
             @Value("${cache.marker.viewport-ttl-seconds:10}") long viewportCacheTtlSeconds
@@ -56,12 +61,21 @@ public class MapMarkerService {
         this.repo = repo;
         this.redisTemplate = redisTemplateProvider.getIfAvailable();
         this.objectMapper = objectMapper;
+        this.availabilityZone = ZoneId.of(availabilityZone);
         this.markerCacheRedisEnabled = markerCacheRedisEnabled;
         this.nearbyCacheTtlSeconds = Math.max(1, nearbyCacheTtlSeconds);
         this.viewportCacheTtlSeconds = Math.max(1, viewportCacheTtlSeconds);
     }
 
     public MapMarker create(String username, String userPublicId, MarkerCreateRequest req) {
+        String clientRequestId = normalizeClientRequestId(req.getClientRequestId());
+        if (clientRequestId != null) {
+            Optional<MapMarker> existing = repo.findByUserPublicIdAndClientRequestId(userPublicId, clientRequestId);
+            if (existing.isPresent()) {
+                return normalizeOneForRead(existing.get());
+            }
+        }
+
         MapMarker m = new MapMarker();
         m.setLat(req.getLat());
         m.setLng(req.getLng());
@@ -74,13 +88,23 @@ public class MapMarkerService {
         m.setMarkImage(req.getMarkImage());
         m.setUsername(username);
         m.setUserPublicId(userPublicId);
+        m.setClientRequestId(clientRequestId);
         m.setReviewStatus("PENDING");
         m.setLastEditedBy(username);
         m.setLastEditedByPublicId(userPublicId);
         m.setLastEditedByOwner(true);
         applyAvailabilityStatus(m);
 
-        return repo.save(m);
+        try {
+            return repo.save(m);
+        } catch (DataIntegrityViolationException e) {
+            if (clientRequestId != null) {
+                return repo.findByUserPublicIdAndClientRequestId(userPublicId, clientRequestId)
+                        .map(this::normalizeOneForRead)
+                        .orElseThrow(() -> e);
+            }
+            throw e;
+        }
     }
 
     public List<MapMarker> listPublicActive() {
@@ -200,7 +224,7 @@ public class MapMarkerService {
         if (startRaw == null || endRaw == null || startRaw.isBlank() || endRaw.isBlank()) {
             return;
         }
-        LocalTime now = LocalTime.now();
+        LocalTime now = LocalTime.now(availabilityZone);
         LocalTime start = LocalTime.parse(startRaw);
         LocalTime end = LocalTime.parse(endRaw);
         boolean activeNow;
@@ -237,6 +261,16 @@ public class MapMarkerService {
             return normalized;
         }
         throw new IllegalArgumentException("不支持的 category：" + category + "，仅支持：" + String.join(", ", SUPPORTED_CATEGORIES));
+    }
+
+    private String normalizeClientRequestId(String clientRequestId) {
+        if (clientRequestId == null) return null;
+        String normalized = clientRequestId.trim();
+        if (normalized.isEmpty()) return null;
+        if (normalized.length() > CLIENT_REQUEST_ID_MAX_LENGTH) {
+            throw new IllegalArgumentException("clientRequestId 过长");
+        }
+        return normalized;
     }
 
     private List<MapMarker> normalizeForRead(List<MapMarker> markers) {

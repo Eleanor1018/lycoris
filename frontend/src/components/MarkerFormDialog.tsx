@@ -46,6 +46,8 @@ type Props = {
     onDelete: () => void
     onMarkImageChange: (file: File | null) => void
     canUploadImage?: boolean
+    saving?: boolean
+    saveLabel?: string
 }
 
 export default function MarkerFormDialog({
@@ -61,6 +63,8 @@ export default function MarkerFormDialog({
     onDelete,
     onMarkImageChange,
     canUploadImage = true,
+    saving = false,
+    saveLabel = '保存',
 }: Props) {
     const [imageError, setImageError] = useState('')
     const [imageHint, setImageHint] = useState('')
@@ -69,6 +73,8 @@ export default function MarkerFormDialog({
     const [startMinuteInput, setStartMinuteInput] = useState('')
     const [endHourInput, setEndHourInput] = useState('')
     const [endMinuteInput, setEndMinuteInput] = useState('')
+    const saveDisabled = saving || processingImage
+    const displayedSaveLabel = processingImage ? '处理图片中...' : saveLabel
 
     useEffect(() => {
         if (!open) {
@@ -200,7 +206,7 @@ export default function MarkerFormDialog({
     return (
         <Dialog
             open={open}
-            onClose={onClose}
+            onClose={saving ? undefined : onClose}
             maxWidth="sm"
             fullWidth
             disableScrollLock
@@ -269,6 +275,7 @@ export default function MarkerFormDialog({
                             labelId="cat-label"
                             label="类别"
                             value={draft?.category ?? 'accessible_toilet'}
+                            disabled={saving}
                             sx={fieldSx}
                             onChange={(e) =>
                                 setDraft((d) => (d ? { ...d, category: e.target.value as MarkerCategory } : d))
@@ -285,6 +292,7 @@ export default function MarkerFormDialog({
                     <TextField
                         label="标题"
                         value={draft?.title ?? ''}
+                        disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, title: e.target.value } : d))}
                         placeholder="例如：地铁站A口无障碍卫生间"
                         fullWidth
@@ -294,6 +302,7 @@ export default function MarkerFormDialog({
                     <TextField
                         label="描述"
                         value={draft?.description ?? ''}
+                        disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, description: e.target.value } : d))}
                         placeholder="例如：入口在XX旁边，晚上关闭时间…"
                         fullWidth
@@ -305,7 +314,7 @@ export default function MarkerFormDialog({
                     <Button
                         variant="outlined"
                         component="label"
-                        disabled={!canUploadImage}
+                        disabled={!canUploadImage || saving}
                         sx={{
                             borderRadius: 999,
                             textTransform: 'none',
@@ -331,7 +340,7 @@ export default function MarkerFormDialog({
                                 type="file"
                                 accept="image/*"
                                 hidden
-                                disabled={!canUploadImage}
+                                disabled={!canUploadImage || saving}
                                 onChange={async (e) => {
                                     const f = e.target.files?.[0] ?? null
                                     if (!f) {
@@ -430,6 +439,7 @@ export default function MarkerFormDialog({
                         control={
                             <Switch
                                 checked={Boolean(draft?.isPublic)}
+                                disabled={saving}
                                 sx={{
                                     '& .MuiSwitch-switchBase.Mui-checked': {
                                         color: 'var(--ly-color-lilac)',
@@ -458,6 +468,7 @@ export default function MarkerFormDialog({
                                 <TextField
                                     label="时"
                                     value={startHourInput}
+                                    disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'hour', e.target.value)}
                                     onBlur={(e) => handlePartBlur('openTimeStart', 'hour', e.target.value)}
                                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }}
@@ -468,6 +479,7 @@ export default function MarkerFormDialog({
                                 <TextField
                                     label="分"
                                     value={startMinuteInput}
+                                    disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'minute', e.target.value)}
                                     onBlur={(e) => handlePartBlur('openTimeStart', 'minute', e.target.value)}
                                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }}
@@ -485,6 +497,7 @@ export default function MarkerFormDialog({
                                 <TextField
                                     label="时"
                                     value={endHourInput}
+                                    disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'hour', e.target.value)}
                                     onBlur={(e) => handlePartBlur('openTimeEnd', 'hour', e.target.value)}
                                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }}
@@ -495,6 +508,7 @@ export default function MarkerFormDialog({
                                 <TextField
                                     label="分"
                                     value={endMinuteInput}
+                                    disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'minute', e.target.value)}
                                     onBlur={(e) => handlePartBlur('openTimeEnd', 'minute', e.target.value)}
                                     inputProps={{ inputMode: 'numeric', pattern: '[0-9]*', maxLength: 2 }}
@@ -511,6 +525,7 @@ export default function MarkerFormDialog({
                     <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
                         <Button
                             onClick={onClose}
+                            disabled={saving}
                             sx={{
                                 borderRadius: 999,
                                 textTransform: 'none',
@@ -525,6 +540,7 @@ export default function MarkerFormDialog({
                             <Button
                                 color="error"
                                 onClick={onDelete}
+                                disabled={saving}
                                 sx={{
                                     borderRadius: 999,
                                     textTransform: 'none',
@@ -539,6 +555,7 @@ export default function MarkerFormDialog({
                         <Button
                             variant="contained"
                             onClick={onSave}
+                            disabled={saveDisabled}
                             sx={{
                                 borderRadius: 999,
                                 textTransform: 'none',
@@ -549,7 +566,7 @@ export default function MarkerFormDialog({
                                 '&:hover': { bgcolor: '#c8afff', boxShadow: '0 14px 28px rgba(208, 188, 255, 0.44)' },
                             }}
                         >
-                            保存
+                            {saveDisabled ? displayedSaveLabel : '保存'}
                         </Button>
                     </Stack>
                 </Stack>
