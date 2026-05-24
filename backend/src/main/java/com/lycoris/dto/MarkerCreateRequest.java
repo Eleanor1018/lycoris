@@ -15,6 +15,7 @@ public class MarkerCreateRequest {
     private Boolean isActive = true;
     private String openTimeStart;
     private String openTimeEnd;
+    private String clientRequestId;
 
     // markImage 先允许传空字符串或不传
     private String markImage;

@@ -11,7 +11,15 @@ import java.time.Instant;
 @Getter
 @Setter
 @NoArgsConstructor
-@Table(name = "map_markers")
+@Table(
+        name = "map_markers",
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_map_markers_user_client_request",
+                        columnNames = {"user_public_id", "client_request_id"}
+                )
+        }
+)
 public class MapMarker {
 
     @Id
@@ -45,6 +53,9 @@ public class MapMarker {
     // 关联用户 public_id（用于权限与收藏）
     @Column(length = 64)
     private String userPublicId;
+
+    @Column(length = 64)
+    private String clientRequestId;
 
     @Column(nullable = false)
     private Boolean isActive = true;

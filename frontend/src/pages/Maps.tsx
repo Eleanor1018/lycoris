@@ -113,6 +113,7 @@ const extractApiErrorMessage = (error: unknown, fallback: string): string => {
 
 // —— 小工具：生成临时 id
 const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()))
+const MARKER_IMAGE_UPLOAD_TIMEOUT_MS = 30000
 
 const supportedCategories = [
     'accessible_toilet',
@@ -376,6 +377,8 @@ export default function Maps() {
     // 新建草稿
     const [draft, setDraft] = useState<DraftMarker | null>(null)
     const [markImageFile, setMarkImageFile] = useState<File | null>(null)
+    const [savingDraft, setSavingDraft] = useState(false)
+    const [saveDraftPhase, setSaveDraftPhase] = useState<'idle' | 'marker' | 'image'>('idle')
 
     // Drawer 开关
     const dialogOpen = Boolean(draft)
@@ -440,6 +443,8 @@ export default function Maps() {
     const [addHintPulse, setAddHintPulse] = useState(false)
     const [canDeleteDraft, setCanDeleteDraft] = useState(true)
     const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<Set<number>>(new Set())
+    const saveDraftLabel =
+        saveDraftPhase === 'image' ? '上传图片中...' : saveDraftPhase === 'marker' ? '保存中...' : '保存'
     const overlayTopOffsetWithNav = `calc(var(--nav-offset, var(--nav-height, 64px)) + env(safe-area-inset-top, 0px) + var(${MAP_VISUAL_VIEWPORT_TOP_VAR}, 0px) + 12px)`
     const desktopOverlayTopOffsetWithNav = 'calc(var(--nav-offset, var(--nav-height, 64px)) + 16px)'
     const overlayBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + var(${MAP_VISUAL_VIEWPORT_BOTTOM_VAR}, 0px) + 20px)`
@@ -1019,13 +1024,17 @@ export default function Maps() {
 
     const saveDraft = async () => {
         if (!draft) return
+        if (savingDraft) return
         if (!draft.title.trim()) {
             showNotice('请填写标题（例如：地铁站 A 口无障碍卫生间）', 'warning')
             return
         }
 
+        setSavingDraft(true)
+        setSaveDraftPhase('marker')
         try {
             let created: ApiMarker
+            let imageUploadFailed = false
             if (editingId) {
                 const res = await axios.patch<ApiMarker>(
                     `/api/markers/${editingId}`,
@@ -1052,6 +1061,7 @@ export default function Maps() {
                         isPublic: draft.isPublic,
                         openTimeStart: draft.openTimeStart || '',
                         openTimeEnd: draft.openTimeEnd || '',
+                        clientRequestId: draft.tempId,
                         markImage: draft.markImage ?? null,
                     },
                     { withCredentials: true }
@@ -1060,14 +1070,22 @@ export default function Maps() {
             }
 
             if (markImageFile) {
+                setSaveDraftPhase('image')
                 const form = new FormData()
                 form.append('file', markImageFile)
-                const imgRes = await axios.post<ApiMarker>(
-                    `/api/markers/${created.id}/image`,
-                    form,
-                    { withCredentials: true }
-                )
-                created = imgRes.data
+                try {
+                    const imgRes = await axios.post<ApiMarker>(
+                        `/api/markers/${created.id}/image`,
+                        form,
+                        {
+                            withCredentials: true,
+                            timeout: MARKER_IMAGE_UPLOAD_TIMEOUT_MS,
+                        }
+                    )
+                    created = imgRes.data
+                } catch {
+                    imageUploadFailed = true
+                }
             }
 
             setMarkers((prev) => {
@@ -1077,9 +1095,21 @@ export default function Maps() {
             setDraft(null)
             setMarkImageFile(null)
             setEditingId(null)
-            setReviewNoticeOpen(true)
+            if (imageUploadFailed) {
+                showNotice(
+                    editingId
+                        ? '修改已提交审核，但图片上传失败。可以稍后重新编辑点位补传图片。'
+                        : '点位已提交审核，但图片上传失败。可以稍后编辑点位补传图片。',
+                    'warning'
+                )
+            } else {
+                setReviewNoticeOpen(true)
+            }
         } catch (e: unknown) {
             showNotice(extractApiErrorMessage(e, '保存失败'), 'error')
+        } finally {
+            setSavingDraft(false)
+            setSaveDraftPhase('idle')
         }
     }
 
@@ -2061,6 +2091,8 @@ export default function Maps() {
                     setDeleteConfirmOpen(true)
                 }}
                 onMarkImageChange={(f) => setMarkImageFile(f)}
+                saving={savingDraft}
+                saveLabel={saveDraftLabel}
             />
 
             <Dialog

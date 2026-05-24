@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
 
@@ -14,6 +15,8 @@ public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
     List<MapMarker> findByUsername(String username);
 
     List<MapMarker> findByUserPublicId(String userPublicId);
+
+    Optional<MapMarker> findByUserPublicIdAndClientRequestId(String userPublicId, String clientRequestId);
 
     List<MapMarker> findByIdIn(List<Long> ids);
 
