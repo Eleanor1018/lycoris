@@ -55,6 +55,7 @@ app:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://lycoris.online,https://www.lycoris.online,http://localhost:5173,https://localhost:5173}
 
 admin:
+  second-factor-enabled: ${ADMIN_SECOND_FACTOR_ENABLED:true}
   second-password-hash: ${ADMIN_SECOND_PASSWORD_HASH:}
 
 security:

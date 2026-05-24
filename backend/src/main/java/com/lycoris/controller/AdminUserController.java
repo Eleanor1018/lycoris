@@ -20,12 +20,17 @@ public class AdminUserController {
     private static final long SECOND_FACTOR_TTL_MS = 30 * 60 * 1000L;
 
     private final UserService userService;
+    private final boolean adminSecondFactorEnabled;
 
     @Value("${admin.default-user-password:Lycoris123!}")
     private String defaultUserPassword;
 
-    public AdminUserController(UserService userService) {
+    public AdminUserController(
+            UserService userService,
+            @Value("${admin.second-factor-enabled:true}") boolean adminSecondFactorEnabled
+    ) {
         this.userService = userService;
+        this.adminSecondFactorEnabled = adminSecondFactorEnabled;
     }
 
     @GetMapping
@@ -123,6 +128,9 @@ public class AdminUserController {
     }
 
     private ResponseEntity<?> requireSecondFactor(HttpSession session) {
+        if (!adminSecondFactorEnabled) {
+            return null;
+        }
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {
