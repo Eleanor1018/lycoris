@@ -34,7 +34,7 @@ class MapViewModel(
 
             try {
                 val markers = repository.loadViewport(bounds, categories)
-                val favoriteIds = repository.loadFavoriteIds().toSet()
+                val favoriteIds = loadFavoriteIdsOrEmpty()
                 if (requestId == loadViewportRequestId) {
                     _state.update {
                         it.copy(
@@ -56,6 +56,16 @@ class MapViewModel(
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun loadFavoriteIdsOrEmpty(): Set<Long> {
+        return try {
+            repository.loadFavoriteIds().toSet()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Throwable) {
+            emptySet()
         }
     }
 

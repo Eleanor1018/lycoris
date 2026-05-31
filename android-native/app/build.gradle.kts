@@ -5,6 +5,14 @@ plugins {
     id("org.jetbrains.kotlin.plugin.compose")
 }
 
+fun String.asBuildConfigString(): String {
+    return "\"${replace("\\", "\\\\").replace("\"", "\\\"")}\""
+}
+
+val lyApiBaseUrl = providers.gradleProperty("lyApiBaseUrl")
+    .orElse(providers.environmentVariable("LY_API_BASE_URL"))
+    .orElse("")
+
 android {
     namespace = "online.lycoris.android"
     compileSdk = 36
@@ -17,7 +25,7 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        buildConfigField("String", "LY_API_BASE_URL", "\"\"")
+        buildConfigField("String", "LY_API_BASE_URL", lyApiBaseUrl.get().asBuildConfigString())
     }
 
     buildFeatures {

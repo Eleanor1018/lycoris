@@ -3,7 +3,6 @@ package online.lycoris.android.feature.profile
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.async
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -31,11 +30,12 @@ class ProfileViewModel(
         loadJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, message = null) }
             try {
-                val created = async { repository.createdMarkers() }
-                val favorites = async { repository.favoriteMarkers() }
+                val created = loadMarkersOrNull { repository.createdMarkers() }
+                val favorites = loadMarkersOrNull { repository.favoriteMarkers() }
                 _state.value = ProfileUiState(
-                    createdMarkers = created.await(),
-                    favoriteMarkers = favorites.await(),
+                    createdMarkers = created.orEmpty(),
+                    favoriteMarkers = favorites.orEmpty(),
+                    message = if (created == null && favorites == null) "ç‚¹ä½åˆ—è¡¨åŠ è½½å¤±è´¥" else null,
                 )
             } catch (error: CancellationException) {
                 throw error
@@ -49,5 +49,15 @@ class ProfileViewModel(
         loadJob?.cancel()
         loadJob = null
         _state.value = ProfileUiState()
+    }
+
+    private suspend fun loadMarkersOrNull(block: suspend () -> List<Marker>): List<Marker>? {
+        return try {
+            block()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (_: Throwable) {
+            null
+        }
     }
 }

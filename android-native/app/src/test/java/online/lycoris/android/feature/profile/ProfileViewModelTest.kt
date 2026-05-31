@@ -50,6 +50,26 @@ class ProfileViewModelTest {
         assertEquals(emptyList<Marker>(), viewModel.state.value.createdMarkers)
         assertEquals(emptyList<Marker>(), viewModel.state.value.favoriteMarkers)
     }
+
+    @Test
+    fun loadKeepsCreatedMarkersWhenFavoritesFail() = runTest {
+        val viewModel = ProfileViewModel(
+            FakeProfileRepository(
+                createdResults = mutableListOf(CompletableDeferred(listOf(marker(id = 1)))),
+                favoriteResults = mutableListOf(CompletableDeferred<List<Marker>>().also {
+                    it.completeExceptionally(IllegalStateException("unauthenticated"))
+                }),
+            ),
+        )
+
+        viewModel.load()
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.loading)
+        assertEquals(listOf(1L), viewModel.state.value.createdMarkers.map { it.id })
+        assertEquals(emptyList<Marker>(), viewModel.state.value.favoriteMarkers)
+        assertEquals(null, viewModel.state.value.message)
+    }
 }
 
 private class FakeProfileRepository(

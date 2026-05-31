@@ -63,6 +63,25 @@ class MapViewModelTest {
     }
 
     @Test
+    fun loadViewportKeepsMarkersWhenFavoriteIdsFail() = runTest {
+        val repository = FakeMapRepository(
+            viewportResults = mutableListOf(CompletableDeferred(listOf(marker(id = 7)))),
+            favoriteResults = mutableListOf(CompletableDeferred<List<Long>>().also {
+                it.completeExceptionally(IllegalStateException("unauthenticated"))
+            }),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadViewport(ViewportBounds(0.0, 1.0, 0.0, 1.0))
+        advanceUntilIdle()
+
+        assertEquals(listOf(7L), viewModel.state.value.markers.map { it.id })
+        assertEquals(emptySet<Long>(), viewModel.state.value.favoriteIds)
+        assertFalse(viewModel.state.value.loading)
+        assertEquals(null, viewModel.state.value.message)
+    }
+
+    @Test
     fun loadFavoritesShowsFailureMessage() = runTest {
         val repository = FakeMapRepository(
             favoriteResults = mutableListOf(CompletableDeferred<List<Long>>().also {
