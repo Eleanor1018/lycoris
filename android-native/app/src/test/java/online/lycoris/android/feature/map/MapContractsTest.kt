@@ -35,4 +35,24 @@ class MapContractsTest {
         assertEquals(10_000, NearbyRadius.fromInput("50000").meters)
         assertEquals(1_000, NearbyRadius.fromInput("abc").meters)
     }
+
+    @Test
+    fun selectedMarkerReturnsMarkerMatchingSelectedId() {
+        val marker = Marker(
+            id = 7,
+            lat = 39.9,
+            lng = 116.4,
+            category = MarkerCategory.SelfDefinition,
+            title = "测试点位",
+            description = "",
+            isPublic = true,
+            isActive = true,
+        )
+        val state = MapUiState(
+            markers = listOf(marker),
+            selectedMarkerId = 7,
+        )
+
+        assertEquals(marker, state.selectedMarker)
+    }
 }

@@ -58,3 +58,6 @@ data class MapUiState(
     val ownerFilter: OwnerFilter = OwnerFilter.All,
     val message: String? = null,
 )
+
+val MapUiState.selectedMarker: Marker?
+    get() = markers.firstOrNull { it.id == selectedMarkerId }

@@ -12,30 +12,19 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 
-private val BeijingInitialBounds = ViewportBounds(
-    minLat = 39.70,
-    maxLat = 40.10,
-    minLng = 116.10,
-    maxLng = 116.70,
-)
-
 @Composable
 fun MapScreen(
     state: MapUiState,
-    onLoadViewport: (ViewportBounds) -> Unit,
     onMarkerClick: (Long) -> Unit,
-    onAddMarkerClick: () -> Unit,
+    onDismissMarker: () -> Unit,
+    onToggleFavorite: (Long) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    LaunchedEffect(Unit) {
-        onLoadViewport(BeijingInitialBounds)
-    }
-
     Box(modifier = modifier.fillMaxSize()) {
         OsmMapView(
             markers = state.markers,
@@ -44,7 +33,7 @@ fun MapScreen(
         )
 
         FloatingActionButton(
-            onClick = onAddMarkerClick,
+            onClick = onAddClick,
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(16.dp),
@@ -72,6 +61,15 @@ fun MapScreen(
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 10.dp),
                 )
             }
+        }
+
+        state.selectedMarker?.let { selectedMarker ->
+            MarkerDetailSheet(
+                marker = selectedMarker,
+                isFavorite = selectedMarker.id in state.favoriteIds,
+                onDismiss = onDismissMarker,
+                onToggleFavorite = { onToggleFavorite(selectedMarker.id) },
+            )
         }
     }
 }

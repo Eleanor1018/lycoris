@@ -56,6 +56,82 @@ class MapViewModel(
         _state.update { it.copy(selectedMarkerId = id) }
     }
 
+    fun loadFavorites() {
+        viewModelScope.launch {
+            try {
+                val favoriteIds = repository.loadFavoriteIds().toSet()
+                _state.update {
+                    it.copy(
+                        favoriteIds = favoriteIds,
+                        message = null,
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(message = error.message?.takeIf { message -> message.isNotBlank() } ?: "收藏加载失败")
+                }
+            }
+        }
+    }
+
+    fun toggleFavorite(markerId: Long) {
+        viewModelScope.launch {
+            try {
+                val nextFavorite = markerId !in state.value.favoriteIds
+                repository.setFavorite(markerId, nextFavorite)
+                val favoriteIds = repository.loadFavoriteIds().toSet()
+                _state.update {
+                    it.copy(
+                        favoriteIds = favoriteIds,
+                        message = null,
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(message = error.message?.takeIf { message -> message.isNotBlank() } ?: "收藏操作失败")
+                }
+            }
+        }
+    }
+
+    fun loadNearby(
+        lat: Double,
+        lng: Double,
+        radius: Int,
+        category: MarkerCategory,
+    ) {
+        viewModelScope.launch {
+            _state.update { it.copy(loading = true, message = null) }
+
+            try {
+                val nearbyMarkers = repository.loadNearby(lat, lng, radius, category)
+                _state.update { current ->
+                    val markersById = current.markers.associateBy { it.id }.toMutableMap()
+                    nearbyMarkers.forEach { marker ->
+                        markersById[marker.id] = marker
+                    }
+                    current.copy(
+                        loading = false,
+                        markers = markersById.values.toList(),
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        message = error.message?.takeIf { message -> message.isNotBlank() } ?: "附近点位查询失败",
+                    )
+                }
+            }
+        }
+    }
+
     fun toggleCategory(category: MarkerCategory) {
         _state.update { current ->
             val categories = current.visibleCategories.toMutableSet()

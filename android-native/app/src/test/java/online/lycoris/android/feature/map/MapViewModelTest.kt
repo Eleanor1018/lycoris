@@ -69,6 +69,15 @@ private class FakeMapRepository(
     }
 
     override suspend fun loadFavoriteIds(): List<Long> = emptyList()
+
+    override suspend fun loadNearby(
+        lat: Double,
+        lng: Double,
+        radius: Int,
+        category: MarkerCategory,
+    ): List<Marker> = emptyList()
+
+    override suspend fun setFavorite(id: Long, favorite: Boolean) = Unit
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)

@@ -7,6 +7,7 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
@@ -24,6 +25,14 @@ import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
 import online.lycoris.android.feature.map.MapScreen
 import online.lycoris.android.feature.map.MapViewModel
+import online.lycoris.android.feature.map.ViewportBounds
+
+private val BeijingInitialBounds = ViewportBounds(
+    minLat = 39.70,
+    maxLat = 40.10,
+    minLng = 116.10,
+    maxLng = 116.70,
+)
 
 @Composable
 fun LycorisApp(
@@ -76,11 +85,15 @@ fun LycorisApp(
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(LycorisDestination.Map.route) {
+                    LaunchedEffect(Unit) {
+                        mapViewModel.loadViewport(BeijingInitialBounds)
+                    }
                     MapScreen(
                         state = mapState,
-                        onLoadViewport = mapViewModel::loadViewport,
                         onMarkerClick = mapViewModel::selectMarker,
-                        onAddMarkerClick = {},
+                        onDismissMarker = { mapViewModel.selectMarker(null) },
+                        onToggleFavorite = mapViewModel::toggleFavorite,
+                        onAddClick = {},
                     )
                 }
                 composable(LycorisDestination.Search.route) {

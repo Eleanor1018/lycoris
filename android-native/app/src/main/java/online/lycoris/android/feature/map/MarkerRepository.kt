@@ -12,6 +12,15 @@ interface MapRepository {
     ): List<Marker>
 
     suspend fun loadFavoriteIds(): List<Long>
+
+    suspend fun loadNearby(
+        lat: Double,
+        lng: Double,
+        radius: Int,
+        category: MarkerCategory,
+    ): List<Marker>
+
+    suspend fun setFavorite(id: Long, favorite: Boolean)
 }
 
 class MarkerRepository(
@@ -34,7 +43,7 @@ class MarkerRepository(
         api.favoriteMarkerIds().bodyOrThrow()
     }
 
-    suspend fun loadNearby(
+    override suspend fun loadNearby(
         lat: Double,
         lng: Double,
         radius: Int,
@@ -64,7 +73,7 @@ class MarkerRepository(
         api.uploadMarkerImage(id, image).bodyOrThrow().toMarker()
     }
 
-    suspend fun setFavorite(id: Long, favorite: Boolean): Unit = repositoryCall("收藏操作失败") {
+    override suspend fun setFavorite(id: Long, favorite: Boolean): Unit = repositoryCall("收藏操作失败") {
         val response = if (favorite) {
             api.favoriteMarker(id)
         } else {
