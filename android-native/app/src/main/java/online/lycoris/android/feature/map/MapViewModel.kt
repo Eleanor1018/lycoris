@@ -21,6 +21,7 @@ class MapViewModel(
     private var loadViewportRequestId = 0L
     private var loadNearbyJob: Job? = null
     private var loadNearbyRequestId = 0L
+    private var createMarkerJob: Job? = null
     private val favoriteMutex = Mutex()
 
     fun loadViewport(bounds: ViewportBounds) {
@@ -140,6 +141,70 @@ class MapViewModel(
                             message = error.message?.takeIf { message -> message.isNotBlank() } ?: "附近点位查询失败",
                         )
                     }
+                }
+            }
+        }
+    }
+
+    fun createMarker(draft: MarkerDraft) {
+        if (createMarkerJob?.isActive == true) {
+            return
+        }
+        createMarkerJob = viewModelScope.launch {
+            _state.update { it.copy(loading = true, message = null) }
+            try {
+                val createdMarker = repository.createMarker(
+                    MarkerCreateRequest(
+                        lat = draft.lat,
+                        lng = draft.lng,
+                        category = draft.category.wireName,
+                        title = draft.title,
+                        description = draft.description,
+                        isPublic = draft.isPublic,
+                        openTimeStart = draft.openTimeStart,
+                        openTimeEnd = draft.openTimeEnd,
+                        clientRequestId = draft.clientRequestId,
+                    ),
+                )
+                _state.update { current ->
+                    val markersById = current.markers.associateBy { it.id }.toMutableMap()
+                    markersById[createdMarker.id] = createdMarker
+                    current.copy(
+                        loading = false,
+                        markers = markersById.values.toList(),
+                        selectedMarkerId = createdMarker.id,
+                        message = "已提交管理员审核",
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        message = "点位提交失败",
+                    )
+                }
+            }
+        }
+    }
+
+    fun deleteMarker(id: Long) {
+        viewModelScope.launch {
+            try {
+                repository.deleteMarker(id)
+                _state.update { current ->
+                    current.copy(
+                        markers = current.markers.filterNot { it.id == id },
+                        selectedMarkerId = current.selectedMarkerId.takeUnless { it == id },
+                        message = "点位已删除",
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(message = "点位删除失败")
                 }
             }
         }

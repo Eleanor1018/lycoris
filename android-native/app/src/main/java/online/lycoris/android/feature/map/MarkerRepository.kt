@@ -20,6 +20,10 @@ interface MapRepository {
         category: MarkerCategory,
     ): List<Marker>
 
+    suspend fun createMarker(request: MarkerCreateRequest): Marker
+
+    suspend fun deleteMarker(id: Long)
+
     suspend fun setFavorite(id: Long, favorite: Boolean)
 }
 
@@ -57,7 +61,7 @@ class MarkerRepository(
         ).bodyOrThrow().map { it.toMarker() }
     }
 
-    suspend fun createMarker(request: MarkerCreateRequest): Marker = repositoryCall("点位提交失败") {
+    override suspend fun createMarker(request: MarkerCreateRequest): Marker = repositoryCall("点位提交失败") {
         api.createMarker(request).bodyOrThrow().toMarker()
     }
 
@@ -65,7 +69,7 @@ class MarkerRepository(
         api.updateMarker(id, request).bodyOrThrow().toMarker()
     }
 
-    suspend fun deleteMarker(id: Long): Unit = repositoryCall("点位删除失败") {
+    override suspend fun deleteMarker(id: Long): Unit = repositoryCall("点位删除失败") {
         api.deleteMarker(id).throwIfUnsuccessful()
     }
 

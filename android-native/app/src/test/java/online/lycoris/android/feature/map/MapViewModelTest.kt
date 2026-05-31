@@ -170,6 +170,50 @@ class MapViewModelTest {
         assertFalse(viewModel.state.value.loading)
         assertEquals("附近点位查询失败", viewModel.state.value.message)
     }
+
+    @Test
+    fun createMarkerMergesCreatedMarkerAndSelectsIt() = runTest {
+        val createdMarker = marker(id = 9, title = "A口")
+        val repository = FakeMapRepository(
+            createResults = mutableListOf(CompletableDeferred(createdMarker)),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.createMarker(
+            MarkerDraft(
+                lat = 39.9,
+                lng = 116.4,
+                title = "A口",
+                clientRequestId = "draft-1",
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L), viewModel.state.value.markers.map { it.id })
+        assertEquals(9L, viewModel.state.value.selectedMarkerId)
+        assertEquals("已提交管理员审核", viewModel.state.value.message)
+        assertFalse(viewModel.state.value.loading)
+        assertEquals("draft-1", repository.createCalls.single().clientRequestId)
+    }
+
+    @Test
+    fun deleteMarkerRemovesMarkerAndClearsSelection() = runTest {
+        val repository = FakeMapRepository(
+            viewportResults = mutableListOf(CompletableDeferred(listOf(marker(id = 7)))),
+            deleteResults = mutableListOf(CompletableDeferred(Unit)),
+        )
+        val viewModel = MapViewModel(repository)
+        viewModel.loadViewport(ViewportBounds(0.0, 1.0, 0.0, 1.0))
+        advanceUntilIdle()
+        viewModel.selectMarker(7)
+
+        viewModel.deleteMarker(7)
+        advanceUntilIdle()
+
+        assertEquals(emptyList<Long>(), viewModel.state.value.markers.map { it.id })
+        assertEquals(null, viewModel.state.value.selectedMarkerId)
+        assertEquals("点位已删除", viewModel.state.value.message)
+    }
 }
 
 private data class SetFavoriteCall(
@@ -181,11 +225,14 @@ private class FakeMapRepository(
     private val viewportResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
     private val favoriteResults: MutableList<CompletableDeferred<List<Long>>> = mutableListOf(),
     private val nearbyResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
+    private val createResults: MutableList<CompletableDeferred<Marker>> = mutableListOf(),
+    private val deleteResults: MutableList<CompletableDeferred<Unit>> = mutableListOf(),
     private val setFavoriteGates: MutableList<CompletableDeferred<Unit>> = mutableListOf(),
     private val setFavoriteFailure: Throwable? = null,
 ) : MapRepository {
     private val favorites = mutableSetOf<Long>()
     val setFavoriteCalls = mutableListOf<SetFavoriteCall>()
+    val createCalls = mutableListOf<MarkerCreateRequest>()
 
     override suspend fun loadViewport(
         bounds: ViewportBounds,
@@ -209,6 +256,15 @@ private class FakeMapRepository(
         category: MarkerCategory,
     ): List<Marker> {
         return nearbyResults.removeAt(0).await()
+    }
+
+    override suspend fun createMarker(request: MarkerCreateRequest): Marker {
+        createCalls.add(request)
+        return createResults.removeAt(0).await()
+    }
+
+    override suspend fun deleteMarker(id: Long) {
+        deleteResults.removeAt(0).await()
     }
 
     override suspend fun setFavorite(id: Long, favorite: Boolean) {
