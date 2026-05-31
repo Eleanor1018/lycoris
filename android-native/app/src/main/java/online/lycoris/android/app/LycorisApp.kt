@@ -9,6 +9,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -25,6 +28,9 @@ import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
 import online.lycoris.android.feature.map.MapScreen
 import online.lycoris.android.feature.map.MapViewModel
+import online.lycoris.android.feature.map.MarkerDraft
+import online.lycoris.android.feature.map.MarkerEditorSheet
+import online.lycoris.android.feature.map.MarkerSubmitCoordinator
 import online.lycoris.android.feature.map.ViewportBounds
 
 private val BeijingInitialBounds = ViewportBounds(
@@ -33,6 +39,9 @@ private val BeijingInitialBounds = ViewportBounds(
     minLng = 116.10,
     maxLng = 116.70,
 )
+
+private const val BeijingMvpLat = 39.9042
+private const val BeijingMvpLng = 116.4074
 
 @Composable
 fun LycorisApp(
@@ -50,6 +59,8 @@ fun LycorisApp(
             factory = MapViewModelFactory(container),
         )
         val mapState by mapViewModel.state.collectAsStateWithLifecycle()
+        val markerSubmitCoordinator = remember { MarkerSubmitCoordinator() }
+        var addMarkerDraft by remember { mutableStateOf<MarkerDraft?>(null) }
 
         Scaffold(
             bottomBar = {
@@ -93,8 +104,21 @@ fun LycorisApp(
                         onMarkerClick = mapViewModel::selectMarker,
                         onDismissMarker = { mapViewModel.selectMarker(null) },
                         onToggleFavorite = mapViewModel::toggleFavorite,
-                        onAddClick = {},
+                        onAddClick = {
+                            addMarkerDraft = newAddMarkerDraft(markerSubmitCoordinator)
+                        },
                     )
+                    addMarkerDraft?.let { draft ->
+                        MarkerEditorSheet(
+                            initialDraft = draft,
+                            submitting = mapState.loading,
+                            onDismiss = { addMarkerDraft = null },
+                            onSubmit = { submittedDraft ->
+                                addMarkerDraft = null
+                                mapViewModel.createMarker(submittedDraft)
+                            },
+                        )
+                    }
                 }
                 composable(LycorisDestination.Search.route) {
                     Text("搜索")
@@ -130,6 +154,17 @@ fun LycorisApp(
             }
         }
     }
+}
+
+internal fun newAddMarkerDraft(
+    markerSubmitCoordinator: MarkerSubmitCoordinator,
+): MarkerDraft {
+    // MVP fallback until Task 8 grows map press selection.
+    return MarkerDraft(
+        lat = BeijingMvpLat,
+        lng = BeijingMvpLng,
+        clientRequestId = markerSubmitCoordinator.newClientRequestId(),
+    )
 }
 
 private class MapViewModelFactory(
