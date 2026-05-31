@@ -64,16 +64,6 @@ fun LycorisApp(
             factory = authViewModelFactory,
         )
         val authState by authViewModel.state.collectAsStateWithLifecycle()
-        val mapViewModel: MapViewModel = viewModel(
-            factory = mapViewModelFactory,
-        )
-        val mapState by mapViewModel.state.collectAsStateWithLifecycle()
-        val searchViewModel: SearchViewModel = viewModel(
-            factory = searchViewModelFactory,
-        )
-        val profileViewModel: ProfileViewModel = viewModel(
-            factory = profileViewModelFactory,
-        )
         val markerSubmitCoordinator = remember { MarkerSubmitCoordinator() }
         var addMarkerDraft by remember { mutableStateOf<MarkerDraft?>(null) }
 
@@ -84,9 +74,18 @@ fun LycorisApp(
                 isLoggedIn = authState.isLoggedIn,
             )
             if (targetRoute != null && currentRoute != null) {
+                val hasLoginBackStackEntry = navController.currentBackStack.value.any {
+                    it.destination.route == LycorisDestination.Login.route
+                }
+                val popUpRoute = LycorisDestination.authSuccessPopUpRoute(
+                    currentRoute = currentRoute,
+                    hasLoginBackStackEntry = hasLoginBackStackEntry,
+                )
                 navController.navigate(targetRoute) {
-                    popUpTo(currentRoute) {
-                        inclusive = true
+                    if (popUpRoute != null) {
+                        popUpTo(popUpRoute) {
+                            inclusive = true
+                        }
                     }
                     launchSingleTop = true
                 }
@@ -127,6 +126,11 @@ fun LycorisApp(
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(LycorisDestination.Map.route) {
+                    val mapViewModel: MapViewModel = viewModel(
+                        factory = mapViewModelFactory,
+                    )
+                    val mapState by mapViewModel.state.collectAsStateWithLifecycle()
+
                     LaunchedEffect(Unit) {
                         mapViewModel.loadViewport(BeijingInitialBounds)
                     }
@@ -162,12 +166,20 @@ fun LycorisApp(
                     }
                 }
                 composable(LycorisDestination.Search.route) {
+                    val searchViewModel: SearchViewModel = viewModel(
+                        factory = searchViewModelFactory,
+                    )
+
                     SearchScreen(viewModel = searchViewModel)
                 }
                 composable(LycorisDestination.Documents.route) {
                     DocumentsScreen(repository = container.documentRepository)
                 }
                 composable(LycorisDestination.Profile.route) {
+                    val profileViewModel: ProfileViewModel = viewModel(
+                        factory = profileViewModelFactory,
+                    )
+
                     ProfileScreen(
                         authState = authState,
                         viewModel = profileViewModel,

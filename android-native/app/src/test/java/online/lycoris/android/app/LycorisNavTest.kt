@@ -30,6 +30,40 @@ class LycorisNavTest {
     }
 
     @Test
+    fun authSuccessPopsFromLoginWhenLoginCanBeInTheBackStack() {
+        assertEquals(
+            LycorisDestination.Login.route,
+            LycorisDestination.authSuccessPopUpRoute(
+                currentRoute = LycorisDestination.Login.route,
+            ),
+        )
+        assertEquals(
+            LycorisDestination.Login.route,
+            LycorisDestination.authSuccessPopUpRoute(
+                currentRoute = LycorisDestination.Register.route,
+            ),
+        )
+    }
+
+    @Test
+    fun authSuccessPopsCurrentAuthRouteWhenLoginIsNotInTheBackStack() {
+        assertEquals(
+            LycorisDestination.Register.route,
+            LycorisDestination.authSuccessPopUpRoute(
+                currentRoute = LycorisDestination.Register.route,
+                hasLoginBackStackEntry = false,
+            ),
+        )
+        assertEquals(
+            null,
+            LycorisDestination.authSuccessPopUpRoute(
+                currentRoute = LycorisDestination.Map.route,
+                hasLoginBackStackEntry = false,
+            ),
+        )
+    }
+
+    @Test
     fun authRoutePolicyDoesNotRedirectLoggedOutUsersOrMainRoutes() {
         assertEquals(
             null,

@@ -70,5 +70,16 @@ sealed class LycorisDestination(
                 else -> null
             }
         }
+
+        fun authSuccessPopUpRoute(
+            currentRoute: String?,
+            hasLoginBackStackEntry: Boolean = true,
+        ): String? {
+            return when (currentRoute) {
+                Login.route -> Login.route
+                Register.route -> if (hasLoginBackStackEntry) Login.route else Register.route
+                else -> null
+            }
+        }
     }
 }
