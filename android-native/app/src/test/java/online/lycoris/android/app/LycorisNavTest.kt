@@ -30,7 +30,7 @@ class LycorisNavTest {
     }
 
     @Test
-    fun authSuccessPopsFromLoginWhenLoginCanBeInTheBackStack() {
+    fun authSuccessPopsFullAuthStackFromAuthRoutes() {
         assertEquals(
             LycorisDestination.Login.route,
             LycorisDestination.authSuccessPopUpRoute(
@@ -46,19 +46,11 @@ class LycorisNavTest {
     }
 
     @Test
-    fun authSuccessPopsCurrentAuthRouteWhenLoginIsNotInTheBackStack() {
-        assertEquals(
-            LycorisDestination.Register.route,
-            LycorisDestination.authSuccessPopUpRoute(
-                currentRoute = LycorisDestination.Register.route,
-                hasLoginBackStackEntry = false,
-            ),
-        )
+    fun authSuccessDoesNotPopMainRoutes() {
         assertEquals(
             null,
             LycorisDestination.authSuccessPopUpRoute(
                 currentRoute = LycorisDestination.Map.route,
-                hasLoginBackStackEntry = false,
             ),
         )
     }

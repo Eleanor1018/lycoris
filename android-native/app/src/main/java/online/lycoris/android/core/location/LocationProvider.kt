@@ -1,6 +1,7 @@
 package online.lycoris.android.core.location
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
@@ -36,6 +37,7 @@ class AndroidLocationProvider(
             context.checkSelfPermission(Manifest.permission.ACCESS_COARSE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
+    @SuppressLint("MissingPermission")
     private fun LocationManager.getBestLastKnownLocation(): Location? {
         return getProviders(true)
             .mapNotNull { provider ->

@@ -81,12 +81,8 @@ fun LycorisApp(
                 isLoggedIn = authState.isLoggedIn,
             )
             if (targetRoute != null && currentRoute != null) {
-                val hasLoginBackStackEntry = navController.currentBackStack.value.any {
-                    it.destination.route == LycorisDestination.Login.route
-                }
                 val popUpRoute = LycorisDestination.authSuccessPopUpRoute(
                     currentRoute = currentRoute,
-                    hasLoginBackStackEntry = hasLoginBackStackEntry,
                 )
                 navController.navigate(targetRoute) {
                     if (popUpRoute != null) {
