@@ -9,7 +9,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
-            LycorisApp()
+            LycorisApp(
+                container = (application as LycorisApplication).container,
+            )
         }
     }
 }

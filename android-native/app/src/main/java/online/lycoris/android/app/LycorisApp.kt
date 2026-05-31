@@ -7,41 +7,34 @@ import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import online.lycoris.android.core.config.BuildConstants
 import online.lycoris.android.core.design.LycorisTheme
-import online.lycoris.android.core.network.NetworkModule
-import online.lycoris.android.core.session.InMemorySessionStore
-import online.lycoris.android.core.session.PersistentCookieJar
-import online.lycoris.android.feature.auth.AuthRepository
 import online.lycoris.android.feature.auth.AuthViewModel
 import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
 
 @Composable
-fun LycorisApp() {
+fun LycorisApp(
+    container: LycorisAppContainer,
+) {
     LycorisTheme {
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
-        val constants = remember { BuildConstants() }
-        val sessionStore = remember { InMemorySessionStore() }
-        val api = remember {
-            NetworkModule.api(
-                constants.apiBaseUrl,
-                NetworkModule.okHttp(PersistentCookieJar(sessionStore)),
-            )
-        }
-        val authViewModel = remember { AuthViewModel(AuthRepository(api)) }
-        val authState by authViewModel.state.collectAsState()
+        val authViewModel: AuthViewModel = viewModel(
+            factory = AuthViewModelFactory(container),
+        )
+        val authState by authViewModel.state.collectAsStateWithLifecycle()
 
         Scaffold(
             bottomBar = {
@@ -112,5 +105,17 @@ fun LycorisApp() {
                 }
             }
         }
+    }
+}
+
+private class AuthViewModelFactory(
+    private val container: LycorisAppContainer,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
+            return AuthViewModel(container.authRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
