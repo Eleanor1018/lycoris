@@ -35,7 +35,7 @@ class MapViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
-                        message = error.message?.takeIf { message -> message.isNotBlank() } ?: "地图点位加载失败",
+                        message = error.message?.takeIf { message -> message.isNotBlank() } ?: "点位加载失败",
                     )
                 }
             }

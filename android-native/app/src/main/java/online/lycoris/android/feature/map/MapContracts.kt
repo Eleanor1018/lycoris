@@ -1,7 +1,7 @@
 package online.lycoris.android.feature.map
 
 enum class MarkerPin(
-    val color: Int,
+    val argb: Int,
 ) {
     AccessibleToilet(0xFF1E88E5.toInt()),
     FriendlyClinic(0xFF43A047.toInt()),
@@ -9,6 +9,9 @@ enum class MarkerPin(
     SelfDefinition(0xFFF0BF2F.toInt()),
     Inactive(0xFF9E9E9E.toInt()),
     ;
+
+    val color: Int
+        get() = argb
 
     companion object {
         fun from(marker: Marker): MarkerPin {

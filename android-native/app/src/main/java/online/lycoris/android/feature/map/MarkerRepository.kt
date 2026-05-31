@@ -1,5 +1,6 @@
 package online.lycoris.android.feature.map
 
+import kotlinx.coroutines.CancellationException
 import okhttp3.MultipartBody
 import online.lycoris.android.core.network.LycorisApi
 import retrofit2.Response
@@ -10,8 +11,8 @@ class MarkerRepository(
     suspend fun loadViewport(
         bounds: ViewportBounds,
         categories: List<MarkerCategory>,
-    ): List<Marker> {
-        return api.viewportMarkers(
+    ): List<Marker> = repositoryCall("点位加载失败") {
+        api.viewportMarkers(
             minLat = bounds.minLat,
             maxLat = bounds.maxLat,
             minLng = bounds.minLng,
@@ -20,8 +21,8 @@ class MarkerRepository(
         ).bodyOrThrow().map { it.toMarker() }
     }
 
-    suspend fun loadFavoriteIds(): List<Long> {
-        return api.favoriteMarkerIds().bodyOrThrow()
+    suspend fun loadFavoriteIds(): List<Long> = repositoryCall("收藏操作失败") {
+        api.favoriteMarkerIds().bodyOrThrow()
     }
 
     suspend fun loadNearby(
@@ -29,8 +30,8 @@ class MarkerRepository(
         lng: Double,
         radius: Int,
         category: MarkerCategory,
-    ): List<Marker> {
-        return api.nearbyMarkers(
+    ): List<Marker> = repositoryCall("附近点位查询失败") {
+        api.nearbyMarkers(
             lat = lat,
             lng = lng,
             radius = radius,
@@ -38,23 +39,23 @@ class MarkerRepository(
         ).bodyOrThrow().map { it.toMarker() }
     }
 
-    suspend fun createMarker(request: MarkerCreateRequest): Marker {
-        return api.createMarker(request).bodyOrThrow().toMarker()
+    suspend fun createMarker(request: MarkerCreateRequest): Marker = repositoryCall("点位提交失败") {
+        api.createMarker(request).bodyOrThrow().toMarker()
     }
 
-    suspend fun updateMarker(id: Long, request: MarkerUpdateRequest): Marker {
-        return api.updateMarker(id, request).bodyOrThrow().toMarker()
+    suspend fun updateMarker(id: Long, request: MarkerUpdateRequest): Marker = repositoryCall("点位编辑提交失败") {
+        api.updateMarker(id, request).bodyOrThrow().toMarker()
     }
 
-    suspend fun deleteMarker(id: Long) {
+    suspend fun deleteMarker(id: Long): Unit = repositoryCall("点位删除失败") {
         api.deleteMarker(id).throwIfUnsuccessful()
     }
 
-    suspend fun uploadMarkerImage(id: Long, image: MultipartBody.Part): Marker {
-        return api.uploadMarkerImage(id, image).bodyOrThrow().toMarker()
+    suspend fun uploadMarkerImage(id: Long, image: MultipartBody.Part): Marker = repositoryCall("图片上传失败") {
+        api.uploadMarkerImage(id, image).bodyOrThrow().toMarker()
     }
 
-    suspend fun setFavorite(id: Long, favorite: Boolean) {
+    suspend fun setFavorite(id: Long, favorite: Boolean): Unit = repositoryCall("收藏操作失败") {
         val response = if (favorite) {
             api.favoriteMarker(id)
         } else {
@@ -63,12 +64,27 @@ class MarkerRepository(
         response.throwIfUnsuccessful()
     }
 
-    suspend fun myCreated(): List<Marker> {
-        return api.myCreatedMarkers().bodyOrThrow().map { it.toMarker() }
+    suspend fun myCreated(): List<Marker> = repositoryCall("点位加载失败") {
+        api.myCreatedMarkers().bodyOrThrow().map { it.toMarker() }
     }
 
-    suspend fun myFavorites(): List<Marker> {
-        return api.myFavoriteMarkers().bodyOrThrow().map { it.toMarker() }
+    suspend fun myFavorites(): List<Marker> = repositoryCall("收藏操作失败") {
+        api.myFavoriteMarkers().bodyOrThrow().map { it.toMarker() }
+    }
+
+    private suspend fun <T> repositoryCall(
+        fallbackMessage: String,
+        block: suspend () -> T,
+    ): T {
+        return try {
+            block()
+        } catch (error: CancellationException) {
+            throw error
+        } catch (error: MarkerRepositoryException) {
+            throw MarkerRepositoryException(error.statusCode, fallbackMessage)
+        } catch (error: Throwable) {
+            throw MarkerRepositoryException(null, fallbackMessage)
+        }
     }
 
     private fun <T> Response<T>.bodyOrThrow(): T {
@@ -88,4 +104,4 @@ class MarkerRepository(
 class MarkerRepositoryException(
     val statusCode: Int?,
     message: String?,
-) : Exception(message?.takeIf { it.isNotBlank() } ?: "点位请求失败")
+) : Exception(message?.takeIf { it.isNotBlank() } ?: "点位加载失败")
