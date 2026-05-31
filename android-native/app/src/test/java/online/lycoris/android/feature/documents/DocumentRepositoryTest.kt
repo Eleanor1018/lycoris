@@ -63,6 +63,49 @@ class DocumentRepositoryTest {
     }
 
     @Test
+    fun buildsReadableBlocksForDocumentDisplay() {
+        val blocks = MarkdownDocumentParser.readableBlocks(
+            """
+            # Guide `Title`
+
+            Body with [important link](https://example.com) and <b>html</b>.
+
+            - First point
+            1. Numbered point
+            """.trimIndent(),
+        )
+
+        assertEquals(
+            listOf(
+                DocumentBlock(text = "Guide Title", level = 1),
+                DocumentBlock(text = "Body with important link and html .", level = 0),
+                DocumentBlock(text = "• - First point", level = 0),
+                DocumentBlock(text = "1. Numbered point", level = 0),
+            ),
+            blocks,
+        )
+    }
+
+    @Test
+    fun loadedDocumentIncludesReadableBlocks() {
+        val repository = DocumentRepository()
+        val entry = DocumentEntry("guide", "Guide", "docs/guide.md")
+
+        val document = repository.buildLoadedDocument(
+            entry = entry,
+            markdown = "# Guide\n\nA readable paragraph.",
+        )
+
+        assertEquals(
+            listOf(
+                DocumentBlock(text = "Guide", level = 1),
+                DocumentBlock(text = "A readable paragraph.", level = 0),
+            ),
+            document.blocks,
+        )
+    }
+
+    @Test
     fun packagedAssetsIncludeFirstHrtGuideImageAliases() {
         val assetRoot = File("src/main/assets")
         val markdown = assetRoot.resolve("docs/nora-hrt-guide.md").readText()

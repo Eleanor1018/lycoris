@@ -15,11 +15,17 @@ data class TocItem(
     val text: String,
 )
 
+data class DocumentBlock(
+    val text: String,
+    val level: Int = 0,
+)
+
 data class LoadedDocument(
     val entry: DocumentEntry,
     val markdown: String,
     val title: String,
     val toc: List<TocItem>,
+    val blocks: List<DocumentBlock>,
 )
 
 data class DocumentSearchResult(
@@ -49,11 +55,16 @@ class DocumentRepository {
     suspend fun loadDocument(context: Context, slug: String): LoadedDocument = withContext(Dispatchers.IO) {
         val entry = find(slug)
         val markdown = loadMarkdownBlocking(context, entry)
-        LoadedDocument(
+        buildLoadedDocument(entry, markdown)
+    }
+
+    fun buildLoadedDocument(entry: DocumentEntry, markdown: String): LoadedDocument {
+        return LoadedDocument(
             entry = entry,
             markdown = markdown,
             title = MarkdownDocumentParser.title(entry.slug, markdown, entry.title),
             toc = MarkdownDocumentParser.toc(markdown),
+            blocks = MarkdownDocumentParser.readableBlocks(markdown),
         )
     }
 
@@ -87,6 +98,7 @@ object MarkdownDocumentParser {
     private val markdownLinkRegex = Regex("""\[(.*?)]\([^)]*\)""")
     private val htmlTagRegex = Regex("""<[^>]+>""")
     private val markdownMarksRegex = Regex("""[#>*_~`]""")
+    private val orderedListRegex = Regex("""^\d+[.)]\s+""")
     private val whitespaceRegex = Regex("""\s+""")
 
     fun title(slug: String, markdown: String, fallbackTitle: String): String {
@@ -120,6 +132,31 @@ object MarkdownDocumentParser {
             val text = cleanText(match.groupValues[2])
             if (text.isBlank()) null else TocItem(level = level, text = text)
         }.toList()
+    }
+
+    fun readableBlocks(markdown: String): List<DocumentBlock> {
+        return markdown
+            .lineSequence()
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .map { line ->
+                val headingLevel = line.takeWhile { it == '#' }.length
+                if (headingLevel in 1..4 && line.getOrNull(headingLevel) == ' ') {
+                    DocumentBlock(
+                        text = cleanText(line.drop(headingLevel).trim()),
+                        level = headingLevel,
+                    )
+                } else {
+                    val prefix = when {
+                        line.startsWith("- ") -> "\u2022 "
+                        orderedListRegex.containsMatchIn(line) -> ""
+                        else -> ""
+                    }
+                    DocumentBlock(prefix + cleanText(line))
+                }
+            }
+            .filter { it.text.isNotBlank() }
+            .toList()
     }
 
     fun cleanText(markdown: String): String {

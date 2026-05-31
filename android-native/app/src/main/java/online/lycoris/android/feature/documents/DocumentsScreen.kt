@@ -125,7 +125,7 @@ fun DocumentsScreen(
                 )
             }
 
-            items(readableMarkdownBlocks(document.markdown)) { block ->
+            items(document.blocks) { block ->
                 MarkdownTextBlock(block)
             }
         }
@@ -133,7 +133,7 @@ fun DocumentsScreen(
 }
 
 @Composable
-private fun MarkdownTextBlock(block: MarkdownBlock) {
+private fun MarkdownTextBlock(block: DocumentBlock) {
     val style = when (block.level) {
         1 -> MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold)
         2 -> MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold)
@@ -153,34 +153,4 @@ private fun MarkdownTextBlock(block: MarkdownBlock) {
                 bottom = if (block.level in 1..4) 2.dp else 6.dp,
             ),
     )
-}
-
-private data class MarkdownBlock(
-    val text: String,
-    val level: Int = 0,
-)
-
-private fun readableMarkdownBlocks(markdown: String): List<MarkdownBlock> {
-    return markdown
-        .lineSequence()
-        .map { it.trim() }
-        .filter { it.isNotBlank() }
-        .map { line ->
-            val headingLevel = line.takeWhile { it == '#' }.length
-            if (headingLevel in 1..4 && line.getOrNull(headingLevel) == ' ') {
-                MarkdownBlock(
-                    text = MarkdownDocumentParser.cleanText(line.drop(headingLevel).trim()),
-                    level = headingLevel,
-                )
-            } else {
-                val prefix = when {
-                    line.startsWith("- ") -> "• "
-                    Regex("""^\d+[.)]\s+""").containsMatchIn(line) -> ""
-                    else -> ""
-                }
-                MarkdownBlock(prefix + MarkdownDocumentParser.cleanText(line))
-            }
-        }
-        .filter { it.text.isNotBlank() }
-        .toList()
 }
