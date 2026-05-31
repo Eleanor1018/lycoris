@@ -22,6 +22,8 @@ import online.lycoris.android.core.design.LycorisTheme
 import online.lycoris.android.feature.auth.AuthViewModel
 import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
+import online.lycoris.android.feature.map.MapScreen
+import online.lycoris.android.feature.map.MapViewModel
 
 @Composable
 fun LycorisApp(
@@ -35,6 +37,10 @@ fun LycorisApp(
             factory = AuthViewModelFactory(container),
         )
         val authState by authViewModel.state.collectAsStateWithLifecycle()
+        val mapViewModel: MapViewModel = viewModel(
+            factory = MapViewModelFactory(container),
+        )
+        val mapState by mapViewModel.state.collectAsStateWithLifecycle()
 
         Scaffold(
             bottomBar = {
@@ -70,7 +76,12 @@ fun LycorisApp(
                 modifier = Modifier.padding(innerPadding),
             ) {
                 composable(LycorisDestination.Map.route) {
-                    Text("地图")
+                    MapScreen(
+                        state = mapState,
+                        onLoadViewport = mapViewModel::loadViewport,
+                        onMarkerClick = mapViewModel::selectMarker,
+                        onAddMarkerClick = {},
+                    )
                 }
                 composable(LycorisDestination.Search.route) {
                     Text("搜索")
@@ -105,6 +116,18 @@ fun LycorisApp(
                 }
             }
         }
+    }
+}
+
+private class MapViewModelFactory(
+    private val container: LycorisAppContainer,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(MapViewModel::class.java)) {
+            return MapViewModel(container.markerRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
 }
 
