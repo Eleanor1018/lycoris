@@ -8,7 +8,9 @@ class PersistentCookieJar(
     private val store: SessionStore,
 ) : CookieJar {
     override fun saveFromResponse(url: HttpUrl, cookies: List<Cookie>) {
+        val now = System.currentTimeMillis()
         val existing = store.readCookies()
+            .filter { it.expiresAt > now }
             .filterNot { old ->
                 cookies.any { new ->
                     old.name == new.name &&
@@ -16,10 +18,14 @@ class PersistentCookieJar(
                         old.path == new.path
                 }
             }
-        store.writeCookies(existing + cookies)
+        val freshIncoming = cookies.filter { it.expiresAt > now }
+        store.writeCookies(existing + freshIncoming)
     }
 
     override fun loadForRequest(url: HttpUrl): List<Cookie> {
-        return store.readCookies().filter { it.matches(url) }
+        val now = System.currentTimeMillis()
+        val freshCookies = store.readCookies().filter { it.expiresAt > now }
+        store.writeCookies(freshCookies)
+        return freshCookies.filter { it.matches(url) }
     }
 }

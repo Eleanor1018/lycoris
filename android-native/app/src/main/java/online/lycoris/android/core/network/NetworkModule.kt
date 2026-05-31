@@ -3,6 +3,7 @@ package online.lycoris.android.core.network
 import com.jakewharton.retrofit2.converter.kotlinx.serialization.asConverterFactory
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
+import online.lycoris.android.BuildConfig
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -22,15 +23,22 @@ object NetworkModule {
         explicitNulls = false
     }
 
-    fun okHttp(cookieJar: PersistentCookieJar): OkHttpClient {
-        return OkHttpClient.Builder()
+    fun okHttp(
+        cookieJar: PersistentCookieJar,
+        enableHttpLogging: Boolean = BuildConfig.DEBUG,
+    ): OkHttpClient {
+        val builder = OkHttpClient.Builder()
             .cookieJar(cookieJar)
-            .addInterceptor(
+
+        if (enableHttpLogging) {
+            builder.addInterceptor(
                 HttpLoggingInterceptor().apply {
                     level = HttpLoggingInterceptor.Level.BASIC
                 },
             )
-            .build()
+        }
+
+        return builder.build()
     }
 
     fun retrofit(baseUrl: String, client: OkHttpClient): Retrofit {
