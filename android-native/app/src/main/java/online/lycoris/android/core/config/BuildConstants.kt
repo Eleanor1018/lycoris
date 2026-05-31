@@ -9,6 +9,7 @@ class BuildConstants(
         .trim()
         .trimEnd('/')
         .ifBlank { DEFAULT_PROD_API_BASE_URL }
+        .plus("/")
 
     val isCustomApiBaseUrl: Boolean = rawApiBaseUrl.trim().isNotBlank()
 
