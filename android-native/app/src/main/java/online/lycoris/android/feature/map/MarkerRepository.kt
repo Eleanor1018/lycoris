@@ -5,10 +5,19 @@ import okhttp3.MultipartBody
 import online.lycoris.android.core.network.LycorisApi
 import retrofit2.Response
 
+interface MapRepository {
+    suspend fun loadViewport(
+        bounds: ViewportBounds,
+        categories: List<MarkerCategory>,
+    ): List<Marker>
+
+    suspend fun loadFavoriteIds(): List<Long>
+}
+
 class MarkerRepository(
     private val api: LycorisApi,
-) {
-    suspend fun loadViewport(
+) : MapRepository {
+    override suspend fun loadViewport(
         bounds: ViewportBounds,
         categories: List<MarkerCategory>,
     ): List<Marker> = repositoryCall("点位加载失败") {
@@ -21,7 +30,7 @@ class MarkerRepository(
         ).bodyOrThrow().map { it.toMarker() }
     }
 
-    suspend fun loadFavoriteIds(): List<Long> = repositoryCall("收藏操作失败") {
+    override suspend fun loadFavoriteIds(): List<Long> = repositoryCall("收藏操作失败") {
         api.favoriteMarkerIds().bodyOrThrow()
     }
 
