@@ -27,6 +27,7 @@ import online.lycoris.android.feature.auth.AuthViewModel
 import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
 import online.lycoris.android.feature.documents.DocumentsScreen
+import online.lycoris.android.feature.map.MapCenter
 import online.lycoris.android.feature.map.MapScreen
 import online.lycoris.android.feature.map.MapViewModel
 import online.lycoris.android.feature.map.MarkerDraft
@@ -48,6 +49,11 @@ private val BeijingInitialBounds = ViewportBounds(
 private const val BeijingMvpLat = 39.9042
 private const val BeijingMvpLng = 116.4074
 
+private val BeijingInitialCenter = MapCenter(
+    lat = BeijingMvpLat,
+    lng = BeijingMvpLng,
+)
+
 @Composable
 fun LycorisApp(
     container: LycorisAppContainer,
@@ -66,6 +72,7 @@ fun LycorisApp(
         val authState by authViewModel.state.collectAsStateWithLifecycle()
         val markerSubmitCoordinator = remember { MarkerSubmitCoordinator() }
         var addMarkerDraft by remember { mutableStateOf<MarkerDraft?>(null) }
+        var currentMapCenter by remember { mutableStateOf(BeijingInitialCenter) }
 
         LaunchedEffect(authState.isLoggedIn, currentDestination?.route) {
             val currentRoute = currentDestination?.route
@@ -139,8 +146,14 @@ fun LycorisApp(
                         onMarkerClick = mapViewModel::selectMarker,
                         onDismissMarker = { mapViewModel.selectMarker(null) },
                         onToggleFavorite = mapViewModel::toggleFavorite,
+                        onMapCenterChanged = { center ->
+                            currentMapCenter = center
+                        },
                         onAddClick = {
-                            addMarkerDraft = newAddMarkerDraft(markerSubmitCoordinator)
+                            addMarkerDraft = newAddMarkerDraft(
+                                markerSubmitCoordinator = markerSubmitCoordinator,
+                                center = currentMapCenter,
+                            )
                         },
                     )
                     addMarkerDraft?.let { draft ->
@@ -218,11 +231,11 @@ fun LycorisApp(
 
 internal fun newAddMarkerDraft(
     markerSubmitCoordinator: MarkerSubmitCoordinator,
+    center: MapCenter,
 ): MarkerDraft {
-    // MVP fallback until Task 8 grows map press selection.
     return MarkerDraft(
-        lat = BeijingMvpLat,
-        lng = BeijingMvpLng,
+        lat = center.lat,
+        lng = center.lng,
         clientRequestId = markerSubmitCoordinator.newClientRequestId(),
     )
 }

@@ -87,6 +87,11 @@ data class ViewportBounds(
     val maxLng: Double,
 )
 
+data class MapCenter(
+    val lat: Double,
+    val lng: Double,
+)
+
 @Serializable
 data class MarkerCreateRequest(
     val lat: Double,

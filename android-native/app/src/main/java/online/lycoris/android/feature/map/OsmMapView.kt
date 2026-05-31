@@ -10,6 +10,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import org.osmdroid.config.Configuration
+import org.osmdroid.events.MapListener
+import org.osmdroid.events.ScrollEvent
+import org.osmdroid.events.ZoomEvent
 import org.osmdroid.tileprovider.tilesource.TileSourceFactory
 import org.osmdroid.util.GeoPoint
 import org.osmdroid.views.MapView
@@ -19,6 +22,7 @@ import org.osmdroid.views.overlay.Marker as OsmMarker
 fun OsmMapView(
     markers: List<Marker>,
     onMarkerClick: (Long) -> Unit,
+    onMapCenterChanged: (MapCenter) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -33,6 +37,20 @@ fun OsmMapView(
                 setMultiTouchControls(true)
                 controller.setZoom(11.0)
                 controller.setCenter(GeoPoint(39.9042, 116.4074))
+                emitCenter(onMapCenterChanged)
+                addMapListener(
+                    object : MapListener {
+                        override fun onScroll(event: ScrollEvent?): Boolean {
+                            emitCenter(onMapCenterChanged)
+                            return false
+                        }
+
+                        override fun onZoom(event: ZoomEvent?): Boolean {
+                            emitCenter(onMapCenterChanged)
+                            return false
+                        }
+                    },
+                )
                 onResume()
             }
         },
@@ -62,6 +80,16 @@ fun OsmMapView(
             mapView.onPause()
             mapView.onDetach()
         },
+    )
+}
+
+private fun MapView.emitCenter(onMapCenterChanged: (MapCenter) -> Unit) {
+    val center = mapCenter
+    onMapCenterChanged(
+        MapCenter(
+            lat = center.latitude,
+            lng = center.longitude,
+        ),
     )
 }
 

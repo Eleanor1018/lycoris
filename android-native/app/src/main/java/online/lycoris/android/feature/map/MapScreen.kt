@@ -22,6 +22,7 @@ fun MapScreen(
     onMarkerClick: (Long) -> Unit,
     onDismissMarker: () -> Unit,
     onToggleFavorite: (Long) -> Unit,
+    onMapCenterChanged: (MapCenter) -> Unit,
     onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -29,6 +30,7 @@ fun MapScreen(
         OsmMapView(
             markers = state.markers,
             onMarkerClick = onMarkerClick,
+            onMapCenterChanged = onMapCenterChanged,
             modifier = Modifier.fillMaxSize(),
         )
 

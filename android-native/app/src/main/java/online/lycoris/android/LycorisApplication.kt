@@ -5,6 +5,6 @@ import online.lycoris.android.app.LycorisAppContainer
 
 class LycorisApplication : Application() {
     val container: LycorisAppContainer by lazy {
-        LycorisAppContainer()
+        LycorisAppContainer(this)
     }
 }
