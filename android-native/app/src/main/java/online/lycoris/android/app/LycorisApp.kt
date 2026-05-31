@@ -26,12 +26,17 @@ import online.lycoris.android.core.design.LycorisTheme
 import online.lycoris.android.feature.auth.AuthViewModel
 import online.lycoris.android.feature.auth.LoginScreen
 import online.lycoris.android.feature.auth.RegisterScreen
+import online.lycoris.android.feature.documents.DocumentsScreen
 import online.lycoris.android.feature.map.MapScreen
 import online.lycoris.android.feature.map.MapViewModel
 import online.lycoris.android.feature.map.MarkerDraft
 import online.lycoris.android.feature.map.MarkerEditorSheet
 import online.lycoris.android.feature.map.MarkerSubmitCoordinator
 import online.lycoris.android.feature.map.ViewportBounds
+import online.lycoris.android.feature.profile.ProfileScreen
+import online.lycoris.android.feature.profile.ProfileViewModel
+import online.lycoris.android.feature.search.SearchScreen
+import online.lycoris.android.feature.search.SearchViewModel
 
 private val BeijingInitialBounds = ViewportBounds(
     minLat = 39.70,
@@ -59,6 +64,12 @@ fun LycorisApp(
             factory = MapViewModelFactory(container),
         )
         val mapState by mapViewModel.state.collectAsStateWithLifecycle()
+        val searchViewModel: SearchViewModel = viewModel(
+            factory = SearchViewModelFactory(container),
+        )
+        val profileViewModel: ProfileViewModel = viewModel(
+            factory = ProfileViewModelFactory(container),
+        )
         val markerSubmitCoordinator = remember { MarkerSubmitCoordinator() }
         var addMarkerDraft by remember { mutableStateOf<MarkerDraft?>(null) }
 
@@ -131,13 +142,20 @@ fun LycorisApp(
                     }
                 }
                 composable(LycorisDestination.Search.route) {
-                    Text("搜索")
+                    SearchScreen(viewModel = searchViewModel)
                 }
                 composable(LycorisDestination.Documents.route) {
-                    Text("文档")
+                    DocumentsScreen(repository = container.documentRepository)
                 }
                 composable(LycorisDestination.Profile.route) {
-                    Text("我的")
+                    ProfileScreen(
+                        authState = authState,
+                        viewModel = profileViewModel,
+                        onOpenLogin = {
+                            navController.navigate(LycorisDestination.Login.route)
+                        },
+                        onLogout = authViewModel::logout,
+                    )
                 }
                 composable(LycorisDestination.Login.route) {
                     LoginScreen(
@@ -196,6 +214,30 @@ private class AuthViewModelFactory(
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AuthViewModel::class.java)) {
             return AuthViewModel(container.authRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}
+
+private class SearchViewModelFactory(
+    private val container: LycorisAppContainer,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(SearchViewModel::class.java)) {
+            return SearchViewModel(container.searchRepository) as T
+        }
+        throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
+    }
+}
+
+private class ProfileViewModelFactory(
+    private val container: LycorisAppContainer,
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(ProfileViewModel::class.java)) {
+            return ProfileViewModel(container.profileRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class: ${modelClass.name}")
     }
