@@ -16,11 +16,11 @@ data class SearchResults(
     val markerError: String? = null,
 )
 
-class SearchRepository(
+open class SearchRepository(
     private val api: LycorisApi,
     private val documentRepository: DocumentRepository = DocumentRepository(),
 ) {
-    suspend fun search(context: Context, query: String): SearchResults {
+    open suspend fun search(context: Context, query: String): SearchResults {
         val keyword = query.trim()
         if (keyword.isBlank()) return SearchResults()
 

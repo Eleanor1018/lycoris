@@ -1,6 +1,8 @@
 package online.lycoris.android.feature.documents
 
 import android.content.Context
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 data class DocumentEntry(
     val slug: String,
@@ -36,14 +38,18 @@ class DocumentRepository {
         return documents.firstOrNull { it.slug == slug } ?: documents.first()
     }
 
-    fun loadMarkdown(context: Context, document: DocumentEntry): String {
+    private fun loadMarkdownBlocking(context: Context, document: DocumentEntry): String {
         return context.assets.open(document.assetPath).bufferedReader(Charsets.UTF_8).use { it.readText() }
     }
 
-    fun loadDocument(context: Context, slug: String): LoadedDocument {
+    suspend fun loadMarkdown(context: Context, document: DocumentEntry): String = withContext(Dispatchers.IO) {
+        loadMarkdownBlocking(context, document)
+    }
+
+    suspend fun loadDocument(context: Context, slug: String): LoadedDocument = withContext(Dispatchers.IO) {
         val entry = find(slug)
-        val markdown = loadMarkdown(context, entry)
-        return LoadedDocument(
+        val markdown = loadMarkdownBlocking(context, entry)
+        LoadedDocument(
             entry = entry,
             markdown = markdown,
             title = MarkdownDocumentParser.title(entry.slug, markdown, entry.title),
@@ -51,12 +57,12 @@ class DocumentRepository {
         )
     }
 
-    fun search(context: Context, query: String): List<DocumentSearchResult> {
+    suspend fun search(context: Context, query: String): List<DocumentSearchResult> = withContext(Dispatchers.IO) {
         val needle = query.trim()
-        if (needle.isBlank()) return emptyList()
+        if (needle.isBlank()) return@withContext emptyList()
 
-        return documents.mapNotNull { entry ->
-            val markdown = loadMarkdown(context, entry)
+        documents.mapNotNull { entry ->
+            val markdown = loadMarkdownBlocking(context, entry)
             val cleanText = MarkdownDocumentParser.cleanText(markdown)
             val title = MarkdownDocumentParser.title(entry.slug, markdown, entry.title)
             val matches = cleanText.contains(needle, ignoreCase = true) ||

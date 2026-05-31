@@ -3,6 +3,7 @@ package online.lycoris.android.feature.search
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -39,14 +40,27 @@ class SearchViewModel(
 
         searchJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, markerError = null) }
-            val results = repository.search(context.applicationContext, query)
-            _state.update {
-                it.copy(
-                    loading = false,
-                    markers = results.markers,
-                    documents = results.documents,
-                    markerError = results.markerError,
-                )
+            try {
+                val results = repository.search(context.applicationContext, query)
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        markers = results.markers,
+                        documents = results.documents,
+                        markerError = results.markerError,
+                    )
+                }
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Throwable) {
+                _state.update {
+                    it.copy(
+                        loading = false,
+                        markers = emptyList(),
+                        documents = emptyList(),
+                        markerError = "搜索失败",
+                    )
+                }
             }
         }
     }

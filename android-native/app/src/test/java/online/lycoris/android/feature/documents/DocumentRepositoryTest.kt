@@ -3,6 +3,7 @@ package online.lycoris.android.feature.documents
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
 
 class DocumentRepositoryTest {
     @Test
@@ -59,5 +60,28 @@ class DocumentRepositoryTest {
             ),
             toc,
         )
+    }
+
+    @Test
+    fun packagedAssetsIncludeFirstHrtGuideImageAliases() {
+        val assetRoot = File("src/main/assets")
+        val markdown = assetRoot.resolve("docs/nora-hrt-guide.md").readText()
+        val imageRefs = Regex("""src="/([^"]+)"""")
+            .findAll(markdown)
+            .take(3)
+            .map { it.groupValues[1] }
+            .toList()
+
+        assertEquals(
+            listOf(
+                "doc_images/figure-1-1-estradiol.svg",
+                "doc_images/figure-1-2-testosterone.svg",
+                "doc_images/figure-1-3-progesterone.svg",
+            ),
+            imageRefs,
+        )
+        imageRefs.forEach { ref ->
+            assertTrue("Missing packaged asset $ref", assetRoot.resolve(ref).isFile)
+        }
     }
 }

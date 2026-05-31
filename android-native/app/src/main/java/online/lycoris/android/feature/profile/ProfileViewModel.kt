@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.async
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -23,9 +24,11 @@ class ProfileViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ProfileUiState())
     val state: StateFlow<ProfileUiState> = _state.asStateFlow()
+    private var loadJob: Job? = null
 
     fun load() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, message = null) }
             try {
                 val created = async { repository.createdMarkers() }
@@ -43,6 +46,8 @@ class ProfileViewModel(
     }
 
     fun clear() {
+        loadJob?.cancel()
+        loadJob = null
         _state.value = ProfileUiState()
     }
 }
