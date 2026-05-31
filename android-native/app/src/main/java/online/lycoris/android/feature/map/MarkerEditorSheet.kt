@@ -19,12 +19,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.launch
 import online.lycoris.android.core.image.LocalImage
 import online.lycoris.android.core.image.PickedImageResult
 import online.lycoris.android.core.image.readPickedImage
@@ -66,23 +68,31 @@ fun MarkerEditorSheet(
     var imageError by rememberSaveable(initialDraft.clientRequestId) {
         mutableStateOf<String?>(null)
     }
+    var imageLoading by rememberSaveable(initialDraft.clientRequestId) {
+        mutableStateOf(false)
+    }
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val photoPicker = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia(),
     ) { uri ->
         if (uri == null) {
             return@rememberLauncherForActivityResult
         }
-        when (val result = readPickedImage(context.contentResolver, uri)) {
-            is PickedImageResult.Success -> {
-                selectedImage = result.image
-                imageError = null
-            }
+        imageLoading = true
+        imageError = null
+        coroutineScope.launch {
+            when (val result = readPickedImage(context.contentResolver, uri)) {
+                is PickedImageResult.Success -> {
+                    selectedImage = result.image
+                    imageError = null
+                }
 
-            is PickedImageResult.Invalid -> {
-                selectedImage = null
-                imageError = result.message
+                is PickedImageResult.Invalid -> {
+                    imageError = result.message
+                }
             }
+            imageLoading = false
         }
     }
     val currentDraft = initialDraft.copy(
@@ -135,7 +145,7 @@ fun MarkerEditorSheet(
                 )
             }
             Button(
-                enabled = !submitting,
+                enabled = !submitting && !imageLoading,
                 onClick = {
                     photoPicker.launch(
                         PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
@@ -143,7 +153,7 @@ fun MarkerEditorSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Text("选择图片")
+                Text(if (imageLoading) "图片读取中" else "选择图片")
             }
             Text(
                 text = imageError ?: selectedImage?.fileName ?: "未选择图片",
