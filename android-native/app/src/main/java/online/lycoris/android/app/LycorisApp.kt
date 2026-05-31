@@ -56,22 +56,42 @@ fun LycorisApp(
         val navController = rememberNavController()
         val navBackStackEntry by navController.currentBackStackEntryAsState()
         val currentDestination = navBackStackEntry?.destination
+        val authViewModelFactory = remember(container) { AuthViewModelFactory(container) }
+        val mapViewModelFactory = remember(container) { MapViewModelFactory(container) }
+        val searchViewModelFactory = remember(container) { SearchViewModelFactory(container) }
+        val profileViewModelFactory = remember(container) { ProfileViewModelFactory(container) }
         val authViewModel: AuthViewModel = viewModel(
-            factory = AuthViewModelFactory(container),
+            factory = authViewModelFactory,
         )
         val authState by authViewModel.state.collectAsStateWithLifecycle()
         val mapViewModel: MapViewModel = viewModel(
-            factory = MapViewModelFactory(container),
+            factory = mapViewModelFactory,
         )
         val mapState by mapViewModel.state.collectAsStateWithLifecycle()
         val searchViewModel: SearchViewModel = viewModel(
-            factory = SearchViewModelFactory(container),
+            factory = searchViewModelFactory,
         )
         val profileViewModel: ProfileViewModel = viewModel(
-            factory = ProfileViewModelFactory(container),
+            factory = profileViewModelFactory,
         )
         val markerSubmitCoordinator = remember { MarkerSubmitCoordinator() }
         var addMarkerDraft by remember { mutableStateOf<MarkerDraft?>(null) }
+
+        LaunchedEffect(authState.isLoggedIn, currentDestination?.route) {
+            val currentRoute = currentDestination?.route
+            val targetRoute = LycorisDestination.routeAfterAuthStateChange(
+                currentRoute = currentRoute,
+                isLoggedIn = authState.isLoggedIn,
+            )
+            if (targetRoute != null && currentRoute != null) {
+                navController.navigate(targetRoute) {
+                    popUpTo(currentRoute) {
+                        inclusive = true
+                    }
+                    launchSingleTop = true
+                }
+            }
+        }
 
         Scaffold(
             bottomBar = {
