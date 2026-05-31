@@ -109,12 +109,22 @@ fun LycorisApp(
                         },
                     )
                     addMarkerDraft?.let { draft ->
+                        val submittingDraft = mapState.creatingClientRequestId == draft.clientRequestId
+                        LaunchedEffect(mapState.completedCreateClientRequestId, draft.clientRequestId) {
+                            if (mapState.completedCreateClientRequestId == draft.clientRequestId) {
+                                addMarkerDraft = null
+                            }
+                        }
                         MarkerEditorSheet(
                             initialDraft = draft,
-                            submitting = mapState.loading,
-                            onDismiss = { addMarkerDraft = null },
+                            submitting = submittingDraft,
+                            onDismiss = {
+                                if (!submittingDraft) {
+                                    addMarkerDraft = null
+                                }
+                            },
                             onSubmit = { submittedDraft ->
-                                addMarkerDraft = null
+                                addMarkerDraft = submittedDraft
                                 mapViewModel.createMarker(submittedDraft)
                             },
                         )

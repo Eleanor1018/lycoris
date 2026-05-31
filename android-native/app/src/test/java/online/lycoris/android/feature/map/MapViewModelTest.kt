@@ -10,8 +10,10 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import online.lycoris.android.core.image.LocalImage
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TestWatcher
@@ -197,6 +199,121 @@ class MapViewModelTest {
     }
 
     @Test
+    fun createMarkerIgnoresRepeatedSubmitWhileInFlight() = runTest {
+        val createGate = CompletableDeferred<Marker>()
+        val repository = FakeMapRepository(
+            createResults = mutableListOf(createGate),
+        )
+        val viewModel = MapViewModel(repository)
+        val draft = MarkerDraft(
+            lat = 39.9,
+            lng = 116.4,
+            title = "A口",
+            clientRequestId = "draft-1",
+        )
+
+        viewModel.createMarker(draft)
+        runCurrent()
+        viewModel.createMarker(draft)
+        runCurrent()
+
+        assertEquals(1, repository.createCalls.size)
+        assertEquals("draft-1", repository.createCalls.single().clientRequestId)
+
+        createGate.complete(marker(id = 9, title = "A口"))
+        advanceUntilIdle()
+    }
+
+    @Test
+    fun createMarkerRetryKeepsSameDraftClientRequestIdAfterFailure() = runTest {
+        val firstFailure = CompletableDeferred<Marker>().also {
+            it.completeExceptionally(IllegalStateException("network down"))
+        }
+        val repository = FakeMapRepository(
+            createResults = mutableListOf(
+                firstFailure,
+                CompletableDeferred(marker(id = 9, title = "A口")),
+            ),
+        )
+        val viewModel = MapViewModel(repository)
+        val draft = MarkerDraft(
+            lat = 39.9,
+            lng = 116.4,
+            title = "A口",
+            clientRequestId = "draft-1",
+        )
+
+        viewModel.createMarker(draft)
+        advanceUntilIdle()
+        viewModel.createMarker(draft)
+        advanceUntilIdle()
+
+        assertEquals(listOf("draft-1", "draft-1"), repository.createCalls.map { it.clientRequestId })
+        assertEquals("draft-1", viewModel.state.value.completedCreateClientRequestId)
+        assertEquals(listOf(9L), viewModel.state.value.markers.map { it.id })
+    }
+
+    @Test
+    fun createMarkerUploadsImageAfterCreateAndUsesUploadedMarker() = runTest {
+        val createdMarker = marker(id = 9, title = "A口")
+        val uploadedMarker = marker(id = 9, title = "A口", image = "/uploads/marker.jpg")
+        val repository = FakeMapRepository(
+            createResults = mutableListOf(CompletableDeferred(createdMarker)),
+            uploadResults = mutableListOf(CompletableDeferred(uploadedMarker)),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.createMarker(
+            MarkerDraft(
+                lat = 39.9,
+                lng = 116.4,
+                title = "A口",
+                clientRequestId = "draft-1",
+                selectedImage = image(),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L), viewModel.state.value.markers.map { it.id })
+        assertEquals("/uploads/marker.jpg", viewModel.state.value.markers.single().markImage)
+        assertEquals(9L, viewModel.state.value.selectedMarkerId)
+        assertEquals("已提交管理员审核", viewModel.state.value.message)
+        assertEquals(9L, repository.uploadCalls.single().id)
+        assertEquals("marker.jpg", repository.uploadCalls.single().image.fileName)
+        assertEquals("draft-1", viewModel.state.value.completedCreateClientRequestId)
+    }
+
+    @Test
+    fun createMarkerReportsPartialSuccessWhenImageUploadFails() = runTest {
+        val createdMarker = marker(id = 9, title = "A口")
+        val uploadFailure = CompletableDeferred<Marker>().also {
+            it.completeExceptionally(IllegalStateException("图片上传失败"))
+        }
+        val repository = FakeMapRepository(
+            createResults = mutableListOf(CompletableDeferred(createdMarker)),
+            uploadResults = mutableListOf(uploadFailure),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.createMarker(
+            MarkerDraft(
+                lat = 39.9,
+                lng = 116.4,
+                title = "A口",
+                clientRequestId = "draft-1",
+                selectedImage = image(),
+            ),
+        )
+        advanceUntilIdle()
+
+        assertEquals(listOf(9L), viewModel.state.value.markers.map { it.id })
+        assertEquals(9L, viewModel.state.value.selectedMarkerId)
+        assertTrue(viewModel.state.value.message.orEmpty().contains("图片"))
+        assertFalse(viewModel.state.value.loading)
+        assertEquals("draft-1", viewModel.state.value.completedCreateClientRequestId)
+    }
+
+    @Test
     fun deleteMarkerRemovesMarkerAndClearsSelection() = runTest {
         val repository = FakeMapRepository(
             viewportResults = mutableListOf(CompletableDeferred(listOf(marker(id = 7)))),
@@ -221,11 +338,17 @@ private data class SetFavoriteCall(
     val favorite: Boolean,
 )
 
+private data class UploadCall(
+    val id: Long,
+    val image: LocalImage,
+)
+
 private class FakeMapRepository(
     private val viewportResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
     private val favoriteResults: MutableList<CompletableDeferred<List<Long>>> = mutableListOf(),
     private val nearbyResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
     private val createResults: MutableList<CompletableDeferred<Marker>> = mutableListOf(),
+    private val uploadResults: MutableList<CompletableDeferred<Marker>> = mutableListOf(),
     private val deleteResults: MutableList<CompletableDeferred<Unit>> = mutableListOf(),
     private val setFavoriteGates: MutableList<CompletableDeferred<Unit>> = mutableListOf(),
     private val setFavoriteFailure: Throwable? = null,
@@ -233,6 +356,7 @@ private class FakeMapRepository(
     private val favorites = mutableSetOf<Long>()
     val setFavoriteCalls = mutableListOf<SetFavoriteCall>()
     val createCalls = mutableListOf<MarkerCreateRequest>()
+    val uploadCalls = mutableListOf<UploadCall>()
 
     override suspend fun loadViewport(
         bounds: ViewportBounds,
@@ -263,6 +387,11 @@ private class FakeMapRepository(
         return createResults.removeAt(0).await()
     }
 
+    override suspend fun uploadMarkerImage(id: Long, image: LocalImage): Marker {
+        uploadCalls.add(UploadCall(id, image))
+        return uploadResults.removeAt(0).await()
+    }
+
     override suspend fun deleteMarker(id: Long) {
         deleteResults.removeAt(0).await()
     }
@@ -284,6 +413,7 @@ private class FakeMapRepository(
 private fun marker(
     id: Long,
     title: String = "未命名点位",
+    image: String? = null,
 ): Marker = Marker(
     id = id,
     lat = 39.9,
@@ -293,6 +423,14 @@ private fun marker(
     description = "",
     isPublic = true,
     isActive = true,
+    markImage = image,
+)
+
+private fun image(): LocalImage = LocalImage(
+    fileName = "marker.jpg",
+    mimeType = "image/jpeg",
+    sizeBytes = 4,
+    bytes = byteArrayOf(1, 2, 3, 4),
 )
 
 @OptIn(ExperimentalCoroutinesApi::class)

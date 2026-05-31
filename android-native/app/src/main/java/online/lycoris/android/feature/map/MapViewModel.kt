@@ -14,6 +14,7 @@ import kotlinx.coroutines.sync.withLock
 
 class MapViewModel(
     private val repository: MapRepository,
+    private val markerSubmitCoordinator: MarkerSubmitCoordinator = MarkerSubmitCoordinator(),
 ) : ViewModel() {
     private val _state = MutableStateFlow(MapUiState())
     val state: StateFlow<MapUiState> = _state.asStateFlow()
@@ -151,30 +152,41 @@ class MapViewModel(
             return
         }
         createMarkerJob = viewModelScope.launch {
-            _state.update { it.copy(loading = true, message = null) }
-            try {
-                val createdMarker = repository.createMarker(
-                    MarkerCreateRequest(
-                        lat = draft.lat,
-                        lng = draft.lng,
-                        category = draft.category.wireName,
-                        title = draft.title,
-                        description = draft.description,
-                        isPublic = draft.isPublic,
-                        openTimeStart = draft.openTimeStart,
-                        openTimeEnd = draft.openTimeEnd,
-                        clientRequestId = draft.clientRequestId,
-                    ),
+            _state.update {
+                it.copy(
+                    loading = true,
+                    message = null,
+                    creatingClientRequestId = draft.clientRequestId,
+                    completedCreateClientRequestId = null,
                 )
-                _state.update { current ->
-                    val markersById = current.markers.associateBy { it.id }.toMutableMap()
-                    markersById[createdMarker.id] = createdMarker
-                    current.copy(
-                        loading = false,
-                        markers = markersById.values.toList(),
-                        selectedMarkerId = createdMarker.id,
-                        message = "已提交管理员审核",
-                    )
+            }
+            try {
+                when (val result = markerSubmitCoordinator.submit(repository, draft)) {
+                    is MarkerSubmitResult.Success -> {
+                        mergeCreatedMarker(
+                            marker = result.marker,
+                            message = "已提交管理员审核",
+                            clientRequestId = draft.clientRequestId,
+                        )
+                    }
+
+                    is MarkerSubmitResult.PartialImageFailure -> {
+                        mergeCreatedMarker(
+                            marker = result.marker,
+                            message = result.message,
+                            clientRequestId = draft.clientRequestId,
+                        )
+                    }
+
+                    is MarkerSubmitResult.Failure -> {
+                        _state.update {
+                            it.copy(
+                                loading = false,
+                                creatingClientRequestId = null,
+                                message = result.message,
+                            )
+                        }
+                    }
                 }
             } catch (error: CancellationException) {
                 throw error
@@ -182,10 +194,30 @@ class MapViewModel(
                 _state.update {
                     it.copy(
                         loading = false,
+                        creatingClientRequestId = null,
                         message = "点位提交失败",
                     )
                 }
             }
+        }
+    }
+
+    private fun mergeCreatedMarker(
+        marker: Marker,
+        message: String,
+        clientRequestId: String,
+    ) {
+        _state.update { current ->
+            val markersById = current.markers.associateBy { it.id }.toMutableMap()
+            markersById[marker.id] = marker
+            current.copy(
+                loading = false,
+                markers = markersById.values.toList(),
+                selectedMarkerId = marker.id,
+                message = message,
+                creatingClientRequestId = null,
+                completedCreateClientRequestId = clientRequestId,
+            )
         }
     }
 

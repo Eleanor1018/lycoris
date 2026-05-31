@@ -57,6 +57,8 @@ data class MapUiState(
     val visibleCategories: Set<MarkerCategory> = MarkerCategory.entries.toSet(),
     val ownerFilter: OwnerFilter = OwnerFilter.All,
     val message: String? = null,
+    val creatingClientRequestId: String? = null,
+    val completedCreateClientRequestId: String? = null,
 )
 
 val MapUiState.selectedMarker: Marker?

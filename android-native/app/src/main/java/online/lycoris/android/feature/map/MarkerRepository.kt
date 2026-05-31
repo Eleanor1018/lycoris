@@ -2,6 +2,9 @@ package online.lycoris.android.feature.map
 
 import kotlinx.coroutines.CancellationException
 import okhttp3.MultipartBody
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import okhttp3.RequestBody.Companion.toRequestBody
+import online.lycoris.android.core.image.LocalImage
 import online.lycoris.android.core.network.LycorisApi
 import retrofit2.Response
 
@@ -21,6 +24,8 @@ interface MapRepository {
     ): List<Marker>
 
     suspend fun createMarker(request: MarkerCreateRequest): Marker
+
+    suspend fun uploadMarkerImage(id: Long, image: LocalImage): Marker
 
     suspend fun deleteMarker(id: Long)
 
@@ -73,8 +78,14 @@ class MarkerRepository(
         api.deleteMarker(id).throwIfUnsuccessful()
     }
 
-    suspend fun uploadMarkerImage(id: Long, image: MultipartBody.Part): Marker = repositoryCall("图片上传失败") {
-        api.uploadMarkerImage(id, image).bodyOrThrow().toMarker()
+    override suspend fun uploadMarkerImage(id: Long, image: LocalImage): Marker = repositoryCall("图片上传失败") {
+        val body = image.bytes.toRequestBody(image.mimeType.toMediaTypeOrNull())
+        val part = MultipartBody.Part.createFormData(
+            name = "file",
+            filename = image.fileName,
+            body = body,
+        )
+        api.uploadMarkerImage(id, part).bodyOrThrow().toMarker()
     }
 
     override suspend fun setFavorite(id: Long, favorite: Boolean): Unit = repositoryCall("收藏操作失败") {

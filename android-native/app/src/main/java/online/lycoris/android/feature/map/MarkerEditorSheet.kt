@@ -1,5 +1,8 @@
 package online.lycoris.android.feature.map
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -15,11 +18,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import online.lycoris.android.core.image.LocalImage
+import online.lycoris.android.core.image.PickedImageResult
+import online.lycoris.android.core.image.readPickedImage
 
 data class MarkerDraft(
     val lat: Double,
@@ -30,6 +38,7 @@ data class MarkerDraft(
     val isPublic: Boolean = true,
     val openTimeStart: String? = null,
     val openTimeEnd: String? = null,
+    val selectedImage: LocalImage? = null,
     val clientRequestId: String,
 )
 
@@ -51,10 +60,36 @@ fun MarkerEditorSheet(
     var isPublic by rememberSaveable(initialDraft.clientRequestId) {
         mutableStateOf(initialDraft.isPublic)
     }
+    var selectedImage by remember(initialDraft.clientRequestId) {
+        mutableStateOf(initialDraft.selectedImage)
+    }
+    var imageError by rememberSaveable(initialDraft.clientRequestId) {
+        mutableStateOf<String?>(null)
+    }
+    val context = LocalContext.current
+    val photoPicker = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.PickVisualMedia(),
+    ) { uri ->
+        if (uri == null) {
+            return@rememberLauncherForActivityResult
+        }
+        when (val result = readPickedImage(context.contentResolver, uri)) {
+            is PickedImageResult.Success -> {
+                selectedImage = result.image
+                imageError = null
+            }
+
+            is PickedImageResult.Invalid -> {
+                selectedImage = null
+                imageError = result.message
+            }
+        }
+    }
     val currentDraft = initialDraft.copy(
         title = title,
         description = description,
         isPublic = isPublic,
+        selectedImage = selectedImage,
     )
 
     ModalBottomSheet(
@@ -99,6 +134,26 @@ fun MarkerEditorSheet(
                     onCheckedChange = { isPublic = it },
                 )
             }
+            Button(
+                enabled = !submitting,
+                onClick = {
+                    photoPicker.launch(
+                        PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly),
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("选择图片")
+            }
+            Text(
+                text = imageError ?: selectedImage?.fileName ?: "未选择图片",
+                color = if (imageError == null) {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                } else {
+                    MaterialTheme.colorScheme.error
+                },
+                style = MaterialTheme.typography.bodyMedium,
+            )
             Button(
                 enabled = !submitting && title.isNotBlank(),
                 onClick = { onSubmit(currentDraft) },
