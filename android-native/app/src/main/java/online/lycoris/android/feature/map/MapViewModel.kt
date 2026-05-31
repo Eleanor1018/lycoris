@@ -9,6 +9,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 
 class MapViewModel(
     private val repository: MapRepository,
@@ -17,6 +19,9 @@ class MapViewModel(
     val state: StateFlow<MapUiState> = _state.asStateFlow()
     private var loadViewportJob: Job? = null
     private var loadViewportRequestId = 0L
+    private var loadNearbyJob: Job? = null
+    private var loadNearbyRequestId = 0L
+    private val favoriteMutex = Mutex()
 
     fun loadViewport(bounds: ViewportBounds) {
         loadViewportJob?.cancel()
@@ -78,21 +83,23 @@ class MapViewModel(
 
     fun toggleFavorite(markerId: Long) {
         viewModelScope.launch {
-            try {
-                val nextFavorite = markerId !in state.value.favoriteIds
-                repository.setFavorite(markerId, nextFavorite)
-                val favoriteIds = repository.loadFavoriteIds().toSet()
-                _state.update {
-                    it.copy(
-                        favoriteIds = favoriteIds,
-                        message = null,
-                    )
-                }
-            } catch (error: CancellationException) {
-                throw error
-            } catch (error: Throwable) {
-                _state.update {
-                    it.copy(message = error.message?.takeIf { message -> message.isNotBlank() } ?: "收藏操作失败")
+            favoriteMutex.withLock {
+                try {
+                    val nextFavorite = markerId !in state.value.favoriteIds
+                    repository.setFavorite(markerId, nextFavorite)
+                    val favoriteIds = repository.loadFavoriteIds().toSet()
+                    _state.update {
+                        it.copy(
+                            favoriteIds = favoriteIds,
+                            message = null,
+                        )
+                    }
+                } catch (error: CancellationException) {
+                    throw error
+                } catch (error: Throwable) {
+                    _state.update {
+                        it.copy(message = error.message?.takeIf { message -> message.isNotBlank() } ?: "收藏操作失败")
+                    }
                 }
             }
         }
@@ -104,29 +111,35 @@ class MapViewModel(
         radius: Int,
         category: MarkerCategory,
     ) {
-        viewModelScope.launch {
+        loadNearbyJob?.cancel()
+        val requestId = ++loadNearbyRequestId
+        loadNearbyJob = viewModelScope.launch {
             _state.update { it.copy(loading = true, message = null) }
 
             try {
                 val nearbyMarkers = repository.loadNearby(lat, lng, radius, category)
-                _state.update { current ->
-                    val markersById = current.markers.associateBy { it.id }.toMutableMap()
-                    nearbyMarkers.forEach { marker ->
-                        markersById[marker.id] = marker
+                if (requestId == loadNearbyRequestId) {
+                    _state.update { current ->
+                        val markersById = current.markers.associateBy { it.id }.toMutableMap()
+                        nearbyMarkers.forEach { marker ->
+                            markersById[marker.id] = marker
+                        }
+                        current.copy(
+                            loading = false,
+                            markers = markersById.values.toList(),
+                        )
                     }
-                    current.copy(
-                        loading = false,
-                        markers = markersById.values.toList(),
-                    )
                 }
             } catch (error: CancellationException) {
                 throw error
             } catch (error: Throwable) {
-                _state.update {
-                    it.copy(
-                        loading = false,
-                        message = error.message?.takeIf { message -> message.isNotBlank() } ?: "附近点位查询失败",
-                    )
+                if (requestId == loadNearbyRequestId) {
+                    _state.update {
+                        it.copy(
+                            loading = false,
+                            message = error.message?.takeIf { message -> message.isNotBlank() } ?: "附近点位查询失败",
+                        )
+                    }
                 }
             }
         }

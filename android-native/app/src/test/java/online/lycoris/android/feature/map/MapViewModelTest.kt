@@ -26,7 +26,9 @@ class MapViewModelTest {
     fun loadViewportOnlyLatestRequestUpdatesState() = runTest {
         val firstRequest = CompletableDeferred<List<Marker>>()
         val secondRequest = CompletableDeferred<List<Marker>>()
-        val repository = FakeMapRepository(listOf(firstRequest, secondRequest))
+        val repository = FakeMapRepository(
+            viewportResults = mutableListOf(firstRequest, secondRequest),
+        )
         val viewModel = MapViewModel(repository)
 
         viewModel.loadViewport(ViewportBounds(0.0, 1.0, 0.0, 1.0))
@@ -44,41 +46,198 @@ class MapViewModelTest {
         assertEquals(null, viewModel.state.value.message)
     }
 
-    private fun marker(id: Long): Marker = Marker(
-        id = id,
-        lat = 39.9,
-        lng = 116.4,
-        category = MarkerCategory.AccessibleToilet,
-        title = "未命名点位",
-        description = "",
-        isPublic = true,
-        isActive = true,
-    )
+    @Test
+    fun loadFavoritesUpdatesFavoriteIds() = runTest {
+        val repository = FakeMapRepository(
+            favoriteResults = mutableListOf(CompletableDeferred(listOf(7L, 8L))),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadFavorites()
+        advanceUntilIdle()
+
+        assertEquals(setOf(7L, 8L), viewModel.state.value.favoriteIds)
+        assertEquals(null, viewModel.state.value.message)
+    }
+
+    @Test
+    fun loadFavoritesShowsFailureMessage() = runTest {
+        val repository = FakeMapRepository(
+            favoriteResults = mutableListOf(CompletableDeferred<List<Long>>().also {
+                it.completeExceptionally(IllegalStateException("收藏加载失败"))
+            }),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadFavorites()
+        advanceUntilIdle()
+
+        assertEquals("收藏加载失败", viewModel.state.value.message)
+    }
+
+    @Test
+    fun toggleFavoriteSerializesRapidTapsAgainstLatestState() = runTest {
+        val firstSet = CompletableDeferred<Unit>()
+        val secondSet = CompletableDeferred<Unit>()
+        val repository = FakeMapRepository(
+            setFavoriteGates = mutableListOf(firstSet, secondSet),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.toggleFavorite(7)
+        runCurrent()
+        viewModel.toggleFavorite(7)
+        runCurrent()
+
+        firstSet.complete(Unit)
+        advanceUntilIdle()
+        secondSet.complete(Unit)
+        advanceUntilIdle()
+
+        assertEquals(listOf(true, false), repository.setFavoriteCalls.map { it.favorite })
+        assertEquals(emptySet<Long>(), viewModel.state.value.favoriteIds)
+        assertEquals(null, viewModel.state.value.message)
+    }
+
+    @Test
+    fun toggleFavoriteShowsFailureMessage() = runTest {
+        val repository = FakeMapRepository(
+            setFavoriteFailure = IllegalStateException("收藏操作失败"),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.toggleFavorite(7)
+        advanceUntilIdle()
+
+        assertEquals("收藏操作失败", viewModel.state.value.message)
+    }
+
+    @Test
+    fun loadNearbyMergesMarkersById() = runTest {
+        val repository = FakeMapRepository(
+            viewportResults = mutableListOf(CompletableDeferred(listOf(marker(id = 1), marker(id = 2, title = "旧点位")))),
+            nearbyResults = mutableListOf(CompletableDeferred(listOf(marker(id = 2, title = "新点位"), marker(id = 3)))),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadViewport(ViewportBounds(0.0, 1.0, 0.0, 1.0))
+        advanceUntilIdle()
+        viewModel.loadNearby(39.9, 116.4, 1_000, MarkerCategory.AccessibleToilet)
+        advanceUntilIdle()
+
+        assertEquals(listOf(1L, 2L, 3L), viewModel.state.value.markers.map { it.id })
+        assertEquals("新点位", viewModel.state.value.markers.first { it.id == 2L }.title)
+        assertFalse(viewModel.state.value.loading)
+        assertEquals(null, viewModel.state.value.message)
+    }
+
+    @Test
+    fun loadNearbyOnlyLatestRequestUpdatesState() = runTest {
+        val firstRequest = CompletableDeferred<List<Marker>>()
+        val secondRequest = CompletableDeferred<List<Marker>>()
+        val repository = FakeMapRepository(
+            nearbyResults = mutableListOf(firstRequest, secondRequest),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadNearby(39.9, 116.4, 1_000, MarkerCategory.AccessibleToilet)
+        runCurrent()
+        viewModel.loadNearby(40.0, 116.5, 2_000, MarkerCategory.BabyRoom)
+        runCurrent()
+
+        secondRequest.complete(listOf(marker(id = 2)))
+        advanceUntilIdle()
+        firstRequest.complete(listOf(marker(id = 1)))
+        advanceUntilIdle()
+
+        assertEquals(listOf(2L), viewModel.state.value.markers.map { it.id })
+        assertFalse(viewModel.state.value.loading)
+        assertEquals(null, viewModel.state.value.message)
+    }
+
+    @Test
+    fun loadNearbyShowsFailureMessage() = runTest {
+        val repository = FakeMapRepository(
+            nearbyResults = mutableListOf(CompletableDeferred<List<Marker>>().also {
+                it.completeExceptionally(IllegalStateException("附近点位查询失败"))
+            }),
+        )
+        val viewModel = MapViewModel(repository)
+
+        viewModel.loadNearby(39.9, 116.4, 1_000, MarkerCategory.AccessibleToilet)
+        advanceUntilIdle()
+
+        assertFalse(viewModel.state.value.loading)
+        assertEquals("附近点位查询失败", viewModel.state.value.message)
+    }
 }
 
+private data class SetFavoriteCall(
+    val id: Long,
+    val favorite: Boolean,
+)
+
 private class FakeMapRepository(
-    private val viewportResults: List<CompletableDeferred<List<Marker>>>,
+    private val viewportResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
+    private val favoriteResults: MutableList<CompletableDeferred<List<Long>>> = mutableListOf(),
+    private val nearbyResults: MutableList<CompletableDeferred<List<Marker>>> = mutableListOf(),
+    private val setFavoriteGates: MutableList<CompletableDeferred<Unit>> = mutableListOf(),
+    private val setFavoriteFailure: Throwable? = null,
 ) : MapRepository {
-    private var viewportCalls = 0
+    private val favorites = mutableSetOf<Long>()
+    val setFavoriteCalls = mutableListOf<SetFavoriteCall>()
 
     override suspend fun loadViewport(
         bounds: ViewportBounds,
         categories: List<MarkerCategory>,
     ): List<Marker> {
-        return viewportResults[viewportCalls++].await()
+        return viewportResults.removeAt(0).await()
     }
 
-    override suspend fun loadFavoriteIds(): List<Long> = emptyList()
+    override suspend fun loadFavoriteIds(): List<Long> {
+        return if (favoriteResults.isNotEmpty()) {
+            favoriteResults.removeAt(0).await()
+        } else {
+            favorites.toList()
+        }
+    }
 
     override suspend fun loadNearby(
         lat: Double,
         lng: Double,
         radius: Int,
         category: MarkerCategory,
-    ): List<Marker> = emptyList()
+    ): List<Marker> {
+        return nearbyResults.removeAt(0).await()
+    }
 
-    override suspend fun setFavorite(id: Long, favorite: Boolean) = Unit
+    override suspend fun setFavorite(id: Long, favorite: Boolean) {
+        setFavoriteFailure?.let { throw it }
+        setFavoriteCalls.add(SetFavoriteCall(id, favorite))
+        if (setFavoriteGates.isNotEmpty()) {
+            setFavoriteGates.removeAt(0).await()
+        }
+        if (favorite) {
+            favorites.add(id)
+        } else {
+            favorites.remove(id)
+        }
+    }
 }
+
+private fun marker(
+    id: Long,
+    title: String = "未命名点位",
+): Marker = Marker(
+    id = id,
+    lat = 39.9,
+    lng = 116.4,
+    category = MarkerCategory.AccessibleToilet,
+    title = title,
+    description = "",
+    isPublic = true,
+    isActive = true,
+)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class MainDispatcherRule(
