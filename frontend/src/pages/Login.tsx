@@ -4,6 +4,7 @@ import {useNavigate, Link as RouterLink} from "react-router-dom";
 import { Alert, Button, TextField, Typography } from '@mui/material'
 import {useAuth, type Me} from "../auth/AuthProvider.tsx";
 import AuthPageShell from '../components/AuthPageShell'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type LoginResponse = {
     code: number
@@ -32,6 +33,7 @@ export default function Login(){
     const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
     const {refresh, setUser} = useAuth();
+    const { tr } = useLanguage()
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
             borderRadius: 999,
@@ -67,28 +69,28 @@ export default function Login(){
                 navigate('/');
             }
             else{
-                setErrorMessage(response.data.message ?? 'login failed.');
+                setErrorMessage(response.data.message ?? tr('登录失败。', 'Login failed.'));
             }
         }catch(err: unknown){
-            const errorMSG = getErrorMessage(err, 'login failed.')
+            const errorMSG = getErrorMessage(err, tr('登录失败。', 'Login failed.'))
             setErrorMessage(errorMSG);
         }
     }
 
     return(
         <AuthPageShell
-            title="Log in"
+            title={tr('登录', 'Log in')}
             onSubmit={handleLogin}
             footer={
                 <Typography variant="body2" sx={{ color: '#1d1b20', textAlign: 'center' }}>
-                    New here? <RouterLink to="/register">Create an account</RouterLink>
+                    {tr('第一次来？', 'New here?')} <RouterLink to="/register">{tr('创建账号', 'Create an account')}</RouterLink>
                 </Typography>
             }
         >
                 {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
                 <TextField
-                    label="Username or email"
+                    label={tr('用户名或邮箱', 'Username or email')}
                     value={loginForm.username}
                     onChange={(e) => setLoginForm((prev) => ({...prev, username: e.target.value}))}
                     autoComplete="username"
@@ -96,7 +98,7 @@ export default function Login(){
                 />
 
                 <TextField
-                    label="Password"
+                    label={tr('密码', 'Password')}
                     type="password"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm((prev) => ({...prev, password: e.target.value}))}
@@ -120,7 +122,7 @@ export default function Login(){
                         '&:hover': { bgcolor: '#c8afff' },
                     }}
                 >
-                    Log in
+                    {tr('登录', 'Log in')}
                 </Button>
         </AuthPageShell>
 

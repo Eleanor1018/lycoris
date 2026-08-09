@@ -27,6 +27,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+import static com.lycoris.i18n.UserMessages.Key.*;
+import static com.lycoris.i18n.UserMessages.text;
+
 @RestController
 @RequestMapping("/api/markers")
 public class MarkerController {
@@ -59,19 +62,19 @@ public class MarkerController {
         Object u = session.getAttribute("username");
         Integer userId = (Integer) session.getAttribute("userId");
         if (u == null || userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String username = String.valueOf(u);
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         // 最小校验
         if (req.getLat() == null || req.getLng() == null || req.getCategory() == null || req.getTitle() == null) {
-            return ResponseEntity.badRequest().body("Required fields are missing");
+            return ResponseEntity.badRequest().body(text(REQUIRED_FIELDS_MISSING));
         }
 
         try {
@@ -103,10 +106,10 @@ public class MarkerController {
             @RequestParam(value = "category", defaultValue = "accessible_toilet") String category
     ) {
         if (lat == null || lng == null) {
-            return ResponseEntity.badRequest().body("Missing lat/lng parameters");
+            return ResponseEntity.badRequest().body(text(MISSING_LAT_LNG));
         }
         if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            return ResponseEntity.badRequest().body("Invalid lat/lng values");
+            return ResponseEntity.badRequest().body(text(INVALID_LAT_LNG));
         }
         try {
             return ResponseEntity.ok(markerService.nearbyPublicActive(lat, lng, radius == null ? 1000 : radius, category));
@@ -116,7 +119,7 @@ public class MarkerController {
             String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
             if (msg.contains("st_dwithin") || msg.contains("postgis")) {
                 return ResponseEntity.status(500)
-                        .body("PostGIS is not enabled in the database. Run: CREATE EXTENSION postgis;");
+                        .body(text(POSTGIS_NOT_ENABLED));
             }
             throw e;
         }
@@ -131,7 +134,7 @@ public class MarkerController {
             @RequestParam(value = "categories", required = false) String categoriesCsv
     ) {
         if (minLat == null || maxLat == null || minLng == null || maxLng == null) {
-            return ResponseEntity.badRequest().body("Viewport bounds are required");
+            return ResponseEntity.badRequest().body(text(VIEWPORT_BOUNDS_REQUIRED));
         }
         try {
             List<String> categories = null;
@@ -163,10 +166,10 @@ public class MarkerController {
     ) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body("File is empty");
+            return ResponseEntity.badRequest().body(text(FILE_EMPTY));
         }
 
         return markerService.findById(id).map(marker -> {
@@ -174,7 +177,7 @@ public class MarkerController {
                     .map(user -> String.valueOf(user.getPublicId()))
                     .orElse(null);
             if (userPublicId == null) {
-                return ResponseEntity.status(401).body("Please sign in first");
+                return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
             }
             try {
                 String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
@@ -197,9 +200,9 @@ public class MarkerController {
 
                 return ResponseEntity.ok(marker);
             } catch (Exception e) {
-                return ResponseEntity.status(500).body("Upload failed");
+                return ResponseEntity.status(500).body(text(UPLOAD_FAILED));
             }
-        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+        }).orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @PatchMapping("/{id}")
@@ -210,13 +213,13 @@ public class MarkerController {
     ) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         return markerService.findById(id)
@@ -237,7 +240,7 @@ public class MarkerController {
                 proposedOpenStart = markerService.normalizeOpenTime(req.getOpenTimeStart());
                 proposedOpenEnd = markerService.normalizeOpenTime(req.getOpenTimeEnd());
                 if ((proposedOpenStart == null) != (proposedOpenEnd == null)) {
-                    throw new IllegalArgumentException("Provide both opening and closing times, or leave both empty");
+                    throw new IllegalArgumentException(text(OPENING_AND_CLOSING_TIMES_REQUIRED));
                 }
             }
 
@@ -263,7 +266,7 @@ public class MarkerController {
             editProposalRepo.save(proposal);
 
             return ResponseEntity.ok(marker);
-        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+        }).orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -276,40 +279,40 @@ public class MarkerController {
     public ResponseEntity<?> deleteMarker(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         return markerService.findById(id).map(marker -> {
             if (marker.getUserPublicId() == null || !userPublicId.equals(marker.getUserPublicId())) {
-                return ResponseEntity.status(403).body("Permission denied");
+                return ResponseEntity.status(403).body(text(PERMISSION_DENIED));
             }
             favoriteRepo.deleteByMarkerId(id);
             markerService.delete(marker);
             return ResponseEntity.ok().build();
-        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+        }).orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @PostMapping("/{id}/favorite")
     public ResponseEntity<?> favorite(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         if (!markerService.findById(id).isPresent()) {
-            return ResponseEntity.status(404).body("Marker not found");
+            return ResponseEntity.status(404).body(text(MARKER_NOT_FOUND));
         }
         if (!favoriteRepo.existsByUserPublicIdAndMarkerId(userPublicId, id)) {
             MarkerFavorite fav = new MarkerFavorite();
@@ -324,13 +327,13 @@ public class MarkerController {
     public ResponseEntity<?> unfavorite(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         favoriteRepo.deleteByUserPublicIdAndMarkerId(userPublicId, id);
@@ -341,13 +344,13 @@ public class MarkerController {
     public ResponseEntity<?> myFavorites(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         List<MarkerFavorite> favs = favoriteRepo.findByUserPublicId(userPublicId);
@@ -359,13 +362,13 @@ public class MarkerController {
     public ResponseEntity<?> myCreatedMarkers(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         return ResponseEntity.ok(markerService.listByUserPublicId(userPublicId));
     }
@@ -374,13 +377,13 @@ public class MarkerController {
     public ResponseEntity<?> myFavoriteMarkers(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("Please sign in first");
+            return ResponseEntity.status(401).body(text(SIGN_IN_FIRST));
         }
 
         List<Long> ids = favoriteRepo.findByUserPublicId(userPublicId)

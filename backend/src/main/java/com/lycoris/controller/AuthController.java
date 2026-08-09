@@ -29,6 +29,18 @@ import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static com.lycoris.i18n.UserMessages.Key.FILE_EMPTY;
+import static com.lycoris.i18n.UserMessages.Key.INVALID_REGISTRATION_REQUEST;
+import static com.lycoris.i18n.UserMessages.Key.INVALID_USERNAME_OR_PASSWORD;
+import static com.lycoris.i18n.UserMessages.Key.MISSING_PARAMETERS;
+import static com.lycoris.i18n.UserMessages.Key.NOT_SIGNED_IN;
+import static com.lycoris.i18n.UserMessages.Key.PASSWORD_CHANGE_INVALID;
+import static com.lycoris.i18n.UserMessages.Key.TOO_MANY_REQUESTS;
+import static com.lycoris.i18n.UserMessages.Key.UPLOAD_FAILED;
+import static com.lycoris.i18n.UserMessages.Key.USERNAME_OR_EMAIL_EXISTS;
+import static com.lycoris.i18n.UserMessages.Key.USER_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.text;
+
 
 @RestController
 @RequestMapping("/api")
@@ -72,7 +84,7 @@ public class AuthController {
         User user = userService.login(request.getUsername(), request.getPassword());
 
         if (user == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(4001, "Invalid username or password"));
+            return ResponseEntity.status(401).body(ApiResponse.error(4001, text(INVALID_USERNAME_OR_PASSWORD)));
         }
 
         rememberUserInSession(httpRequest, session, user);
@@ -92,11 +104,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody RegisterRequest request, HttpSession session, HttpServletRequest httpRequest){
         if (request.getWebsite() != null && !request.getWebsite().isBlank()) {
-            return ResponseEntity.status(400).body(ApiResponse.error(4004, "Invalid registration request"));
+            return ResponseEntity.status(400).body(ApiResponse.error(4004, text(INVALID_REGISTRATION_REQUEST)));
         }
         String clientIp = resolveClientIp(httpRequest);
         if (!registerRateLimitService.tryAcquire(clientIp)) {
-            return ResponseEntity.status(429).body(ApiResponse.error(429, "Too many requests. Please try again later"));
+            return ResponseEntity.status(429).body(ApiResponse.error(429, text(TOO_MANY_REQUESTS)));
         }
         User created = userService.register(
                 request.getUsername(),
@@ -105,7 +117,7 @@ public class AuthController {
                 request.getPassword()
         );
         if (created == null) {
-            return ResponseEntity.status(400).body(ApiResponse.error(4002, "Username or email already exists"));
+            return ResponseEntity.status(400).body(ApiResponse.error(4002, text(USERNAME_OR_EMAIL_EXISTS)));
         }
 
         rememberUserInSession(httpRequest, session, created);
@@ -130,7 +142,7 @@ public class AuthController {
         Integer userId = resolveSessionUserId(session);
 
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, text(NOT_SIGNED_IN)));
         }
 
         return userService.findById(userId).map(user -> ResponseEntity.ok(
@@ -151,7 +163,7 @@ public class AuthController {
                     session.removeAttribute("username");
                     session.removeAttribute("email");
                     session.removeAttribute("role");
-                    return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
+                    return ResponseEntity.status(401).body(ApiResponse.error(401, text(NOT_SIGNED_IN)));
                 }
         );
     }
@@ -179,7 +191,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> updateMe(@RequestBody UpdateProfileRequest request, HttpSession session) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, text(NOT_SIGNED_IN)));
         }
 
         return userService.findById(userId).map(user -> {
@@ -209,7 +221,7 @@ public class AuthController {
                     updated.getSignature()
             );
             return ResponseEntity.ok(ApiResponse.success(data));
-        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "User not found")));
+        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, text(USER_NOT_FOUND))));
     }
 
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -219,10 +231,10 @@ public class AuthController {
     ) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, text(NOT_SIGNED_IN)));
         }
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(400, "File is empty"));
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, text(FILE_EMPTY)));
         }
 
         return userService.findById(userId).map(user -> {
@@ -250,19 +262,19 @@ public class AuthController {
                 );
                 return ResponseEntity.ok(ApiResponse.success(data));
             } catch (Exception e) {
-                return ResponseEntity.status(500).body(ApiResponse.<UserResponse>error(500, "Upload failed"));
+                return ResponseEntity.status(500).body(ApiResponse.<UserResponse>error(500, text(UPLOAD_FAILED)));
             }
-        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "User not found")));
+        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, text(USER_NOT_FOUND))));
     }
 
     @PostMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request, HttpSession session) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.<Void>error(401, "Not signed in"));
+            return ResponseEntity.status(401).body(ApiResponse.<Void>error(401, text(NOT_SIGNED_IN)));
         }
         if (request.getOldPassword() == null || request.getNewPassword() == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.<Void>error(400, "Missing parameters"));
+            return ResponseEntity.badRequest().body(ApiResponse.<Void>error(400, text(MISSING_PARAMETERS)));
         }
 
         return userService.findById(userId)
@@ -271,12 +283,12 @@ public class AuthController {
                     if (!ok) {
                         return ResponseEntity.status(400).body(ApiResponse.<Void>error(
                                 400,
-                                "Current password is incorrect or the new password is invalid"
+                                text(PASSWORD_CHANGE_INVALID)
                         ));
                     }
                     return ResponseEntity.ok(ApiResponse.<Void>success(null));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<Void>error(404, "User not found")));
+                .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<Void>error(404, text(USER_NOT_FOUND))));
     }
 
     @PostMapping("/logout")

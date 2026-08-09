@@ -19,12 +19,13 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import Slugger from 'github-slugger'
+import { useLanguage, type Language } from '../i18n/LanguageProvider'
 
 const mdModules = import.meta.glob<string>('../docs/*.md', { query: '?raw', import: 'default' })
 
-async function loadAboutDoc(): Promise<string> {
-    const loader = mdModules['../docs/about.md']
-    if (!loader) throw new Error('Doc not found: about.md')
+async function loadAboutDoc(language: Language): Promise<string> {
+    const loader = mdModules[`../docs/about.${language}.md`]
+    if (!loader) throw new Error('DOC_NOT_FOUND')
     return await loader()
 }
 
@@ -74,8 +75,9 @@ export default function About() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     const navigate = useNavigate()
     const location = useLocation()
+    const { language, tr } = useLanguage()
 
-    const [content, setContent] = useState<string>('# Loading...')
+    const [content, setContent] = useState<string>(() => `# ${tr('加载中…', 'Loading…')}`)
     const [err, setErr] = useState('')
     const [tocItems, setTocItems] = useState<TocItem[]>([])
     const [mobileOpen, setMobileOpen] = useState(false)
@@ -86,23 +88,31 @@ export default function About() {
 
     useEffect(() => {
         let alive = true
-        void loadAboutDoc()
+        void loadAboutDoc(language)
             .then((md) => {
                 if (!alive) return
+                setErr('')
                 setContent(md)
                 setTocItems(buildToc(md))
             })
-            .catch((e) => {
+            .catch(() => {
                 if (!alive) return
-                setErr(String(e?.message ?? e))
-                setContent('# Could not load this page')
+                setErr(tr('关于页面加载失败。', 'Could not load the About page.'))
+                setContent(`# ${tr('无法加载此页面', 'Could not load this page')}`)
                 setTocItems([])
             })
 
         return () => {
             alive = false
         }
-    }, [])
+    }, [language, tr])
+
+    useEffect(() => {
+        document.title = tr('关于 Lycoris', 'About Lycoris')
+        return () => {
+            document.title = 'Lycoris'
+        }
+    }, [tr])
 
     useEffect(() => {
         if (!location.hash) return
@@ -137,7 +147,7 @@ export default function About() {
                         }}
                     >
                         <ListItemText
-                            primary="About Lycoris"
+                            primary={tr('关于 Lycoris', 'About Lycoris')}
                             primaryTypographyProps={{ fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}
                         />
                         {aboutOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -154,7 +164,7 @@ export default function About() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding aria-label="About page table of contents">
+                            <List dense disablePadding aria-label={tr('关于页面目录', 'About page table of contents')}>
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -183,7 +193,7 @@ export default function About() {
                 </List>
             </Box>
         ),
-        [aboutOpen, isMobile, navigate, tocItems]
+        [aboutOpen, isMobile, navigate, tocItems, tr]
     )
 
     return (
@@ -233,13 +243,13 @@ export default function About() {
                                 lineHeight: 1,
                             }}
                         >
-                            About
+                            {tr('关于', 'About')}
                         </Typography>
                         <Typography
                             variant="body2"
                             sx={{ mt: 0.75, color: 'var(--ly-color-muted)' }}
                         >
-                            Contents
+                            {tr('目录', 'Contents')}
                         </Typography>
                     </Box>
                     <Box sx={{ height: 'calc(100% - 78px)', overflowY: 'auto', py: 0.75 }}>
@@ -274,7 +284,7 @@ export default function About() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="Open About page table of contents"
+                    aria-label={tr('打开关于页面目录', 'Open About page table of contents')}
                     sx={{
                         position: 'fixed',
                         right: 16,

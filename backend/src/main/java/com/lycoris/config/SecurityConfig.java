@@ -19,6 +19,10 @@ import org.springframework.http.HttpMethod;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.lycoris.i18n.UserMessages.Key.SPRING_SECURITY_ERROR;
+import static com.lycoris.i18n.UserMessages.localeForAcceptLanguage;
+import static com.lycoris.i18n.UserMessages.textForLocale;
+
 
 @Configuration
 @EnableWebSecurity
@@ -51,7 +55,11 @@ public class SecurityConfig {
                     System.out.println("SECURITY_BLOCKED " + request.getMethod() + " " + request.getRequestURI());
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setContentType("application/json; charset=UTF-8");
-                    response.getWriter().write("{\"message\":\"Spring Security Error\"}");
+                    String message = textForLocale(
+                            SPRING_SECURITY_ERROR,
+                            localeForAcceptLanguage(request.getHeader("Accept-Language"))
+                    );
+                    response.getWriter().write("{\"message\":\"" + message + "\"}");
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .addFilterBefore(new SessionAuthFilter(), UsernamePasswordAuthenticationFilter.class);

@@ -7,9 +7,10 @@ import React, {
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import {toBackendAssetUrl} from '../config/runtime';
-import {ApiError, requestJson} from '../lib/http';
-import type {ApiResponse, Me} from '../types/auth';
+import { toBackendAssetUrl } from '../config/runtime';
+import { ApiError, requestJson } from '../lib/http';
+import { tr } from '../i18n/LanguageProvider';
+import type { ApiResponse, Me } from '../types/auth';
 
 type AuthContextValue = {
   user: Me | null;
@@ -67,7 +68,7 @@ const getPayloadData = <T,>(payload: ApiResponse<T> | T): T | null => {
   return payload as T;
 };
 
-export function AuthProvider({children}: {children: React.ReactNode}) {
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -89,17 +90,26 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     }
   }, [setAuthUser]);
 
-  const login = useCallback(async (username: string, password: string) => {
-    const payload = await requestJson<ApiResponse<Me>>('/api/login', {
-      method: 'POST',
-      body: JSON.stringify({username, password}),
-    });
-    const me = getPayloadData(payload);
-    if (!me) {
-      throw new ApiError(500, 'Login succeeded but user payload is empty');
-    }
-    setAuthUser(me);
-  }, [setAuthUser]);
+  const login = useCallback(
+    async (username: string, password: string) => {
+      const payload = await requestJson<ApiResponse<Me>>('/api/login', {
+        method: 'POST',
+        body: JSON.stringify({ username, password }),
+      });
+      const me = getPayloadData(payload);
+      if (!me) {
+        throw new ApiError(
+          500,
+          tr(
+            '登录成功，但用户数据为空',
+            'Login succeeded but user payload is empty',
+          ),
+        );
+      }
+      setAuthUser(me);
+    },
+    [setAuthUser],
+  );
 
   const register = useCallback(
     async (payload: {
@@ -121,7 +131,13 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       });
       const me = getPayloadData(result);
       if (!me) {
-        throw new ApiError(500, 'Register succeeded but user payload is empty');
+        throw new ApiError(
+          500,
+          tr(
+            '注册成功，但用户数据为空',
+            'Register succeeded but user payload is empty',
+          ),
+        );
       }
       setAuthUser(me);
     },

@@ -4,6 +4,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import axios from 'axios'
 import { useAuth } from '../auth/AuthProvider'
 import EditProfileDialog from '../components/EditProfileDialog'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 const desktopPinPath =
     'M1217 443C1244.84 443 1268.68 433.052 1288.51 413.155C1308.34 393.258 1318.25 369.34 1318.25 341.4C1318.25 313.46 1308.34 289.542 1288.51 269.645C1268.68 249.748 1244.84 239.8 1217 239.8C1189.16 239.8 1165.32 249.748 1145.49 269.645C1125.66 289.542 1115.75 313.46 1115.75 341.4C1115.75 369.34 1125.66 393.258 1145.49 413.155C1165.32 433.052 1189.16 443 1217 443ZM1217 816.38C1319.94 721.553 1396.3 635.405 1446.08 557.935C1495.86 480.465 1520.75 411.673 1520.75 351.56C1520.75 259.273 1491.43 183.708 1432.79 124.865C1374.15 66.0217 1302.22 36.6 1217 36.6C1131.78 36.6 1059.85 66.0217 1001.21 124.865C942.57 183.708 913.25 259.273 913.25 351.56C913.25 411.673 938.141 480.465 987.922 557.935C1037.7 635.405 1114.06 721.553 1217 816.38ZM1217 951C1081.16 835.007 979.695 727.268 912.617 627.785C845.539 528.302 812 436.227 812 351.56C812 224.56 852.711 123.383 934.133 48.03C1015.55 -27.3233 1109.84 -65 1217 -65C1324.16 -65 1418.45 -27.3233 1499.87 48.03C1581.29 123.383 1622 224.56 1622 351.56C1622 436.227 1588.46 528.302 1521.38 627.785C1454.3 727.268 1352.84 835.007 1217 951Z'
@@ -51,6 +52,7 @@ function HomePinBackdrop() {
 }
 
 export default function Home() {
+    const { tr } = useLanguage()
     const { user, refresh } = useAuth()
     const [editOpen, setEditOpen] = useState(false)
     const [nickname, setNickname] = useState('')
@@ -107,7 +109,7 @@ export default function Home() {
                 >
                     <Typography
                         component="h1"
-                        aria-label="Trans Support Together"
+                        aria-label={tr('跨越山海，并肩同行', 'Trans Support Together')}
                         sx={{
                             m: 0,
                             color: '#000',
@@ -120,9 +122,9 @@ export default function Home() {
                             userSelect: 'none',
                         }}
                     >
-                        <Box component="span" sx={{ display: 'block' }}>TRANS-</Box>
-                        <Box component="span" sx={{ display: 'block' }}>SUPPORT</Box>
-                        <Box component="span" sx={{ display: 'block' }}>TOGETHER</Box>
+                        <Box component="span" sx={{ display: 'block' }}>{tr('跨越山海', 'TRANS-')}</Box>
+                        <Box component="span" sx={{ display: 'block' }}>{tr('并肩', 'SUPPORT')}</Box>
+                        <Box component="span" sx={{ display: 'block' }}>{tr('同行', 'TOGETHER')}</Box>
                     </Typography>
 
                     <Typography
@@ -139,14 +141,14 @@ export default function Home() {
                         }}
                     >
                         <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
-                            Welcome to Lycoris, a platform sharing accessible facilities and mutual-aid resources for transgender people.
+                            {tr('欢迎来到 Lycoris，一个为跨性别群体分享无障碍设施和互助资源的平台。', 'Welcome to Lycoris, a platform sharing accessible facilities and mutual-aid resources for transgender people.')}
                         </Box>
                         <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>
-                            Welcome to Lycoris
+                            {tr('欢迎来到 Lycoris', 'Welcome to Lycoris')}
                             <br />
-                            A platform sharing accessible facilities
+                            {tr('为跨性别群体分享无障碍设施', 'A platform sharing accessible facilities')}
                             <br />
-                            and mutual-aid resources for transgender people
+                            {tr('与互助资源的平台', 'and mutual-aid resources for transgender people')}
                         </Box>
                     </Typography>
 
@@ -173,7 +175,7 @@ export default function Home() {
                             },
                         }}
                     >
-                        Open map
+                        {tr('打开地图', 'Open map')}
                     </Button>
                 </Box>
             </Box>
@@ -211,7 +213,7 @@ export default function Home() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setSaveOpen(false)}>
-                    Welcome! Your profile has been saved.
+                    {tr('欢迎！你的资料已保存。', 'Welcome! Your profile has been saved.')}
                 </Alert>
             </Snackbar>
         </>

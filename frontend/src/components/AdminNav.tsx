@@ -1,5 +1,6 @@
 import { Button, Stack } from '@mui/material'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 const adminNavButtonSx = {
     borderRadius: 999,
@@ -27,12 +28,13 @@ const adminNavButtonSx = {
 export default function AdminNav() {
     const navigate = useNavigate()
     const location = useLocation()
+    const { tr } = useLanguage()
 
     const items = [
-        { label: 'Admin access', path: '/admin' },
-        { label: 'Review center', path: '/admin/review' },
-        { label: 'All places', path: '/admin/all' },
-        { label: 'User management', path: '/admin/usr' },
+        { label: tr('管理入口', 'Admin access'), path: '/admin' },
+        { label: tr('审核中心', 'Review center'), path: '/admin/review' },
+        { label: tr('全量点位', 'All places'), path: '/admin/all' },
+        { label: tr('用户管理', 'User management'), path: '/admin/usr' },
     ]
 
     return (

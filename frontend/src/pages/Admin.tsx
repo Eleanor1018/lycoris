@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
 import { toBackendAssetUrl } from '../config/runtime'
 import { adminContainedButtonSx, adminPaginationSx } from '../styles/adminButtons'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type AdminMarker = {
     id: number
@@ -64,15 +65,6 @@ type PendingEditProposal = {
     createdAt?: string
 }
 
-const categoryLabel: Record<string, string> = {
-    accessible_toilet: 'Accessible Restroom',
-    friendly_clinic: 'Trans-Friendly Clinic',
-    baby_room: 'Nursing Room',
-    self_definition: 'Custom',
-}
-
-const formatCategory = (category: string) => categoryLabel[category] ?? 'Custom'
-
 const statusColor = (status?: string) => {
     switch ((status || '').toUpperCase()) {
         case 'APPROVED':
@@ -87,6 +79,14 @@ const statusColor = (status?: string) => {
 export default function Admin() {
     const PAGE_SIZE = 10
     const navigate = useNavigate()
+    const { tr } = useLanguage()
+    const categoryLabel: Record<string, string> = {
+        accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
+        friendly_clinic: tr('跨性别友好医疗机构', 'Trans-Friendly Clinic'),
+        baby_room: tr('母婴室', 'Nursing Room'),
+        self_definition: tr('自定义', 'Custom'),
+    }
+    const formatCategory = (category: string) => categoryLabel[category] ?? tr('自定义', 'Custom')
     const [pending, setPending] = useState<AdminMarker[]>([])
     const [pendingEdits, setPendingEdits] = useState<PendingEditProposal[]>([])
     const [pendingImages, setPendingImages] = useState<PendingImageProposal[]>([])
@@ -121,11 +121,11 @@ export default function Admin() {
             setPendingImages(imageRes.data || [])
             setError(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not load the review queue.'))
+            setError(getErrorMessage(e, tr('审核队列加载失败。', 'Could not load the review queue.')))
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [tr])
 
     useEffect(() => {
         void loadPending()
@@ -166,7 +166,7 @@ export default function Admin() {
             await axios.post(`/api/admin/markers/${id}/${action}`, null, { withCredentials: true })
             setPending(prev => prev.filter(item => item.id !== id))
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not complete the action.'))
+            setError(getErrorMessage(e, tr('操作失败。', 'Could not complete the action.')))
         }
     }
 
@@ -175,7 +175,7 @@ export default function Admin() {
             await axios.post(`/api/admin/markers/image-proposals/${id}/${action}`, null, { withCredentials: true })
             setPendingImages((prev) => prev.filter((item) => item.id !== id))
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not update the image proposal.'))
+            setError(getErrorMessage(e, tr('图片提案更新失败。', 'Could not update the image proposal.')))
         }
     }
 
@@ -184,7 +184,7 @@ export default function Admin() {
             await axios.post(`/api/admin/markers/edit-proposals/${id}/${action}`, null, { withCredentials: true })
             setPendingEdits((prev) => prev.filter((item) => item.id !== id))
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not update the edit proposal.'))
+            setError(getErrorMessage(e, tr('编辑提案更新失败。', 'Could not update the edit proposal.')))
         }
     }
 
@@ -192,10 +192,10 @@ export default function Admin() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    Admin · Review center
+                    {tr('管理 · 审核中心', 'Admin · Review center')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Administrators only. New and edited places appear publicly after approval.
+                    {tr('仅限管理员。新增和编辑的点位将在审核通过后公开显示。', 'Administrators only. New and edited places appear publicly after approval.')}
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -210,18 +210,18 @@ export default function Admin() {
                         </Paper>
                         {/secondary (passcode|password)/i.test(String(error)) ? (
                             <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
-                                Verify the secondary passcode
+                                {tr('校验二级口令', 'Verify the secondary passcode')}
                             </Button>
                         ) : null}
                     </Stack>
                 ) : (
                     <Stack spacing={2}>
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            Places awaiting review
+                            {tr('待审核点位', 'Places awaiting review')}
                         </Typography>
                         {pending.length === 0 ? (
                             <Paper sx={{ p: 2 }}>
-                                <Typography color="text.secondary">No places are awaiting review.</Typography>
+                                <Typography color="text.secondary">{tr('没有待审核点位。', 'No places are awaiting review.')}</Typography>
                             </Paper>
                         ) : (
                             pendingPageItems.map(item => (
@@ -232,25 +232,25 @@ export default function Admin() {
                                                 {item.title}
                                             </Typography>
                                             <Chip size="small" label={formatCategory(item.category)} />
-                                            <Chip size="small" color={statusColor(item.reviewStatus)} label="Pending" />
+                                            <Chip size="small" color={statusColor(item.reviewStatus)} label={tr('待审核', 'Pending')} />
                                             {item.lastEditedByOwner === false ? (
-                                                <Chip size="small" color="warning" label="Edited by someone else" />
+                                                <Chip size="small" color="warning" label={tr('由他人编辑', 'Edited by someone else')} />
                                             ) : null}
                                         </Stack>
                                         <Typography variant="body2" color="text.secondary">
-                                            {item.description || '(No description)'}
+                                            {item.description || tr('（无描述）', '(No description)')}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            Coordinates: {item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
-                                            Submitted by: {item.username}
+                                            {tr('坐标：', 'Coordinates: ')}{item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
+                                            {tr('提交者：', 'Submitted by: ')}{item.username}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            Edited by: {item.lastEditedBy || item.username}
-                                            {item.lastEditedByOwner === false ? ' (not the creator)' : ''}
+                                            {tr('编辑者：', 'Edited by: ')}{item.lastEditedBy || item.username}
+                                            {item.lastEditedByOwner === false ? tr('（非创建者）', ' (not the creator)') : ''}
                                         </Typography>
                                         {item.lastEditedByOwner === false ? (
                                             <Typography variant="caption" color="warning.main">
-                                                Review note: edited by someone other than the creator
+                                                {tr('审核提示：由创建者之外的用户编辑', 'Review note: edited by someone other than the creator')}
                                             </Typography>
                                         ) : null}
                                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
@@ -259,14 +259,14 @@ export default function Admin() {
                                                 color="success"
                                                 onClick={() => handleAction(item.id, 'approve')}
                                             >
-                                                Approve
+                                                {tr('通过', 'Approve')}
                                             </Button>
                                             <Button
                                                 variant="outlined"
                                                 color="error"
                                                 onClick={() => handleAction(item.id, 'reject')}
                                             >
-                                                Reject
+                                                {tr('驳回', 'Reject')}
                                             </Button>
                                         </Stack>
                                     </Stack>
@@ -285,11 +285,11 @@ export default function Admin() {
 
                         <Divider />
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            Edit proposals awaiting review
+                            {tr('待审核编辑提案', 'Edit proposals awaiting review')}
                         </Typography>
                         {pendingEdits.length === 0 ? (
                             <Paper sx={{ p: 2 }}>
-                                <Typography color="text.secondary">No edit proposals are awaiting review.</Typography>
+                                <Typography color="text.secondary">{tr('没有待审核编辑提案。', 'No edit proposals are awaiting review.')}</Typography>
                             </Paper>
                         ) : (
                             editPageItems.map((item) => (
@@ -300,23 +300,23 @@ export default function Admin() {
                                                 {item.title}
                                             </Typography>
                                             <Chip size="small" label={formatCategory(item.category)} />
-                                            <Chip size="small" color="warning" label="Edit pending" />
+                                            <Chip size="small" color="warning" label={tr('编辑待审核', 'Edit pending')} />
                                             {item.proposerIsOwner === false ? (
-                                                <Chip size="small" color="warning" label="Edited by someone else" />
+                                                <Chip size="small" color="warning" label={tr('由他人编辑', 'Edited by someone else')} />
                                             ) : null}
                                         </Stack>
                                         <Typography variant="body2" color="text.secondary">
-                                            Original place: {item.markerTitle}
+                                            {tr('原点位：', 'Original place: ')}{item.markerTitle}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            {item.description || '(No description)'}
+                                            {item.description || tr('（无描述）', '(No description)')}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            Place ID: {item.markerId} · Coordinates: {item.lat.toFixed(6)}, {item.lng.toFixed(6)}
+                                            {tr('点位 ID：', 'Place ID: ')}{item.markerId} · {tr('坐标：', 'Coordinates: ')}{item.lat.toFixed(6)}, {item.lng.toFixed(6)}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            Submitted by: {item.proposerUsername}
-                                            {item.proposerIsOwner === false ? ' (not the creator)' : ''}
+                                            {tr('提交者：', 'Submitted by: ')}{item.proposerUsername}
+                                            {item.proposerIsOwner === false ? tr('（非创建者）', ' (not the creator)') : ''}
                                         </Typography>
                                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                             <Button
@@ -324,14 +324,14 @@ export default function Admin() {
                                                 color="success"
                                                 onClick={() => handleEditAction(item.id, 'approve')}
                                             >
-                                                Approve
+                                                {tr('通过', 'Approve')}
                                             </Button>
                                             <Button
                                                 variant="outlined"
                                                 color="error"
                                                 onClick={() => handleEditAction(item.id, 'reject')}
                                             >
-                                                Reject
+                                                {tr('驳回', 'Reject')}
                                             </Button>
                                         </Stack>
                                     </Stack>
@@ -350,11 +350,11 @@ export default function Admin() {
 
                         <Divider />
                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
-                            Image proposals awaiting review
+                            {tr('待审核图片提案', 'Image proposals awaiting review')}
                         </Typography>
                         {pendingImages.length === 0 ? (
                             <Paper sx={{ p: 2 }}>
-                                <Typography color="text.secondary">No images are awaiting review.</Typography>
+                                <Typography color="text.secondary">{tr('没有待审核图片。', 'No images are awaiting review.')}</Typography>
                             </Paper>
                         ) : (
                             imagePageItems.map((item) => (
@@ -364,10 +364,10 @@ export default function Admin() {
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                                 {item.markerTitle}
                                             </Typography>
-                                            <Chip size="small" color="warning" label="Image pending" />
+                                            <Chip size="small" color="warning" label={tr('图片待审核', 'Image pending')} />
                                         </Stack>
                                         <Typography variant="caption" color="text.secondary">
-                                            Place ID: {item.markerId} · Submitted by: {item.proposerUsername}
+                                            {tr('点位 ID：', 'Place ID: ')}{item.markerId} · {tr('提交者：', 'Submitted by: ')}{item.proposerUsername}
                                         </Typography>
                                         <Box
                                             component="img"
@@ -388,14 +388,14 @@ export default function Admin() {
                                                 color="success"
                                                 onClick={() => handleImageAction(item.id, 'approve')}
                                             >
-                                                Approve
+                                                {tr('通过', 'Approve')}
                                             </Button>
                                             <Button
                                                 variant="outlined"
                                                 color="error"
                                                 onClick={() => handleImageAction(item.id, 'reject')}
                                             >
-                                                Reject
+                                                {tr('驳回', 'Reject')}
                                             </Button>
                                         </Stack>
                                     </Stack>

@@ -6,10 +6,12 @@ import com.lycoris.entity.MapMarker;
 import com.lycoris.repository.MapMarkerRepository;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
@@ -27,6 +29,26 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MapMarkerServiceTest {
+
+    @Test
+    void serviceValidationExceptionUsesRequestLocaleAndInterpolatesValues() {
+        MapMarkerService service = serviceWith(mock(MapMarkerRepository.class));
+        Locale previous = LocaleContextHolder.getLocale();
+        try {
+            LocaleContextHolder.setLocale(Locale.SIMPLIFIED_CHINESE);
+            assertThatThrownBy(() -> service.normalizeCategoryForWrite("unknown_category"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessageStartingWith("不支持的 category：unknown_category，仅支持：")
+                    .hasMessageContaining("accessible_toilet");
+
+            LocaleContextHolder.setLocale(Locale.ENGLISH);
+            assertThatThrownBy(() -> service.normalizeStoredCategoryForApproval("unknown_category"))
+                    .isInstanceOf(IllegalArgumentException.class)
+                    .hasMessage("Unsupported stored category: unknown_category");
+        } finally {
+            LocaleContextHolder.setLocale(previous);
+        }
+    }
 
     @Test
     void categoryContractAcceptsBabyRoomAndRejectsRemovedConversionTherapy() {

@@ -24,6 +24,9 @@ import java.util.Set;
 import java.util.Comparator;
 import java.util.concurrent.TimeUnit;
 
+import static com.lycoris.i18n.UserMessages.Key.*;
+import static com.lycoris.i18n.UserMessages.text;
+
 @Service
 public class MapMarkerService {
 
@@ -159,10 +162,10 @@ public class MapMarkerService {
             List<String> categories
     ) {
         if (minLat > maxLat || minLng > maxLng) {
-            throw new IllegalArgumentException("Invalid viewport bounds");
+            throw new IllegalArgumentException(text(INVALID_VIEWPORT_BOUNDS));
         }
         if (minLat < -90 || maxLat > 90 || minLng < -180 || maxLng > 180) {
-            throw new IllegalArgumentException("Viewport bounds are outside the valid latitude/longitude range");
+            throw new IllegalArgumentException(text(VIEWPORT_BOUNDS_OUT_OF_RANGE));
         }
 
         String cacheKey = buildViewportCacheKey(minLat, maxLat, minLng, maxLng, categories);
@@ -233,7 +236,7 @@ public class MapMarkerService {
             LocalTime parsed = LocalTime.parse(normalized);
             return parsed.withSecond(0).withNano(0).toString().substring(0, 5);
         } catch (DateTimeParseException ex) {
-            throw new IllegalArgumentException("Invalid time format. Use HH:mm");
+            throw new IllegalArgumentException(text(INVALID_TIME_FORMAT));
         }
     }
 
@@ -263,7 +266,7 @@ public class MapMarkerService {
         String normalizedStart = normalizeOpenTime(start);
         String normalizedEnd = normalizeOpenTime(end);
         if ((normalizedStart == null) != (normalizedEnd == null)) {
-            throw new IllegalArgumentException("Provide both opening and closing times, or leave both empty");
+            throw new IllegalArgumentException(text(OPENING_AND_CLOSING_TIMES_REQUIRED));
         }
         marker.setOpenTimeStart(normalizedStart);
         marker.setOpenTimeEnd(normalizedEnd);
@@ -271,7 +274,7 @@ public class MapMarkerService {
 
     public String normalizeCategoryForWrite(String category) {
         if (category == null) {
-            throw new IllegalArgumentException("category is required");
+            throw new IllegalArgumentException(text(CATEGORY_REQUIRED));
         }
         String normalized = category.trim().toLowerCase(Locale.ROOT);
         if (LEGACY_TO_SELF_DEFINITION.contains(normalized)) {
@@ -280,10 +283,11 @@ public class MapMarkerService {
         if (SUPPORTED_CATEGORIES.contains(normalized)) {
             return normalized;
         }
-        throw new IllegalArgumentException(
-                "Unsupported category: " + category
-                        + ". Supported values: " + String.join(", ", SUPPORTED_CATEGORIES)
-        );
+        throw new IllegalArgumentException(text(
+                UNSUPPORTED_CATEGORY,
+                category,
+                String.join(", ", SUPPORTED_CATEGORIES)
+        ));
     }
 
     public String normalizeStoredCategoryForRead(String category) {
@@ -297,7 +301,7 @@ public class MapMarkerService {
 
     public String normalizeStoredCategoryForApproval(String category) {
         if (category == null) {
-            throw new IllegalArgumentException("Stored category is required");
+            throw new IllegalArgumentException(text(STORED_CATEGORY_REQUIRED));
         }
         String normalized = category.trim().toLowerCase(Locale.ROOT);
         if (SUPPORTED_CATEGORIES.contains(normalized)) {
@@ -306,7 +310,7 @@ public class MapMarkerService {
         if (LEGACY_STORED_CATEGORIES.contains(normalized)) {
             return "self_definition";
         }
-        throw new IllegalArgumentException("Unsupported stored category: " + category);
+        throw new IllegalArgumentException(text(UNSUPPORTED_STORED_CATEGORY, category));
     }
 
     private String normalizeClientRequestId(String clientRequestId) {
@@ -314,7 +318,7 @@ public class MapMarkerService {
         String normalized = clientRequestId.trim();
         if (normalized.isEmpty()) return null;
         if (normalized.length() > CLIENT_REQUEST_ID_MAX_LENGTH) {
-            throw new IllegalArgumentException("clientRequestId is too long");
+            throw new IllegalArgumentException(text(CLIENT_REQUEST_ID_TOO_LONG));
         }
         return normalized;
     }

@@ -1,4 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Image,
   Linking,
@@ -10,15 +16,17 @@ import {
   View,
   useWindowDimensions,
 } from 'react-native';
-import Markdown, {ASTNode, RenderRules} from 'react-native-markdown-display';
-import {IconButton} from 'react-native-paper';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {SvgXml} from 'react-native-svg';
-import noraHrtGuideMarkdownRaw from '../docs/nora-hrt-guide.md';
-import {docImageAssets, docSvgXmlAssets} from '../docs/imageRegistry';
-import {PageBackground} from '../components/PageBackground';
-import {WEB_BASE_URL} from '../config/runtime';
-import {colors} from '../theme/colors';
+import Markdown, { ASTNode, RenderRules } from 'react-native-markdown-display';
+import { IconButton } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SvgXml } from 'react-native-svg';
+import noraHrtGuideEnglishMarkdownRaw from '../docs/nora-hrt-guide.md';
+import noraHrtGuideChineseMarkdownRaw from '../docs/nora-hrt-guide.zh.md';
+import { docImageAssets, docSvgXmlAssets } from '../docs/imageRegistry';
+import { PageBackground } from '../components/PageBackground';
+import { WEB_BASE_URL } from '../config/runtime';
+import { useLanguage } from '../i18n/LanguageProvider';
+import { colors } from '../theme/colors';
 
 type DocSlug = 'nora-hrt-guide';
 
@@ -33,14 +41,6 @@ type TocItem = {
   level: 2 | 3 | 4;
   text: string;
 };
-
-const DOCS: DocEntry[] = [
-  {
-    slug: 'nora-hrt-guide',
-    title: "Nora's HRT Guide (MTF)",
-    markdown: noraHrtGuideMarkdownRaw,
-  },
-];
 
 const DRAWER_WIDTH = 272;
 const WIDE_LAYOUT_BREAKPOINT = 980;
@@ -62,8 +62,18 @@ const slugifyHeading = (raw: string) => {
   return cleaned || 'section';
 };
 
-const buildToc = (markdown: string): TocItem[] => {
+export const createHeadingIdGenerator = () => {
   const counts: Record<string, number> = {};
+  return (raw: string): string => {
+    const baseId = slugifyHeading(raw);
+    const next = (counts[baseId] ?? 0) + 1;
+    counts[baseId] = next;
+    return next === 1 ? baseId : `${baseId}-${next}`;
+  };
+};
+
+const buildToc = (markdown: string): TocItem[] => {
+  const nextHeadingId = createHeadingIdGenerator();
   const items: TocItem[] = [];
   let match: RegExpExecArray | null;
 
@@ -80,11 +90,8 @@ const buildToc = (markdown: string): TocItem[] => {
       continue;
     }
 
-    const baseId = slugifyHeading(text);
-    const next = (counts[baseId] ?? 0) + 1;
-    counts[baseId] = next;
-    const id = next === 1 ? baseId : `${baseId}-${next}`;
-    items.push({id, level, text});
+    const id = nextHeadingId(text);
+    items.push({ id, level, text });
   }
 
   return items;
@@ -145,8 +152,22 @@ const extractNodeText = (node?: ASTNode): string => {
 };
 
 export function DocsScreen() {
-  const {width: windowWidth} = useWindowDimensions();
+  const { width: windowWidth } = useWindowDimensions();
   const insets = useSafeAreaInsets();
+  const { language, tr } = useLanguage();
+  const docs = useMemo<DocEntry[]>(
+    () => [
+      {
+        slug: 'nora-hrt-guide',
+        title: tr('雪雁的HRT指南（MTF）', "Nora's HRT Guide (MTF)"),
+        markdown:
+          language === 'zh'
+            ? noraHrtGuideChineseMarkdownRaw
+            : noraHrtGuideEnglishMarkdownRaw,
+      },
+    ],
+    [language, tr],
+  );
   const isWideLayout = windowWidth >= WIDE_LAYOUT_BREAKPOINT;
   const imageWidth = Math.max(
     220,
@@ -157,10 +178,10 @@ export function DocsScreen() {
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const activeDoc = useMemo(
-    () => DOCS.find(doc => doc.slug === activeSlug) ?? DOCS[0],
-    [activeSlug],
+    () => docs.find(doc => doc.slug === activeSlug) ?? docs[0],
+    [activeSlug, docs],
   );
-  const {displayTitle, markdown} = useMemo(() => {
+  const { displayTitle, markdown } = useMemo(() => {
     const normalized = normalizeMarkdown(activeDoc.markdown);
     const lines = normalized.split('\n');
     const firstLine = lines[0]?.trim() ?? '';
@@ -196,8 +217,8 @@ export function DocsScreen() {
 
   useEffect(() => {
     headingOffsetsRef.current = {};
-    scrollRef.current?.scrollTo({y: 0, animated: false});
-  }, [activeSlug]);
+    scrollRef.current?.scrollTo({ y: 0, animated: false });
+  }, [activeSlug, language]);
 
   const openUrl = useCallback(async (url: string) => {
     try {
@@ -234,15 +255,10 @@ export function DocsScreen() {
     [isWideLayout],
   );
 
-  const markdownRules = useMemo<RenderRules>(() => {
-    const slugCounts: Record<string, number> = {};
-
-    const getHeadingId = (node: ASTNode) => {
-      const base = slugifyHeading(extractNodeText(node));
-      const next = (slugCounts[base] ?? 0) + 1;
-      slugCounts[base] = next;
-      return next === 1 ? base : `${base}-${next}`;
-    };
+  const markdownRules: RenderRules = (() => {
+    const nextHeadingId = createHeadingIdGenerator();
+    const getHeadingId = (node: ASTNode) =>
+      nextHeadingId(extractNodeText(node));
 
     const renderHeading =
       (level: 1 | 2 | 3 | 4 | 5 | 6) =>
@@ -294,55 +310,59 @@ export function DocsScreen() {
           return (
             <View key={node.key} style={styles.imageWrap}>
               <View
+                accessible={Boolean(altText)}
+                accessibilityRole="image"
+                accessibilityLabel={altText || undefined}
                 style={[
                   styles.svgCard,
-                  {width: imageWidth, height: imageHeight},
+                  { width: imageWidth, height: imageHeight },
                 ]}
               >
-                <SvgXml xml={svgXml} width="100%" height="100%" />
+                <SvgXml
+                  accessible={false}
+                  xml={svgXml}
+                  width="100%"
+                  height="100%"
+                />
               </View>
-              {altText ? (
-                <Text style={styles.imageCaption}>{altText}</Text>
-              ) : null}
             </View>
           );
         }
 
         const localAsset = docImageAssets[assetName];
-        const source = localAsset ? localAsset : {uri: toAbsoluteUrl(rawSrc)};
+        const source = localAsset ? localAsset : { uri: toAbsoluteUrl(rawSrc) };
         return (
           <View key={node.key} style={styles.imageWrap}>
             <Image
+              accessible={Boolean(altText)}
+              accessibilityLabel={altText || undefined}
               source={source}
               style={[
                 styles.markdownImage,
-                {width: imageWidth, height: imageHeight},
+                { width: imageWidth, height: imageHeight },
               ]}
               resizeMode="contain"
             />
-            {altText ? (
-              <Text style={styles.imageCaption}>{altText}</Text>
-            ) : null}
           </View>
         );
       },
     };
-  }, [imageWidth]);
+  })();
 
   const drawerContent = (
     <View style={styles.drawerInner}>
       <View style={styles.drawerHeader}>
-        <Text style={styles.drawerTitle}>Reading menu</Text>
+        <Text style={styles.drawerTitle}>{tr('阅读目录', 'Reading menu')}</Text>
       </View>
 
-      <Text style={styles.drawerSectionTitle}>Guides</Text>
+      <Text style={styles.drawerSectionTitle}>{tr('文档', 'Guides')}</Text>
       <View style={styles.drawerCard}>
-        {DOCS.map(doc => (
+        {docs.map(doc => (
           <Pressable
             key={doc.slug}
             onPress={() => onSelectDoc(doc.slug)}
             accessibilityRole="button"
-            accessibilityState={{selected: activeDoc.slug === doc.slug}}
+            accessibilityState={{ selected: activeDoc.slug === doc.slug }}
             style={[
               styles.drawerItem,
               activeDoc.slug === doc.slug ? styles.drawerItemActive : null,
@@ -363,7 +383,7 @@ export function DocsScreen() {
       </View>
 
       <Text style={[styles.drawerSectionTitle, styles.tocHeading]}>
-        On this page
+        {tr('当前文章', 'On this page')}
       </Text>
       <ScrollView
         style={styles.tocScroll}
@@ -373,7 +393,10 @@ export function DocsScreen() {
       >
         {tocItems.length === 0 ? (
           <Text style={styles.tocEmpty}>
-            No sections are available for this guide.
+            {tr(
+              '当前文档没有可用目录',
+              'No sections are available for this guide.',
+            )}
           </Text>
         ) : (
           tocItems.map(item => (
@@ -381,7 +404,10 @@ export function DocsScreen() {
               key={item.id}
               onPress={() => onSelectToc(item.id)}
               accessibilityRole="button"
-              accessibilityLabel={`Jump to ${item.text}`}
+              accessibilityLabel={tr(
+                `跳转到${item.text}`,
+                `Jump to ${item.text}`,
+              )}
               style={[
                 styles.tocItem,
                 item.level === 2
@@ -404,7 +430,9 @@ export function DocsScreen() {
   return (
     <View style={styles.page}>
       <PageBackground />
-      <View style={[styles.layout, {paddingTop: Math.max(14, insets.top + 6)}]}>
+      <View
+        style={[styles.layout, { paddingTop: Math.max(14, insets.top + 6) }]}
+      >
         {isWideLayout ? (
           <View style={styles.desktopDrawer}>{drawerContent}</View>
         ) : null}
@@ -425,7 +453,7 @@ export function DocsScreen() {
                 mode="contained"
                 containerColor={colors.primarySoft}
                 iconColor={colors.primary}
-                accessibilityLabel="Open reading menu"
+                accessibilityLabel={tr('打开阅读目录', 'Open reading menu')}
                 onPress={() => setDrawerOpen(true)}
                 style={styles.menuButton}
               />
@@ -483,7 +511,7 @@ export function DocsScreen() {
             <Pressable
               style={styles.modalBackdrop}
               accessibilityRole="button"
-              accessibilityLabel="Close reading menu"
+              accessibilityLabel={tr('关闭阅读目录', 'Close reading menu')}
               onPress={() => setDrawerOpen(false)}
             />
           </View>
@@ -681,7 +709,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.16,
     shadowRadius: 18,
     elevation: 3,
@@ -720,7 +748,7 @@ const styles = StyleSheet.create({
     paddingTop: 26,
     paddingBottom: 34,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.14,
     shadowRadius: 24,
     elevation: 2,
@@ -807,13 +835,6 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: '#fff',
     padding: 10,
-  },
-  imageCaption: {
-    marginTop: 6,
-    textAlign: 'center',
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
   },
   modalRoot: {
     flex: 1,

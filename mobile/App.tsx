@@ -18,6 +18,7 @@ import {
 } from 'react-native-safe-area-context';
 import { Icon, MD3LightTheme, PaperProvider, Text } from 'react-native-paper';
 import { AuthProvider } from './src/auth/AuthProvider';
+import { LanguageProvider, useLanguage } from './src/i18n/LanguageProvider';
 import { DocsScreen } from './src/screens/DocsScreen';
 import { MapScreen } from './src/screens/MapScreen';
 import { MeScreen, type MePanel } from './src/screens/MeScreen';
@@ -107,25 +108,14 @@ const navigationTheme = {
   },
 };
 
-const tabRoutes: AppRoute[] = [
-  {
-    key: 'maps',
-    title: 'Map',
-    focusedIcon: 'map',
-    unfocusedIcon: 'map-outline',
-  },
+const tabRouteIcons: Omit<AppRoute, 'title'>[] = [
+  { key: 'maps', focusedIcon: 'map', unfocusedIcon: 'map-outline' },
   {
     key: 'docs',
-    title: 'Guides',
     focusedIcon: 'file-document',
     unfocusedIcon: 'file-document-outline',
   },
-  {
-    key: 'me',
-    title: 'Me',
-    focusedIcon: 'account',
-    unfocusedIcon: 'account-outline',
-  },
+  { key: 'me', focusedIcon: 'account', unfocusedIcon: 'account-outline' },
 ];
 
 const nativeTabIcons: Record<
@@ -330,6 +320,16 @@ function MeStackNavigator() {
 
 function CustomAppTabs() {
   const insets = useSafeAreaInsets();
+  const { tr } = useLanguage();
+  const tabRoutes: AppRoute[] = tabRouteIcons.map(route => ({
+    ...route,
+    title:
+      route.key === 'maps'
+        ? tr('地图', 'Map')
+        : route.key === 'docs'
+        ? tr('文档', 'Guides')
+        : tr('我的', 'Me'),
+  }));
 
   return (
     <CustomTab.Navigator
@@ -384,6 +384,17 @@ function CustomAppTabs() {
 }
 
 function NativeIosAppTabs() {
+  const { tr } = useLanguage();
+  const tabRoutes: AppRoute[] = tabRouteIcons.map(route => ({
+    ...route,
+    title:
+      route.key === 'maps'
+        ? tr('地图', 'Map')
+        : route.key === 'docs'
+        ? tr('文档', 'Guides')
+        : tr('我的', 'Me'),
+  }));
+
   return (
     <NativeTab.Navigator
       initialRouteName="maps"
@@ -440,9 +451,11 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <PaperProvider theme={materialTheme}>
-        <AuthProvider>
-          <AppShell />
-        </AuthProvider>
+        <LanguageProvider>
+          <AuthProvider>
+            <AppShell />
+          </AuthProvider>
+        </LanguageProvider>
       </PaperProvider>
     </SafeAreaProvider>
   );

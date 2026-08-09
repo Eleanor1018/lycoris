@@ -4,6 +4,7 @@ import {useNavigate, Link as RouterLink} from "react-router-dom";
 import {Alert, Button, TextField, Typography} from '@mui/material'
 import {useAuth, type Me} from "../auth/AuthProvider.tsx";
 import AuthPageShell from '../components/AuthPageShell'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type RegisterResponse = {
     code: number
@@ -36,6 +37,7 @@ export default function Register() {
     const [password2, setPassword2] = useState("")
     const navigate = useNavigate();
     const {refresh, setUser} = useAuth();
+    const { tr } = useLanguage()
     const fieldSx = {
         '& .MuiOutlinedInput-root': {
             borderRadius: 999,
@@ -59,7 +61,7 @@ export default function Register() {
     const handleRegister = async () => {
         setErrorMessage("");
         if (registerForm.password !== password2) {
-            setErrorMessage("The passwords do not match.");
+            setErrorMessage(tr('两次输入的密码不一致。', 'The passwords do not match.'));
             return;
         }
         try{
@@ -75,12 +77,12 @@ export default function Register() {
                 navigate('/');
             }
             else{
-                setErrorMessage(response.data.message ?? "Sign-up failed. Please check your username and password.");
+                setErrorMessage(response.data.message ?? tr('注册失败，请检查用户名和密码。', 'Sign-up failed. Please check your username and password.'));
             }
 
             }
         catch(error: unknown){
-            const errorMsg = getErrorMessage(error, "Sign-up failed. Please check your username and password.")
+            const errorMsg = getErrorMessage(error, tr('注册失败，请检查用户名和密码。', 'Sign-up failed. Please check your username and password.'))
             setErrorMessage(errorMsg);
         }
 
@@ -93,12 +95,12 @@ export default function Register() {
 
     return (
         <AuthPageShell
-            title="Sign up"
+            title={tr('注册', 'Sign up')}
             onSubmit={handleSubmit}
             maxWidth={540}
             footer={
                 <Typography variant="body2" sx={{ color: '#1d1b20', textAlign: 'center' }}>
-                    Already have an account? <RouterLink to="/login">Log in</RouterLink>
+                    {tr('已有账号？', 'Already have an account?')} <RouterLink to="/login">{tr('登录', 'Log in')}</RouterLink>
                 </Typography>
             }
         >
@@ -123,7 +125,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="Username"
+                    label={tr('用户名', 'Username')}
                     value={registerForm.username}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, username: e.target.value}))}
                     autoComplete="username"
@@ -131,7 +133,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="Display name"
+                    label={tr('昵称', 'Display name')}
                     value={registerForm.nickname}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, nickname: e.target.value}))}
                     autoComplete="nickname"
@@ -139,7 +141,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="Email"
+                    label={tr('邮箱', 'Email')}
                     value={registerForm.email}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, email: e.target.value}))}
                     autoComplete="email"
@@ -147,7 +149,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="Password"
+                    label={tr('密码', 'Password')}
                     type="password"
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, password: e.target.value}))}
@@ -156,7 +158,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="Confirm password"
+                    label={tr('确认密码', 'Confirm password')}
                     type="password"
                     value={password2}
                     onChange={(e) => setPassword2(e.target.value)}
@@ -180,7 +182,7 @@ export default function Register() {
                         '&:hover': { bgcolor: '#c8afff' },
                     }}
                 >
-                    Sign up
+                    {tr('注册', 'Sign up')}
                 </Button>
         </AuthPageShell>
 

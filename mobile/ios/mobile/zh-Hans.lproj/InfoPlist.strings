@@ -1,0 +1,3 @@
+"CFBundleDisplayName" = "Lycoris";
+"NSLocationWhenInUseUsageDescription" = "Lycoris 需要使用你的位置，以显示当前位置并查找附近点位。";
+"NSPhotoLibraryUsageDescription" = "Lycoris 需要访问你的照片图库，以便选择并上传头像或点位图片。";

@@ -9,6 +9,7 @@ import axios from 'axios';
 import {AuthProvider} from "./auth/AuthProvider.tsx";
 import theme from './theme.ts';
 import { API_BASE_URL } from './config/runtime'
+import { LanguageProvider } from './i18n/LanguageProvider.tsx'
 axios.defaults.withCredentials = true;
 if (API_BASE_URL) {
     axios.defaults.baseURL = API_BASE_URL
@@ -19,9 +20,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <ThemeProvider theme={theme}>
             <CssBaseline />
             <BrowserRouter>
-                <AuthProvider>
-                    <App />
-                </AuthProvider>
+                <LanguageProvider>
+                    <AuthProvider>
+                        <App />
+                    </AuthProvider>
+                </LanguageProvider>
             </BrowserRouter>
         </ThemeProvider>
     </React.StrictMode>

@@ -21,13 +21,14 @@ import remarkGfm from 'remark-gfm'
 import rehypeSlug from 'rehype-slug'
 import rehypeRaw from 'rehype-raw'
 import Slugger from 'github-slugger'
+import { useLanguage, type Language } from '../i18n/LanguageProvider'
 
 const mdModules = import.meta.glob<string>('../docs/*.md', { query: '?raw', import: 'default' })
 
-async function loadDoc(slug: string): Promise<string> {
-    const key = `../docs/${slug}.md`
+async function loadDoc(slug: string, language: Language): Promise<string> {
+    const key = `../docs/${slug}.${language}.md`
     const loader = mdModules[key]
-    if (!loader) throw new Error(`Doc not found: ${slug}`)
+    if (!loader) throw new Error('DOC_NOT_FOUND')
     return await loader()
 }
 
@@ -78,9 +79,10 @@ export default function Documents() {
     const navigate = useNavigate()
     const location = useLocation()
     const { slug } = useParams<{ slug?: string }>()
+    const { language, tr } = useLanguage()
 
     const orderedDocs = [
-        { slug: 'nora-hrt-guide', title: 'HRT Guide' },
+        { slug: 'nora-hrt-guide', title: tr('HRT 指南', 'HRT Guide') },
     ]
 
     // Use the first guide as the default, with intro as a fallback.
@@ -92,7 +94,7 @@ export default function Documents() {
     const [hrtOpen, setHrtOpen] = useState(true)
 
     // Markdown content.
-    const [content, setContent] = useState<string>('# Loading...')
+    const [content, setContent] = useState<string>(() => `# ${tr('加载中…', 'Loading…')}`)
     const [err, setErr] = useState<string>('')
     const [tocItems, setTocItems] = useState<TocItem[]>([])
     const fontSize = 16
@@ -113,25 +115,32 @@ export default function Documents() {
     useEffect(() => {
         let alive = true
         setErr('')
-        setContent('# Loading...')
+        setContent(`# ${tr('加载中…', 'Loading…')}`)
 
-        loadDoc(activeSlug)
+        loadDoc(activeSlug, language)
             .then((md) => {
                 if (!alive) return
                 setContent(md)
                 setTocItems(buildToc(md))
             })
-            .catch((e) => {
+            .catch(() => {
                 if (!alive) return
-                setErr(String(e?.message ?? e))
-                setContent('# Could not load the guide')
+                setErr(tr('指南加载失败。', 'Could not load the guide.'))
+                setContent(`# ${tr('无法加载指南', 'Could not load the guide')}`)
                 setTocItems([])
             })
 
         return () => {
             alive = false
         }
-    }, [activeSlug])
+    }, [activeSlug, language, tr])
+
+    useEffect(() => {
+        document.title = tr('雪雁的HRT指南（MTF）', "Nora's HRT Guide (MTF)")
+        return () => {
+            document.title = 'Lycoris'
+        }
+    }, [tr])
 
     useEffect(() => {
         if (!location.hash) return
@@ -164,7 +173,7 @@ export default function Documents() {
                         }}
                     >
                         <ListItemText
-                            primary="Nora's HRT Guide (MTF)"
+                            primary={tr('雪雁的HRT指南（MTF）', "Nora's HRT Guide (MTF)")}
                             primaryTypographyProps={{ fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}
                         />
                         {hrtOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -181,7 +190,7 @@ export default function Documents() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding aria-label="Guide table of contents">
+                            <List dense disablePadding aria-label={tr('指南目录', 'Guide table of contents')}>
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -216,7 +225,7 @@ export default function Documents() {
                 </List>
             </Box>
         ),
-        [activeSlug, hrtOpen, hrtSectionId, hrtToggleId, isMobile, navigate, tocItems, location.hash]
+        [activeSlug, hrtOpen, hrtSectionId, hrtToggleId, isMobile, navigate, tocItems, location.hash, tr]
     )
 
     return (
@@ -266,13 +275,13 @@ export default function Documents() {
                                 lineHeight: 1,
                             }}
                         >
-                            Docs
+                            {tr('文档', 'Docs')}
                         </Typography>
                         <Typography
                             variant="body2"
                             sx={{ mt: 0.75, color: 'var(--ly-color-muted)' }}
                         >
-                            Contents
+                            {tr('目录', 'Contents')}
                         </Typography>
                     </Box>
                     <Box sx={{ height: 'calc(100% - 78px)', overflowY: 'auto', py: 0.75 }}>
@@ -307,7 +316,7 @@ export default function Documents() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="Open guide table of contents"
+                    aria-label={tr('打开文档目录', 'Open guide table of contents')}
                     sx={{
                         position: 'fixed',
                         right: 16,

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
     Avatar,
@@ -28,6 +28,7 @@ import { useAuth } from '../auth/AuthProvider'
 import axios from 'axios'
 import EditProfileDialog from '../components/EditProfileDialog'
 import chisatoAvatar from '../../chisato.png'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type MarkerRow = {
     id: number
@@ -48,20 +49,21 @@ type MarkerApiRow = {
     lng?: number
 }
 
-const categoryLabelMap: Record<string, string> = {
-    accessible_toilet: 'Accessible Restroom',
-    friendly_clinic: 'Trans-Friendly Clinic',
-    baby_room: 'Nursing Room',
-    self_definition: 'Custom',
-    safe_place: 'Custom',
-    dangerous_place: 'Custom',
-}
 //560px, 68vh, 700px
 export default function Profile() {
     const desktopCardHeight = 'clamp(560px, 68vh, 68vh)'
     const rowsPerPage = 3
     const { user, logout, refresh } = useAuth()
     const navigate = useNavigate()
+    const { language, tr } = useLanguage()
+    const categoryLabelMap = useMemo<Record<string, string>>(() => ({
+        accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
+        friendly_clinic: tr('跨性别友好医疗机构', 'Trans-Friendly Clinic'),
+        baby_room: tr('母婴室', 'Nursing Room'),
+        self_definition: tr('自定义', 'Custom'),
+        safe_place: tr('自定义', 'Custom'),
+        dangerous_place: tr('自定义', 'Custom'),
+    }), [tr])
     const [createdPage, setCreatedPage] = useState(0)
     const [favoritePage, setFavoritePage] = useState(0)
     const [editOpen, setEditOpen] = useState(false)
@@ -121,7 +123,7 @@ export default function Profile() {
         }
 
         void loadMarkers()
-    }, [user])
+    }, [user, language, categoryLabelMap])
 
     const goToMapMarker = (row: MarkerRow) => {
         const params = new URLSearchParams({
@@ -183,8 +185,10 @@ export default function Profile() {
         onMarkerRowClick(row)
     }
 
-    const getRowAriaLabel = (row: MarkerRow) =>
+    const getRowAriaLabel = (row: MarkerRow) => tr(
+        `点位 ${row.title}，类别 ${row.category}，更新于 ${row.updatedAt || '未知时间'}。按回车键在地图中查看。`,
         `Place ${row.title}, category ${row.category}, updated ${row.updatedAt || 'at an unknown time'}. Press Enter to view it on the map.`
+    )
 
     useEffect(() => {
         return () => {
@@ -221,7 +225,7 @@ export default function Profile() {
                     }}
                 >
                     <IconButton
-                        aria-label="Edit profile"
+                        aria-label={tr('编辑资料', 'Edit profile')}
                         onClick={() => {
                             setNickname(user?.nickname || user?.username || '')
                             setPronouns(user?.pronouns || '')
@@ -265,7 +269,7 @@ export default function Profile() {
                             </Typography>
                         </Stack>
                         <Typography variant="body2" sx={{ textAlign: 'center', opacity: 0.8 }}>
-                            {user?.signature || 'Default signature'}
+                            {user?.signature || tr('默认签名', 'Default signature')}
                         </Typography>
                         <Button
                             onClick={() => navigate('/me/password')}
@@ -278,7 +282,7 @@ export default function Profile() {
                                 '&:hover': { borderColor: '#744988', bgcolor: 'rgba(116, 73, 136, 0.08)' },
                             }}
                         >
-                            Change password
+                            {tr('修改密码', 'Change password')}
                         </Button>
                         <Button
                             onClick={async () => {
@@ -293,7 +297,7 @@ export default function Profile() {
                                 '&:hover': { bgcolor: '#d86a6a' },
                             }}
                         >
-                            Log out
+                            {tr('退出登录', 'Log out')}
                         </Button>
                     </Stack>
                 </Paper>
@@ -311,29 +315,29 @@ export default function Profile() {
                     }}
                 >
                     <Typography variant="h6" fontWeight={800}>
-                        Places
+                        {tr('点位', 'Places')}
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
-                        Places you created and favorited are shown separately.
+                        {tr('你创建和收藏的点位会分别显示。', 'Places you created and favorited are shown separately.')}
                     </Typography>
                     <Stack spacing={2} sx={{ mt: 2, flex: 1 }}>
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                Places I created
+                                {tr('我创建的点位', 'Places I created')}
                             </Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>Name</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>Category</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>Updated</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>{tr('名称', 'Name')}</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>{tr('类别', 'Category')}</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{tr('更新时间', 'Updated')}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {createdRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">You have not created any places.</TableCell>
+                                                <TableCell colSpan={3} align="center">{tr('你还没有创建点位。', 'You have not created any places.')}</TableCell>
                                             </TableRow>
                                         ) : (
                                             createdSlice.map((row) => (
@@ -376,27 +380,29 @@ export default function Profile() {
                                 onPageChange={(_, page) => setCreatedPage(page)}
                                 rowsPerPage={rowsPerPage}
                                 rowsPerPageOptions={[3]}
+                                labelRowsPerPage={tr('每页行数：', 'Rows per page:')}
+                                labelDisplayedRows={({ from, to, count }) => tr(`${from}–${to}，共 ${count} 条`, `${from}–${to} of ${count}`)}
                                 sx={{ mt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}
                             />
                         </Box>
 
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                My favorites
+                                {tr('我的收藏', 'My favorites')}
                             </Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>Name</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>Category</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>Updated</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>{tr('名称', 'Name')}</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>{tr('类别', 'Category')}</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{tr('更新时间', 'Updated')}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {favoriteRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">You have no favorites yet.</TableCell>
+                                                <TableCell colSpan={3} align="center">{tr('你还没有收藏点位。', 'You have no favorites yet.')}</TableCell>
                                             </TableRow>
                                         ) : (
                                             favoriteSlice.map((row) => (
@@ -439,6 +445,8 @@ export default function Profile() {
                                 onPageChange={(_, page) => setFavoritePage(page)}
                                 rowsPerPage={rowsPerPage}
                                 rowsPerPageOptions={[3]}
+                                labelRowsPerPage={tr('每页行数：', 'Rows per page:')}
+                                labelDisplayedRows={({ from, to, count }) => tr(`${from}–${to}，共 ${count} 条`, `${from}–${to} of ${count}`)}
                                 sx={{ mt: 0.5, borderTop: '1px solid', borderColor: 'divider' }}
                             />
                         </Box>
@@ -473,10 +481,10 @@ export default function Profile() {
                 }}
             />
             <Dialog open={jumpDialogOpen} onClose={() => setJumpDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle sx={{ fontWeight: 800 }}>Open on the map?</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 800 }}>{tr('在地图中打开？', 'Open on the map?')}</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                        The map will center on “{pendingJumpMarker?.title ?? 'this place'}” and try to open its details.
+                        {tr(`地图将定位到“${pendingJumpMarker?.title ?? '这个点位'}”并尝试打开详情。`, `The map will center on “${pendingJumpMarker?.title ?? 'this place'}” and try to open its details.`)}
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
                         <Checkbox
@@ -485,12 +493,12 @@ export default function Profile() {
                             size="small"
                             sx={{ p: 0.5 }}
                         />
-                        <Typography variant="body2">Do not ask again</Typography>
+                        <Typography variant="body2">{tr('不再询问', 'Do not ask again')}</Typography>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ px: 2, pb: 1.5 }}>
                     <Button onClick={() => setJumpDialogOpen(false)} sx={{ borderRadius: 999, textTransform: 'none' }}>
-                        Cancel
+                        {tr('取消', 'Cancel')}
                     </Button>
                     <Button
                         variant="contained"
@@ -502,7 +510,7 @@ export default function Profile() {
                             '&:hover': { bgcolor: '#a77597' },
                         }}
                     >
-                        Continue
+                        {tr('继续', 'Continue')}
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -513,7 +521,7 @@ export default function Profile() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setSaveOpen(false)}>
-                    Saved successfully.
+                    {tr('保存成功。', 'Saved successfully.')}
                 </Alert>
             </Snackbar>
         </Box>

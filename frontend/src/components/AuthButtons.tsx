@@ -2,6 +2,7 @@ import { Avatar, Button, IconButton } from '@mui/material'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import chisatoAvatar from '../../chisato.png'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type AuthButtonsProps = {
     isLoggedIn: boolean
@@ -11,6 +12,7 @@ type AuthButtonsProps = {
 export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps) {
     const navigate = useNavigate()
     const resolvedAvatarUrl = avatarUrl || chisatoAvatar
+    const { tr } = useLanguage()
 
     if (isLoggedIn) {
         return (
@@ -25,7 +27,7 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
                     overflow: 'hidden',
                     '&:hover': { bgcolor: 'transparent', opacity: 0.92 },
                 }}
-                aria-label="Open profile"
+                aria-label={tr('打开个人中心', 'Open profile')}
             >
                 <Avatar src={resolvedAvatarUrl} sx={{ width: 54, height: 54, bgcolor: 'transparent' }}>
                     <PersonOutlineIcon sx={{ color: 'var(--ly-color-ink)' }} />
@@ -54,7 +56,7 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
                 '&:hover': { bgcolor: '#c8afff' },
             }}
         >
-            Log in / Sign up
+            {tr('登录/注册', 'Log in / Sign up')}
         </Button>
     )
 }

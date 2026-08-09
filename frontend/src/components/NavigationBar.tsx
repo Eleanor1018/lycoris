@@ -21,24 +21,27 @@ import CloseIcon from '@mui/icons-material/Close'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
+import { useLanguage } from '../i18n/LanguageProvider.tsx'
 import chisatoAvatar from '../../chisato.png'
 
 type NavItem = { label: string; to: string }
+const mobileDrawerId = 'lycoris-mobile-navigation'
 
 export default function NavigationBar() {
     const location = useLocation()
     const navigate = useNavigate()
     const { isLoggedIn, user, logout } = useAuth()
+    const { language, toggleLanguage, tr } = useLanguage()
     const navShellRef = useRef<HTMLDivElement | null>(null)
     const [navOpen, setNavOpen] = useState(false)
 
     const navItems: NavItem[] = useMemo(
         () => [
-            { label: 'Map', to: '/maps' },
-            { label: 'Guides', to: '/documents' },
-            { label: 'About', to: '/about' },
+            { label: tr('地图', 'Map'), to: '/maps' },
+            { label: tr('指南', 'Guides'), to: '/documents' },
+            { label: tr('关于', 'About'), to: '/about' },
         ],
-        []
+        [tr]
     )
 
     const mobileAvatarUrl = isLoggedIn ? user?.avatarUrl || chisatoAvatar : undefined
@@ -102,7 +105,7 @@ export default function NavigationBar() {
                         px: { xs: 2, md: 3, lg: 4 },
                         gap: { xs: 1, md: 2.4 },
                         display: { xs: 'grid', md: 'flex' },
-                        gridTemplateColumns: { xs: '54px minmax(0, 1fr) 54px', md: 'none' },
+                        gridTemplateColumns: { xs: '54px minmax(0, 1fr) auto', md: 'none' },
                         alignItems: 'center',
                         position: 'relative',
                         pointerEvents: 'auto',
@@ -130,8 +133,9 @@ export default function NavigationBar() {
                             color: '#1d1b20',
                             '&:hover': { bgcolor: '#c8afff' },
                         }}
-                        aria-label={isLoggedIn ? 'Open account navigation' : 'Open login navigation'}
+                        aria-label={isLoggedIn ? tr('打开个人导航菜单', 'Open account navigation') : tr('打开登录导航菜单', 'Open login navigation')}
                         aria-expanded={navOpen}
+                        aria-controls={navOpen ? mobileDrawerId : undefined}
                     >
                         <Avatar
                             src={mobileAvatarUrl}
@@ -150,7 +154,7 @@ export default function NavigationBar() {
                     <Box
                         component={RouterLink}
                         to="/"
-                        aria-label="Back to home"
+                        aria-label={tr('返回首页', 'Back to home')}
                         sx={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -161,6 +165,8 @@ export default function NavigationBar() {
                             position: 'static',
                             gridColumn: { xs: 2, md: 'auto' },
                             justifySelf: { xs: 'center', md: 'auto' },
+                            minHeight: 44,
+                            px: 0.5,
                         }}
                     >
                         <Typography
@@ -223,24 +229,57 @@ export default function NavigationBar() {
 
                     <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
 
-                    <IconButton
-                        aria-label="Open search"
-                        onClick={() => navigate('/search')}
+                    <Stack
+                        direction="row"
+                        spacing={{ xs: 0.65, md: 1 }}
                         sx={{
-                            display: { xs: navOpen ? 'none' : 'inline-flex', md: 'inline-flex' },
-                            width: 54,
-                            height: 54,
                             gridColumn: { xs: 3, md: 'auto' },
                             justifySelf: { xs: 'end', md: 'auto' },
-                            position: 'static',
-                            pointerEvents: 'auto',
-                            bgcolor: '#f4b3cc',
-                            color: '#1d1b20',
-                            '&:hover': { bgcolor: '#efa7c5' },
+                            alignItems: 'center',
                         }}
                     >
-                        <SearchIcon />
-                    </IconButton>
+                        <Button
+                            onClick={toggleLanguage}
+                            aria-label={language === 'en' ? '切换到中文' : 'Switch to English'}
+                            title={language === 'en' ? '切换到中文' : 'Switch to English'}
+                            sx={{
+                                display: navOpen ? { xs: 'none', md: 'inline-flex' } : 'inline-flex',
+                                minWidth: { xs: 44, md: 48 },
+                                height: { xs: 44, md: 48 },
+                                px: { xs: 1, md: 1.25 },
+                                borderRadius: 999,
+                                border: '1px solid rgba(90, 56, 80, 0.14)',
+                                bgcolor: 'rgba(255, 255, 255, 0.58)',
+                                color: 'var(--ly-color-ink)',
+                                fontFamily: 'var(--ly-font-body)',
+                                fontSize: 13,
+                                fontWeight: 800,
+                                lineHeight: 1,
+                                textTransform: 'none',
+                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.72)',
+                                '&:hover': { bgcolor: 'rgba(248, 235, 255, 0.84)' },
+                            }}
+                        >
+                            {language === 'en' ? '中文' : 'EN'}
+                        </Button>
+
+                        <IconButton
+                            aria-label={tr('打开搜索', 'Open search')}
+                            onClick={() => navigate('/search')}
+                            sx={{
+                                display: { xs: navOpen ? 'none' : 'inline-flex', md: 'inline-flex' },
+                                width: { xs: 46, md: 54 },
+                                height: { xs: 46, md: 54 },
+                                position: 'static',
+                                pointerEvents: 'auto',
+                                bgcolor: '#f4b3cc',
+                                color: '#1d1b20',
+                                '&:hover': { bgcolor: '#efa7c5' },
+                            }}
+                        >
+                            <SearchIcon />
+                        </IconButton>
+                    </Stack>
 
                     <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
                         <AuthButtons isLoggedIn={isLoggedIn} avatarUrl={user?.avatarUrl} />
@@ -253,6 +292,7 @@ export default function NavigationBar() {
                 open={navOpen}
                 onClose={closeNavMenu}
                 PaperProps={{
+                    id: mobileDrawerId,
                     sx: {
                         width: 'min(360px, 100vw)',
                         borderRadius: 0,
@@ -281,7 +321,7 @@ export default function NavigationBar() {
                     >
                         Lycoris
                     </Typography>
-                    <IconButton onClick={closeNavMenu} aria-label="Close navigation menu">
+                    <IconButton onClick={closeNavMenu} aria-label={tr('关闭导航菜单', 'Close navigation menu')}>
                         <CloseIcon />
                     </IconButton>
                 </Box>
@@ -295,7 +335,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="Log in" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={tr('登录', 'Log in')} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={() => {
@@ -304,7 +344,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="Sign up" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={tr('注册', 'Sign up')} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 ) : (
@@ -316,7 +356,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="Profile" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={tr('个人中心', 'Profile')} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={async () => {
@@ -326,7 +366,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="Log out" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={tr('退出登录', 'Log out')} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 )}

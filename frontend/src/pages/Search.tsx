@@ -15,6 +15,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import axios from 'axios'
 import type { MarkerCategory } from '../types/marker'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 const searchPinPath =
     'M319 562C333.025 562 345.031 556.987 355.019 546.96C365.006 536.933 370 524.88 370 510.8C370 496.72 365.006 484.667 355.019 474.64C345.031 464.613 333.025 459.6 319 459.6C304.975 459.6 292.969 464.613 282.981 474.64C272.994 484.667 268 496.72 268 510.8C268 524.88 272.994 536.933 282.981 546.96C292.969 556.987 304.975 562 319 562ZM319 750.16C370.85 702.373 409.313 658.96 434.388 619.92C459.463 580.88 472 546.213 472 515.92C472 469.413 457.231 431.333 427.694 401.68C398.156 372.027 361.925 357.2 319 357.2C276.075 357.2 239.844 372.027 210.306 401.68C180.769 431.333 166 469.413 166 515.92C166 546.213 178.538 580.88 203.613 619.92C228.688 658.96 267.15 702.373 319 750.16ZM319 818C250.575 759.547 199.469 705.253 165.681 655.12C131.894 604.987 115 558.587 115 515.92C115 451.92 135.506 400.933 176.519 362.96C217.531 324.987 265.025 306 319 306C372.975 306 420.469 324.987 461.481 362.96C502.494 400.933 523 451.92 523 515.92C523 558.587 506.106 604.987 472.319 655.12C438.531 705.253 387.425 759.547 319 818Z'
@@ -41,18 +42,6 @@ type DocItem = {
 
 const mdModules = import.meta.glob<string>('../docs/*.md', { query: '?raw', import: 'default' })
 
-const orderedDocs = [
-    { slug: 'about', title: 'About Lycoris' },
-    { slug: 'nora-hrt-guide', title: "Nora's HRT Guide (MTF)" },
-]
-
-const markerCategoryLabel: Record<MarkerCategory, string> = {
-    accessible_toilet: 'Accessible Restroom',
-    friendly_clinic: 'Trans-Friendly Clinic',
-    baby_room: 'Nursing Room',
-    self_definition: 'Custom',
-}
-
 const cleanDocText = (s: string) =>
     s
         .replace(/&ensp;|&emsp;|&nbsp;/g, ' ')
@@ -65,8 +54,7 @@ const cleanDocText = (s: string) =>
 const getDocTitle = (slug: string, content: string) => {
     const match = content.match(/^\uFEFF?#\s+(.+)$/m)
     if (match?.[1]) return cleanDocText(match[1])
-    const hit = orderedDocs.find((d) => d.slug === slug)
-    return hit?.title ?? slug
+    return slug
 }
 
 const normalize = (s: string) => s.toLowerCase()
@@ -118,17 +106,27 @@ export default function Search() {
     const [markers, setMarkers] = useState<ApiMarker[]>([])
     const [docs, setDocs] = useState<DocItem[]>([])
     const [loadingMarkers, setLoadingMarkers] = useState(false)
+    const { language, tr } = useLanguage()
+    const markerCategoryLabel: Record<MarkerCategory, string> = {
+        accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
+        friendly_clinic: tr('跨性别友好医疗机构', 'Trans-Friendly Clinic'),
+        baby_room: tr('母婴室', 'Nursing Room'),
+        self_definition: tr('自定义', 'Custom'),
+    }
 
     useEffect(() => {
         setQuery(qParam)
     }, [qParam])
 
     useEffect(() => {
+        let alive = true
         const loadDocs = async () => {
-            const entries = Object.entries(mdModules)
+            setDocs([])
+            const suffix = `.${language}.md`
+            const entries = Object.entries(mdModules).filter(([key]) => key.endsWith(suffix))
             const loaded = await Promise.all(
                 entries.map(async ([key, loader]) => {
-                    const slug = key.split('/').pop()?.replace('.md', '') ?? key
+                    const slug = key.split('/').pop()?.replace(suffix, '') ?? key
                     const content = await loader()
                     return {
                         slug,
@@ -137,10 +135,20 @@ export default function Search() {
                     } as DocItem
                 })
             )
-            setDocs(loaded)
+            if (alive) setDocs(loaded)
         }
         void loadDocs()
-    }, [])
+        return () => {
+            alive = false
+        }
+    }, [language])
+
+    useEffect(() => {
+        document.title = tr('搜索', 'Search')
+        return () => {
+            document.title = 'Lycoris'
+        }
+    }, [tr])
 
     useEffect(() => {
         const run = async () => {
@@ -161,7 +169,7 @@ export default function Search() {
             }
         }
         void run()
-    }, [query])
+    }, [query, language])
 
     const matchedDocs = useMemo(() => {
         const q = query.trim()
@@ -237,7 +245,7 @@ export default function Search() {
                                     color: '#000',
                                 }}
                             >
-                                Search
+                                {tr('搜索', 'Search')}
                             </Typography>
                             <Typography
                                 sx={{
@@ -248,11 +256,11 @@ export default function Search() {
                                     color: 'var(--ly-color-muted)',
                                 }}
                             >
-                                Search places and guides to find useful information.
+                                {tr('搜索地图点位和指南，找到有用的信息。', 'Search places and guides to find useful information.')}
                             </Typography>
                         </Box>
                         <Chip
-                            label={query.trim() ? `Keyword: ${query.trim()}` : 'Enter a keyword to start searching'}
+                            label={query.trim() ? tr(`关键词：${query.trim()}`, `Keyword: ${query.trim()}`) : tr('输入关键词开始搜索', 'Enter a keyword to start searching')}
                             sx={{
                                 maxWidth: '100%',
                                 borderRadius: 999,
@@ -266,10 +274,10 @@ export default function Search() {
                     <TextField
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="Enter a keyword"
+                        placeholder={tr('输入关键词', 'Enter a keyword')}
                         fullWidth
                         inputProps={{
-                            'aria-label': 'Search keywords',
+                            'aria-label': tr('搜索关键词', 'Search keywords'),
                         }}
                         sx={{
                             '& .MuiOutlinedInput-root': {
@@ -299,7 +307,7 @@ export default function Search() {
                                 <IconButton
                                     onClick={() => navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
                                     disabled={!query.trim()}
-                                    aria-label="Run search"
+                                    aria-label={tr('执行搜索', 'Run search')}
                                     sx={{
                                         width: 46,
                                         height: 46,
@@ -340,10 +348,10 @@ export default function Search() {
                     >
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                             <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#000' }}>
-                                Place results
+                                {tr('点位结果', 'Place results')}
                             </Typography>
                             <Chip
-                                label={loadingMarkers ? 'Loading…' : `${markers.length} results`}
+                                label={loadingMarkers ? tr('加载中…', 'Loading…') : tr(`${markers.length} 个结果`, `${markers.length} results`)}
                                 size="small"
                                 sx={{
                                     bgcolor: 'rgba(252, 221, 236, 0.72)',
@@ -383,7 +391,7 @@ export default function Search() {
                                             {highlightText(m.title, query)}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'rgba(17, 24, 39, 0.76)', mt: 0.75 }}>
-                                            {m.description ? highlightText(m.description, query) : 'No description'}
+                                            {m.description ? highlightText(m.description, query) : tr('暂无描述', 'No description')}
                                         </Typography>
                                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
                                             <Chip
@@ -417,7 +425,7 @@ export default function Search() {
                                     }}
                                 >
                                     <Typography variant="body2">
-                                        {query.trim() ? 'No matching places.' : 'Place results will appear here after you enter a keyword.'}
+                                        {query.trim() ? tr('没有匹配的点位。', 'No matching places.') : tr('输入关键词后，点位结果会显示在这里。', 'Place results will appear here after you enter a keyword.')}
                                     </Typography>
                                 </Box>
                             ) : null}
@@ -437,10 +445,10 @@ export default function Search() {
                     >
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                             <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#000' }}>
-                                Guide results
+                                {tr('指南结果', 'Guide results')}
                             </Typography>
                             <Chip
-                                label={`${matchedDocs.length} results`}
+                                label={tr(`${matchedDocs.length} 个结果`, `${matchedDocs.length} results`)}
                                 size="small"
                                 sx={{
                                     bgcolor: 'rgba(252, 221, 236, 0.72)',
@@ -472,7 +480,7 @@ export default function Search() {
                                             {highlightText(d.title, query)}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'rgba(17, 24, 39, 0.76)', mt: 0.75 }}>
-                                            {d.snippet ? highlightText(d.snippet, query) : 'Keyword found'}
+                                            {d.snippet ? highlightText(d.snippet, query) : tr('找到关键词', 'Keyword found')}
                                         </Typography>
                                         <Button
                                             size="small"
@@ -484,9 +492,9 @@ export default function Search() {
                                                 bgcolor: 'rgba(208, 188, 255, 0.34)',
                                                 '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.52)' },
                                             }}
-                                            onClick={() => navigate(`/documents/${d.slug}`)}
+                                            onClick={() => navigate(d.slug === 'about' ? '/about' : `/documents/${d.slug}`)}
                                         >
-                                            Open guide
+                                            {tr('打开指南', 'Open guide')}
                                         </Button>
                                     </CardContent>
                                 </Card>
@@ -502,7 +510,7 @@ export default function Search() {
                                     }}
                                 >
                                     <Typography variant="body2">
-                                        {query.trim() ? 'No matching guides.' : 'Guide results will appear here after you enter a keyword.'}
+                                        {query.trim() ? tr('没有匹配的指南。', 'No matching guides.') : tr('输入关键词后，指南结果会显示在这里。', 'Guide results will appear here after you enter a keyword.')}
                                     </Typography>
                                 </Box>
                             ) : null}

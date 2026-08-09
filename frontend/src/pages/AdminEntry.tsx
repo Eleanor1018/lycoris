@@ -4,9 +4,11 @@ import { Box, Button, Divider, Paper, Stack, TextField, Typography } from '@mui/
 import { useNavigate } from 'react-router-dom'
 import AdminNav from '../components/AdminNav'
 import { adminContainedButtonSx, adminOutlinedButtonSx } from '../styles/adminButtons'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 export default function AdminEntry() {
     const navigate = useNavigate()
+    const { tr } = useLanguage()
     const [passcode, setPasscode] = useState('')
     const [error, setError] = useState<string | null>(null)
     const [loading, setLoading] = useState(false)
@@ -26,7 +28,7 @@ export default function AdminEntry() {
 
     const handleVerify = async () => {
         if (!passcode.trim()) {
-            setError('Enter the secondary passcode.')
+            setError(tr('请输入二级口令。', 'Enter the secondary passcode.'))
             return
         }
         try {
@@ -35,7 +37,7 @@ export default function AdminEntry() {
             setError(null)
             navigate('/admin/review')
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not verify the secondary passcode.'))
+            setError(getErrorMessage(e, tr('二级口令校验失败。', 'Could not verify the secondary passcode.')))
         } finally {
             setLoading(false)
         }
@@ -45,10 +47,10 @@ export default function AdminEntry() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    Admin access
+                    {tr('管理入口', 'Admin access')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    If secondary verification is enabled, verify here first. When it is temporarily disabled, an administrator can open the admin pages directly.
+                    {tr('如果启用了二级校验，请先在此验证。临时关闭时，管理员可以直接打开管理页面。', 'If secondary verification is enabled, verify here first. When it is temporarily disabled, an administrator can open the admin pages directly.')}
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -57,7 +59,7 @@ export default function AdminEntry() {
                     <Stack spacing={2}>
                         <TextField
                             type="password"
-                            label="Secondary passcode"
+                            label={tr('二级口令', 'Secondary passcode')}
                             value={passcode}
                             onChange={(e) => setPasscode(e.target.value)}
                             fullWidth
@@ -69,16 +71,16 @@ export default function AdminEntry() {
                         ) : null}
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                             <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ ...adminContainedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                {loading ? 'Verifying…' : 'Verify and open review center'}
+                                {loading ? tr('校验中…', 'Verifying…') : tr('校验并打开审核中心', 'Verify and open review center')}
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/review')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                Open review center
+                                {tr('打开审核中心', 'Open review center')}
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                Open all places
+                                {tr('打开全量点位', 'Open all places')}
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/usr')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                Open user management
+                                {tr('打开用户管理', 'Open user management')}
                             </Button>
                         </Stack>
                     </Stack>

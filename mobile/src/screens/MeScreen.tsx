@@ -1,4 +1,4 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -16,19 +16,21 @@ import {
   useWindowDimensions,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import {Icon} from 'react-native-paper';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {ApiError, requestJson} from '../lib/http';
+import { Icon } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ApiError, requestJson } from '../lib/http';
 import {
   appendUploadImageToFormData,
   pickUploadImage,
   type LocalUploadImage,
 } from '../lib/imageUpload';
-import {colors} from '../theme/colors';
-import {useAuth} from '../auth/AuthProvider';
-import {PageBackground} from '../components/PageBackground';
-import {radii, shadows, sizes, spacing, typography} from '../theme/tokens';
-import aboutMarkdownRaw from '../docs/about.md';
+import { colors } from '../theme/colors';
+import { useAuth } from '../auth/AuthProvider';
+import { PageBackground } from '../components/PageBackground';
+import { radii, shadows, sizes, spacing, typography } from '../theme/tokens';
+import aboutEnglishMarkdownRaw from '../docs/about.md';
+import aboutChineseMarkdownRaw from '../docs/about.zh.md';
+import { useLanguage } from '../i18n/LanguageProvider';
 
 export type MePanel =
   | 'root'
@@ -59,16 +61,10 @@ type MarkerRow = {
 
 const rowsPerPage = 6;
 
-const categoryLabelMap: Record<string, string> = {
-  accessible_toilet: 'Accessible Restroom',
-  friendly_clinic: 'Trans-Friendly Clinic',
-  baby_room: 'Nursing Room',
-  self_definition: 'Custom',
-  safe_place: 'Custom',
-  dangerous_place: 'Custom',
-};
-
-const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
+const normalizeMarkerRows = (
+  raw: unknown,
+  tr: (zh: string, en: string) => string,
+): MarkerRow[] => {
   if (!Array.isArray(raw)) return [];
   const rows: MarkerRow[] = [];
   for (const item of raw) {
@@ -76,8 +72,16 @@ const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
     const row = item as MarkerApiRow;
     const id = Number(row.id);
     if (!Number.isFinite(id)) continue;
-    const title = row.title?.trim() || 'Untitled Place';
+    const title = row.title?.trim() || tr('未命名点位', 'Untitled Place');
     const categoryRaw = row.category || 'self_definition';
+    const categoryLabelMap: Record<string, string> = {
+      accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
+      friendly_clinic: tr('友好医疗机构', 'Trans-Friendly Clinic'),
+      baby_room: tr('母婴室', 'Nursing Room'),
+      self_definition: tr('自定义', 'Custom'),
+      safe_place: tr('自定义', 'Custom'),
+      dangerous_place: tr('自定义', 'Custom'),
+    };
     const category = categoryLabelMap[categoryRaw] ?? categoryRaw;
     const updatedAtRaw = (row.updatedAt ?? row.createdAt ?? '').toString();
     const updatedAt = updatedAtRaw ? updatedAtRaw.slice(0, 10) : '-';
@@ -95,14 +99,15 @@ const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
   return rows;
 };
 
-function AboutEntryCard({onPress}: {onPress: () => void}) {
+function AboutEntryCard({ onPress }: { onPress: () => void }) {
+  const { tr } = useLanguage();
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel="About Lycoris"
-      accessibilityHint="Open the project introduction"
+      accessibilityLabel={tr('关于夏水仙', 'About Lycoris')}
+      accessibilityHint={tr('打开项目介绍', 'Open the project introduction')}
       onPress={onPress}
-      style={({pressed}) => [
+      style={({ pressed }) => [
         styles.menuEntryCard,
         pressed && styles.pressablePressed,
       ]}
@@ -111,7 +116,9 @@ function AboutEntryCard({onPress}: {onPress: () => void}) {
         <Icon source="information-outline" size={22} color={colors.primary} />
       </View>
       <View style={styles.menuEntryTextWrap}>
-        <Text style={styles.menuEntryTitle}>About Lycoris</Text>
+        <Text style={styles.menuEntryTitle}>
+          {tr('关于夏水仙', 'About Lycoris')}
+        </Text>
       </View>
       <Icon source="chevron-right" size={20} color={colors.textSecondary} />
     </Pressable>
@@ -129,13 +136,14 @@ function MarkerListEntryCard({
   tone: 'lilac' | 'blush';
   onPress: () => void;
 }) {
+  const { tr } = useLanguage();
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={title}
-      accessibilityHint="Open the place list"
+      accessibilityHint={tr('打开点位列表', 'Open the place list')}
       onPress={onPress}
-      style={({pressed}) => [
+      style={({ pressed }) => [
         styles.menuEntryCard,
         pressed && styles.pressablePressed,
       ]}
@@ -158,17 +166,18 @@ function MarkerListEntryCard({
   );
 }
 
-function PanelHeader({title, onBack}: {title: string; onBack: () => void}) {
+function PanelHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  const { tr } = useLanguage();
   return (
     <View style={styles.hero}>
       <View style={styles.heroTopRow}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Back"
-          accessibilityHint="Return to the Me page"
+          accessibilityLabel={tr('返回', 'Back')}
+          accessibilityHint={tr('返回我的页面', 'Return to the Me page')}
           hitSlop={4}
           onPress={onBack}
-          style={({pressed}) => [
+          style={({ pressed }) => [
             styles.backRow,
             pressed && styles.pressablePressed,
           ]}
@@ -201,10 +210,11 @@ export function MeScreen({
   onNavigatePanel,
   onBack,
 }: MeScreenProps) {
-  const {loading, user, isLoggedIn, login, register, logout, refresh} =
+  const { loading, user, isLoggedIn, login, register, logout, refresh } =
     useAuth();
+  const { language, tr } = useLanguage();
   const insets = useSafeAreaInsets();
-  const {width} = useWindowDimensions();
+  const { width } = useWindowDimensions();
   const compactLayout = width < 360;
   const pageInsetsStyle = {
     paddingTop: Math.max(insets.top + spacing.sm, spacing.lg),
@@ -254,6 +264,17 @@ export function MeScreen({
   const [panelState, setPanelState] = useState<MePanel>('root');
   const panel = panelProp ?? panelState;
 
+  useEffect(() => {
+    setError('');
+    setRegisterError('');
+    setPasswordError('');
+    setPasswordSuccess('');
+    setProfileError('');
+    setAvatarHint('');
+    setAvatarError('');
+    setMarkerListError('');
+  }, [language]);
+
   const goPanel = useCallback(
     (next: MePanel) => {
       if (next === panel) return;
@@ -276,11 +297,13 @@ export function MeScreen({
   }, [user]);
 
   const aboutMarkdown = useMemo(() => {
-    const normalized = aboutMarkdownRaw
+    const normalized = (
+      language === 'zh' ? aboutChineseMarkdownRaw : aboutEnglishMarkdownRaw
+    )
       .replace(/\r\n/g, '\n')
       .replace(/&ensp;/g, '');
     return normalized.replace(/^[\u3000 ]+/gmu, '');
-  }, []);
+  }, [language]);
 
   const createdSlice = useMemo(
     () =>
@@ -308,8 +331,8 @@ export function MeScreen({
         requestJson<unknown>('/api/markers/me/created'),
         requestJson<unknown>('/api/markers/me/favorites/details'),
       ]);
-      setCreatedRows(normalizeMarkerRows(createdRes));
-      setFavoriteRows(normalizeMarkerRows(favoriteRes));
+      setCreatedRows(normalizeMarkerRows(createdRes, tr));
+      setFavoriteRows(normalizeMarkerRows(favoriteRes, tr));
       setCreatedPage(0);
       setFavoritePage(0);
     } catch (e) {
@@ -322,12 +345,17 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setMarkerListError(e.message);
       } else {
-        setMarkerListError('Could not load your places. Please try again.');
+        setMarkerListError(
+          tr(
+            '无法加载点位，请重试。',
+            'Could not load your places. Please try again.',
+          ),
+        );
       }
     } finally {
       setMarkerListLoading(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, tr]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -352,7 +380,7 @@ export function MeScreen({
   const doLogin = async () => {
     const uname = username.trim();
     if (!uname || !password) {
-      setError('Enter your username and password.');
+      setError(tr('请输入用户名和密码。', 'Enter your username and password.'));
       return;
     }
     try {
@@ -368,7 +396,9 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError('Could not log in. Please try again.');
+        setError(
+          tr('登录失败，请稍后重试。', 'Could not log in. Please try again.'),
+        );
       }
     } finally {
       setBusy(false);
@@ -390,11 +420,18 @@ export function MeScreen({
       !payload.email ||
       !payload.password
     ) {
-      setRegisterError('Complete all required registration fields.');
+      setRegisterError(
+        tr(
+          '请填写所有必填注册信息。',
+          'Complete all required registration fields.',
+        ),
+      );
       return;
     }
     if (payload.password !== password2) {
-      setRegisterError('The passwords do not match.');
+      setRegisterError(
+        tr('两次输入的密码不一致。', 'The passwords do not match.'),
+      );
       return;
     }
 
@@ -418,7 +455,12 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setRegisterError(e.message);
       } else {
-        setRegisterError('Could not create your account. Please try again.');
+        setRegisterError(
+          tr(
+            '注册失败，请稍后重试。',
+            'Could not create your account. Please try again.',
+          ),
+        );
       }
     } finally {
       setBusy(false);
@@ -453,7 +495,7 @@ export function MeScreen({
     if (profileSaving || avatarPicking) return;
     setAvatarPicking(true);
     setAvatarError('');
-    const result = await pickUploadImage({mode: 'avatar'});
+    const result = await pickUploadImage({ mode: 'avatar' });
     setAvatarPicking(false);
 
     if (result.cancelled) return;
@@ -500,7 +542,12 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setProfileError(e.message);
       } else {
-        setProfileError('Could not save your profile. Please try again.');
+        setProfileError(
+          tr(
+            '保存资料失败，请稍后重试。',
+            'Could not save your profile. Please try again.',
+          ),
+        );
       }
     } finally {
       setProfileSaving(false);
@@ -509,11 +556,13 @@ export function MeScreen({
 
   const doChangePassword = async () => {
     if (!passwordForm.oldPassword || !passwordForm.newPassword) {
-      setPasswordError('Complete all fields.');
+      setPasswordError(tr('请填写全部字段。', 'Complete all fields.'));
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirm) {
-      setPasswordError('The new passwords do not match.');
+      setPasswordError(
+        tr('两次输入的新密码不一致。', 'The new passwords do not match.'),
+      );
       return;
     }
     try {
@@ -527,8 +576,8 @@ export function MeScreen({
           newPassword: passwordForm.newPassword,
         }),
       });
-      setPasswordForm({oldPassword: '', newPassword: '', confirm: ''});
-      setPasswordSuccess('Password changed.');
+      setPasswordForm({ oldPassword: '', newPassword: '', confirm: '' });
+      setPasswordSuccess(tr('密码修改成功。', 'Password changed.'));
       setTimeout(() => {
         setPasswordSuccess('');
         goPanel('root');
@@ -539,7 +588,9 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setPasswordError(e.message);
       } else {
-        setPasswordError('Could not change your password.');
+        setPasswordError(
+          tr('修改密码失败。', 'Could not change your password.'),
+        );
       }
     } finally {
       setPasswordBusy(false);
@@ -570,11 +621,14 @@ export function MeScreen({
         <PageBackground />
         <View style={styles.loadingCard}>
           <ActivityIndicator
-            accessibilityLabel="Checking sign-in status"
+            accessibilityLabel={tr(
+              '正在检查登录状态',
+              'Checking sign-in status',
+            )}
             color={colors.primary}
           />
           <Text accessibilityLiveRegion="polite" style={styles.loadingText}>
-            Checking sign-in status...
+            {tr('正在检查登录状态...', 'Checking sign-in status...')}
           </Text>
         </View>
       </View>
@@ -585,7 +639,10 @@ export function MeScreen({
     return (
       <View style={[styles.page, pageInsetsStyle]}>
         <PageBackground />
-        <PanelHeader title="About Lycoris" onBack={() => goPanel('root')} />
+        <PanelHeader
+          title={tr('关于夏水仙', 'About Lycoris')}
+          onBack={() => goPanel('root')}
+        />
 
         <ScrollView
           style={styles.scroll}
@@ -611,14 +668,16 @@ export function MeScreen({
 
   if (panel === 'created' || panel === 'favorites') {
     const isCreatedPanel = panel === 'created';
-    const title = isCreatedPanel ? 'Places I Created' : 'Favorite Places';
+    const title = isCreatedPanel
+      ? tr('我创建的点位', 'Places I Created')
+      : tr('我收藏的点位', 'Favorite Places');
     const rows = isCreatedPanel ? createdRows : favoriteRows;
     const page = isCreatedPanel ? createdPage : favoritePage;
     const setPage = isCreatedPanel ? setCreatedPage : setFavoritePage;
     const slice = isCreatedPanel ? createdSlice : favoriteSlice;
     const emptyText = isCreatedPanel
-      ? 'You have not created any places yet.'
-      : 'You have no favorite places yet.';
+      ? tr('你还没有创建点位。', 'You have not created any places yet.')
+      : tr('你还没有收藏点位。', 'You have no favorite places yet.');
     const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
     const rangeStart = rows.length === 0 ? 0 : page * rowsPerPage + 1;
     const rangeEnd =
@@ -639,7 +698,10 @@ export function MeScreen({
             <View style={styles.markerListSummaryRow}>
               <View>
                 <Text style={styles.markerListSummaryTitle}>
-                  {rows.length} {rows.length === 1 ? 'place' : 'places'}
+                  {tr(
+                    `${rows.length} 个点位`,
+                    `${rows.length} ${rows.length === 1 ? 'place' : 'places'}`,
+                  )}
                 </Text>
               </View>
               <View style={styles.markerListCountPill}>
@@ -652,14 +714,17 @@ export function MeScreen({
             {markerListLoading ? (
               <View style={styles.markerListLoadingWrap}>
                 <ActivityIndicator
-                  accessibilityLabel="Loading place list"
+                  accessibilityLabel={tr(
+                    '正在加载点位列表',
+                    'Loading place list',
+                  )}
                   color={colors.primary}
                 />
                 <Text
                   accessibilityLiveRegion="polite"
                   style={styles.menuEntrySubtitle}
                 >
-                  Loading...
+                  {tr('加载中...', 'Loading...')}
                 </Text>
               </View>
             ) : slice.length === 0 ? (
@@ -670,11 +735,17 @@ export function MeScreen({
               slice.map(row => (
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={`${row.title}, ${row.category}, updated ${row.updatedAt}`}
-                  accessibilityHint="Open this place on the map"
+                  accessibilityLabel={tr(
+                    `${row.title}，${row.category}，更新于 ${row.updatedAt}`,
+                    `${row.title}, ${row.category}, updated ${row.updatedAt}`,
+                  )}
+                  accessibilityHint={tr(
+                    '在地图上打开这个点位',
+                    'Open this place on the map',
+                  )}
                   key={`${panel}-${row.id}`}
                   onPress={() => openMarkerOnMap(row)}
-                  style={({pressed}) => [
+                  style={({ pressed }) => [
                     styles.markerListRow,
                     pressed && styles.markerListRowPressed,
                   ]}
@@ -706,14 +777,17 @@ export function MeScreen({
 
             <View style={styles.markerPagerRow}>
               <Text style={styles.markerPagerText}>
-                Page {Math.min(page + 1, pageCount)} of {pageCount}
+                {tr(
+                  `第 ${Math.min(page + 1, pageCount)} 页，共 ${pageCount} 页`,
+                  `Page ${Math.min(page + 1, pageCount)} of ${pageCount}`,
+                )}
               </Text>
               <View style={styles.markerPagerActions}>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Previous page"
-                  accessibilityState={{disabled: page <= 0}}
-                  style={({pressed}) => [
+                  accessibilityLabel={tr('上一页', 'Previous page')}
+                  accessibilityState={{ disabled: page <= 0 }}
+                  style={({ pressed }) => [
                     styles.markerPagerBtn,
                     page <= 0 && styles.markerPagerBtnDisabled,
                     pressed && page > 0 && styles.pressablePressed,
@@ -729,9 +803,9 @@ export function MeScreen({
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Next page"
-                  accessibilityState={{disabled: page >= pageCount - 1}}
-                  style={({pressed}) => [
+                  accessibilityLabel={tr('下一页', 'Next page')}
+                  accessibilityState={{ disabled: page >= pageCount - 1 }}
+                  style={({ pressed }) => [
                     styles.markerPagerBtn,
                     page >= pageCount - 1 && styles.markerPagerBtnDisabled,
                     pressed && page < pageCount - 1 && styles.pressablePressed,
@@ -760,12 +834,12 @@ export function MeScreen({
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel="Refresh place list"
+              accessibilityLabel={tr('刷新点位列表', 'Refresh place list')}
               accessibilityState={{
                 disabled: markerListLoading,
                 busy: markerListLoading,
               }}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.markerReloadBtn,
                 markerListLoading && styles.disabledControl,
                 pressed && !markerListLoading && styles.pressablePressed,
@@ -777,7 +851,9 @@ export function MeScreen({
             >
               <Icon source="refresh" size={18} color={colors.primary} />
               <Text style={styles.markerReloadBtnText}>
-                {markerListLoading ? 'Refreshing...' : 'Refresh List'}
+                {markerListLoading
+                  ? tr('刷新中...', 'Refreshing...')
+                  : tr('刷新列表', 'Refresh List')}
               </Text>
             </Pressable>
           </View>
@@ -794,7 +870,10 @@ export function MeScreen({
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       >
         <PageBackground />
-        <PanelHeader title="Create Account" onBack={() => goPanel('root')} />
+        <PanelHeader
+          title={tr('注册', 'Create Account')}
+          onBack={() => goPanel('root')}
+        />
 
         <ScrollView
           style={styles.scroll}
@@ -805,72 +884,74 @@ export function MeScreen({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.label}>{tr('用户名', 'Username')}</Text>
             <TextInput
-              accessibilityLabel="Username"
+              accessibilityLabel={tr('用户名', 'Username')}
               autoCapitalize="none"
               autoCorrect={false}
               value={registerForm.username}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, username: value}))
+                setRegisterForm(prev => ({ ...prev, username: value }))
               }
               style={styles.input}
-              placeholder="Enter a username"
+              placeholder={tr('请输入用户名', 'Enter a username')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Display Name</Text>
+            <Text style={styles.label}>{tr('昵称', 'Display Name')}</Text>
             <TextInput
-              accessibilityLabel="Display name"
+              accessibilityLabel={tr('昵称', 'Display name')}
               value={registerForm.nickname}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, nickname: value}))
+                setRegisterForm(prev => ({ ...prev, nickname: value }))
               }
               style={styles.input}
-              placeholder="Enter a display name"
+              placeholder={tr('请输入昵称', 'Enter a display name')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{tr('邮箱', 'Email')}</Text>
             <TextInput
-              accessibilityLabel="Email"
+              accessibilityLabel={tr('邮箱', 'Email')}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="email-address"
               value={registerForm.email}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, email: value}))
+                setRegisterForm(prev => ({ ...prev, email: value }))
               }
               style={styles.input}
-              placeholder="Enter your email"
+              placeholder={tr('请输入邮箱', 'Enter your email')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{tr('密码', 'Password')}</Text>
             <TextInput
-              accessibilityLabel="Password"
+              accessibilityLabel={tr('密码', 'Password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={registerForm.password}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, password: value}))
+                setRegisterForm(prev => ({ ...prev, password: value }))
               }
               style={styles.input}
-              placeholder="Enter a password"
+              placeholder={tr('请输入密码', 'Enter a password')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Confirm Password</Text>
+            <Text style={styles.label}>
+              {tr('再次输入密码', 'Confirm Password')}
+            </Text>
             <TextInput
-              accessibilityLabel="Confirm password"
+              accessibilityLabel={tr('再次输入密码', 'Confirm password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={password2}
               onChangeText={setPassword2}
               style={styles.input}
-              placeholder="Enter the password again"
+              placeholder={tr('请再次输入密码', 'Enter the password again')}
               placeholderTextColor={colors.textMuted}
             />
 
@@ -882,10 +963,14 @@ export function MeScreen({
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={busy ? 'Creating account' : 'Create account'}
-              accessibilityState={{disabled: busy, busy}}
+              accessibilityLabel={
+                busy
+                  ? tr('正在注册', 'Creating account')
+                  : tr('注册', 'Create account')
+              }
+              accessibilityState={{ disabled: busy, busy }}
               onPress={doRegister}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.loginBtn,
                 busy && styles.disabledControl,
                 pressed && !busy && styles.pressablePressed,
@@ -893,15 +978,19 @@ export function MeScreen({
               disabled={busy}
             >
               <Text style={styles.loginBtnText}>
-                {busy ? 'Creating Account...' : 'Create Account'}
+                {busy
+                  ? tr('注册中...', 'Creating Account...')
+                  : tr('注册', 'Create Account')}
               </Text>
             </Pressable>
 
             <View style={styles.formLinkRow}>
-              <Text style={styles.formLinkHint}>Already have an account?</Text>
+              <Text style={styles.formLinkHint}>
+                {tr('已经有账号？', 'Already have an account?')}
+              </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Go to login"
+                accessibilityLabel={tr('去登录', 'Go to login')}
                 hitSlop={8}
                 style={styles.formLinkPressable}
                 onPress={() => {
@@ -909,7 +998,9 @@ export function MeScreen({
                   goPanel('root');
                 }}
               >
-                <Text style={styles.formLinkText}>Log In</Text>
+                <Text style={styles.formLinkText}>
+                  {tr('去登录', 'Log In')}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -926,7 +1017,10 @@ export function MeScreen({
         keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
       >
         <PageBackground />
-        <PanelHeader title="Change Password" onBack={() => goPanel('root')} />
+        <PanelHeader
+          title={tr('修改密码', 'Change Password')}
+          onBack={() => goPanel('root')}
+        />
         <ScrollView
           style={styles.scroll}
           contentInsetAdjustmentBehavior="automatic"
@@ -936,48 +1030,53 @@ export function MeScreen({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            <Text style={styles.label}>Current Password</Text>
+            <Text style={styles.label}>{tr('原密码', 'Current Password')}</Text>
             <TextInput
-              accessibilityLabel="Current password"
+              accessibilityLabel={tr('原密码', 'Current password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={passwordForm.oldPassword}
               onChangeText={value =>
-                setPasswordForm(prev => ({...prev, oldPassword: value}))
+                setPasswordForm(prev => ({ ...prev, oldPassword: value }))
               }
               style={styles.input}
-              placeholder="Enter your current password"
+              placeholder={tr('请输入原密码', 'Enter your current password')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>New Password</Text>
+            <Text style={styles.label}>{tr('新密码', 'New Password')}</Text>
             <TextInput
-              accessibilityLabel="New password"
+              accessibilityLabel={tr('新密码', 'New password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={passwordForm.newPassword}
               onChangeText={value =>
-                setPasswordForm(prev => ({...prev, newPassword: value}))
+                setPasswordForm(prev => ({ ...prev, newPassword: value }))
               }
               style={styles.input}
-              placeholder="Enter a new password"
+              placeholder={tr('请输入新密码', 'Enter a new password')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Confirm New Password</Text>
+            <Text style={styles.label}>
+              {tr('确认新密码', 'Confirm New Password')}
+            </Text>
             <TextInput
-              accessibilityLabel="Confirm new password"
+              accessibilityLabel={tr('确认新密码', 'Confirm new password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={passwordForm.confirm}
               onChangeText={value =>
-                setPasswordForm(prev => ({...prev, confirm: value}))
+                setPasswordForm(prev => ({ ...prev, confirm: value }))
               }
               style={styles.input}
-              placeholder="Enter the new password again"
+              placeholder={tr(
+                '请再次输入新密码',
+                'Enter the new password again',
+              )}
               placeholderTextColor={colors.textMuted}
             />
 
@@ -995,14 +1094,16 @@ export function MeScreen({
             <Pressable
               accessibilityRole="button"
               accessibilityLabel={
-                passwordBusy ? 'Saving password' : 'Save new password'
+                passwordBusy
+                  ? tr('正在保存密码', 'Saving password')
+                  : tr('保存新密码', 'Save new password')
               }
               accessibilityState={{
                 disabled: passwordBusy,
                 busy: passwordBusy,
               }}
               onPress={doChangePassword}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.loginBtn,
                 passwordBusy && styles.disabledControl,
                 pressed && !passwordBusy && styles.pressablePressed,
@@ -1010,7 +1111,9 @@ export function MeScreen({
               disabled={passwordBusy}
             >
               <Text style={styles.loginBtnText}>
-                {passwordBusy ? 'Saving...' : 'Save New Password'}
+                {passwordBusy
+                  ? tr('保存中...', 'Saving...')
+                  : tr('保存新密码', 'Save New Password')}
               </Text>
             </Pressable>
           </View>
@@ -1041,9 +1144,12 @@ export function MeScreen({
             >
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Edit profile"
-                accessibilityHint="Change your display name, pronouns, bio, and profile picture"
-                style={({pressed}) => [
+                accessibilityLabel={tr('编辑个人资料', 'Edit profile')}
+                accessibilityHint={tr(
+                  '修改昵称、代词、签名和头像',
+                  'Change your display name, pronouns, bio, and profile picture',
+                )}
+                style={({ pressed }) => [
                   styles.profileEditFab,
                   pressed && styles.pressablePressed,
                 ]}
@@ -1058,13 +1164,19 @@ export function MeScreen({
 
               {user.avatarUrl ? (
                 <Image
-                  accessibilityLabel={`${nickname}'s profile picture`}
-                  source={{uri: user.avatarUrl}}
+                  accessibilityLabel={tr(
+                    `${nickname} 的头像`,
+                    `${nickname}'s profile picture`,
+                  )}
+                  source={{ uri: user.avatarUrl }}
                   style={styles.profileAvatarLarge}
                 />
               ) : (
                 <View
-                  accessibilityLabel="Default profile picture"
+                  accessibilityLabel={tr(
+                    '默认个人头像',
+                    'Default profile picture',
+                  )}
                   style={styles.profileAvatarFallbackLarge}
                 >
                   <Icon
@@ -1094,8 +1206,8 @@ export function MeScreen({
               >
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Change password"
-                  style={({pressed}) => [
+                  accessibilityLabel={tr('修改密码', 'Change password')}
+                  style={({ pressed }) => [
                     styles.profileOutlineBtn,
                     pressed && styles.pressablePressed,
                   ]}
@@ -1111,15 +1223,19 @@ export function MeScreen({
                     color={colors.primary}
                   />
                   <Text style={styles.profileOutlineBtnText}>
-                    Change Password
+                    {tr('修改密码', 'Change Password')}
                   </Text>
                 </Pressable>
 
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel={busy ? 'Logging out' : 'Log out'}
-                  accessibilityState={{disabled: busy, busy}}
-                  style={({pressed}) => [
+                  accessibilityLabel={
+                    busy
+                      ? tr('正在退出登录', 'Logging out')
+                      : tr('退出登录', 'Log out')
+                  }
+                  accessibilityState={{ disabled: busy, busy }}
+                  style={({ pressed }) => [
                     styles.profileLogoutBtn,
                     busy && styles.disabledControl,
                     pressed && !busy && styles.pressablePressed,
@@ -1129,20 +1245,22 @@ export function MeScreen({
                 >
                   <Icon source="logout" size={18} color={colors.primary} />
                   <Text style={styles.profileLogoutBtnText}>
-                    {busy ? 'Working...' : 'Log Out'}
+                    {busy
+                      ? tr('处理中...', 'Working...')
+                      : tr('退出登录', 'Log Out')}
                   </Text>
                 </Pressable>
               </View>
             </View>
 
             <MarkerListEntryCard
-              title="Places I Created"
+              title={tr('我创建的点位', 'Places I Created')}
               icon="map-marker-plus-outline"
               tone="lilac"
               onPress={() => goPanel('created')}
             />
             <MarkerListEntryCard
-              title="Favorite Places"
+              title={tr('我收藏的点位', 'Favorite Places')}
               icon="star-outline"
               tone="blush"
               onPress={() => goPanel('favorites')}
@@ -1157,30 +1275,30 @@ export function MeScreen({
             ]}
           >
             <Text accessibilityRole="header" style={styles.formTitle}>
-              Log In
+              {tr('登录', 'Log In')}
             </Text>
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.label}>{tr('用户名', 'Username')}</Text>
             <TextInput
-              accessibilityLabel="Username"
+              accessibilityLabel={tr('用户名', 'Username')}
               autoCapitalize="none"
               autoCorrect={false}
               value={username}
               onChangeText={setUsername}
               style={styles.input}
-              placeholder="Enter your username"
+              placeholder={tr('请输入用户名', 'Enter your username')}
               placeholderTextColor={colors.textMuted}
             />
 
-            <Text style={styles.label}>Password</Text>
+            <Text style={styles.label}>{tr('密码', 'Password')}</Text>
             <TextInput
-              accessibilityLabel="Password"
+              accessibilityLabel={tr('密码', 'Password')}
               autoCapitalize="none"
               autoCorrect={false}
               secureTextEntry
               value={password}
               onChangeText={setPassword}
               style={styles.input}
-              placeholder="Enter your password"
+              placeholder={tr('请输入密码', 'Enter your password')}
               placeholderTextColor={colors.textMuted}
             />
 
@@ -1192,10 +1310,12 @@ export function MeScreen({
 
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={busy ? 'Logging in' : 'Log in'}
-              accessibilityState={{disabled: busy, busy}}
+              accessibilityLabel={
+                busy ? tr('正在登录', 'Logging in') : tr('登录', 'Log in')
+              }
+              accessibilityState={{ disabled: busy, busy }}
               onPress={doLogin}
-              style={({pressed}) => [
+              style={({ pressed }) => [
                 styles.loginBtn,
                 busy && styles.disabledControl,
                 pressed && !busy && styles.pressablePressed,
@@ -1203,15 +1323,17 @@ export function MeScreen({
               disabled={busy}
             >
               <Text style={styles.loginBtnText}>
-                {busy ? 'Logging In...' : 'Log In'}
+                {busy ? tr('登录中...', 'Logging In...') : tr('登录', 'Log In')}
               </Text>
             </Pressable>
 
             <View style={styles.formLinkRow}>
-              <Text style={styles.formLinkHint}>New to Lycoris?</Text>
+              <Text style={styles.formLinkHint}>
+                {tr('没有账号？', 'New to Lycoris?')}
+              </Text>
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Create an account"
+                accessibilityLabel={tr('去注册', 'Create an account')}
                 hitSlop={8}
                 style={styles.formLinkPressable}
                 onPress={() => {
@@ -1219,7 +1341,9 @@ export function MeScreen({
                   goPanel('register');
                 }}
               >
-                <Text style={styles.formLinkText}>Create Account</Text>
+                <Text style={styles.formLinkText}>
+                  {tr('去注册', 'Create Account')}
+                </Text>
               </Pressable>
             </View>
           </View>
@@ -1259,16 +1383,19 @@ export function MeScreen({
               <View style={styles.editTitleRow}>
                 <View style={styles.editTitleTextWrap}>
                   <Text accessibilityRole="header" style={styles.editTitle}>
-                    Edit Profile
+                    {tr('编辑资料', 'Edit Profile')}
                   </Text>
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Close profile editor"
-                  accessibilityState={{disabled: profileSaving}}
+                  accessibilityLabel={tr(
+                    '关闭编辑资料',
+                    'Close profile editor',
+                  )}
+                  accessibilityState={{ disabled: profileSaving }}
                   disabled={profileSaving}
                   onPress={() => setProfileEditOpen(false)}
-                  style={({pressed}) => [
+                  style={({ pressed }) => [
                     styles.modalCloseBtn,
                     profileSaving && styles.disabledControl,
                     pressed && !profileSaving && styles.pressablePressed,
@@ -1278,58 +1405,63 @@ export function MeScreen({
                 </Pressable>
               </View>
 
-              <Text style={styles.label}>Display Name</Text>
+              <Text style={styles.label}>{tr('昵称', 'Display Name')}</Text>
               <TextInput
-                accessibilityLabel="Display name"
+                accessibilityLabel={tr('昵称', 'Display name')}
                 value={profileDraft.nickname}
                 onChangeText={value =>
-                  setProfileDraft(prev => ({...prev, nickname: value}))
+                  setProfileDraft(prev => ({ ...prev, nickname: value }))
                 }
                 style={styles.input}
-                placeholder="Enter a display name"
+                placeholder={tr('请输入昵称', 'Enter a display name')}
                 placeholderTextColor={colors.textMuted}
               />
 
-              <Text style={styles.label}>Pronouns</Text>
+              <Text style={styles.label}>{tr('代词', 'Pronouns')}</Text>
               <TextInput
-                accessibilityLabel="Pronouns"
+                accessibilityLabel={tr('代词', 'Pronouns')}
                 value={profileDraft.pronouns}
                 onChangeText={value =>
-                  setProfileDraft(prev => ({...prev, pronouns: value}))
+                  setProfileDraft(prev => ({ ...prev, pronouns: value }))
                 }
                 style={styles.input}
-                placeholder="For example, she/her"
+                placeholder={tr('例如 she/her', 'For example, she/her')}
                 placeholderTextColor={colors.textMuted}
               />
 
-              <Text style={styles.label}>Bio</Text>
+              <Text style={styles.label}>{tr('签名', 'Bio')}</Text>
               <TextInput
-                accessibilityLabel="Bio"
+                accessibilityLabel={tr('签名', 'Bio')}
                 value={profileDraft.signature}
                 onChangeText={value =>
-                  setProfileDraft(prev => ({...prev, signature: value}))
+                  setProfileDraft(prev => ({ ...prev, signature: value }))
                 }
                 style={[styles.input, styles.editSignatureInput]}
-                placeholder="Tell us a little about yourself"
+                placeholder={tr(
+                  '写点你想说的话',
+                  'Tell us a little about yourself',
+                )}
                 placeholderTextColor={colors.textMuted}
                 multiline
                 textAlignVertical="top"
               />
 
-              <Text style={styles.label}>Profile Picture (Optional)</Text>
+              <Text style={styles.label}>
+                {tr('头像（可选）', 'Profile Picture (Optional)')}
+              </Text>
               <View style={styles.uploadRow}>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={
                     avatarPicking
-                      ? 'Processing image'
-                      : 'Choose profile picture'
+                      ? tr('正在处理图片', 'Processing image')
+                      : tr('选择头像图片', 'Choose profile picture')
                   }
                   accessibilityState={{
                     disabled: profileSaving || avatarPicking,
                     busy: avatarPicking,
                   }}
-                  style={({pressed}) => [
+                  style={({ pressed }) => [
                     styles.uploadPickBtn,
                     (profileSaving || avatarPicking) && styles.disabledControl,
                     pressed &&
@@ -1342,17 +1474,22 @@ export function MeScreen({
                 >
                   <Icon source="image-plus" size={18} color={colors.primary} />
                   <Text style={styles.uploadPickBtnText}>
-                    {avatarPicking ? 'Processing...' : 'Choose Image'}
+                    {avatarPicking
+                      ? tr('处理中...', 'Processing...')
+                      : tr('选择图片', 'Choose Image')}
                   </Text>
                 </Pressable>
                 {avatarDraftFile ? (
                   <Pressable
                     accessibilityRole="button"
-                    accessibilityLabel="Clear selected profile picture"
+                    accessibilityLabel={tr(
+                      '清除已选择的头像图片',
+                      'Clear selected profile picture',
+                    )}
                     accessibilityState={{
                       disabled: profileSaving || avatarPicking,
                     }}
-                    style={({pressed}) => [
+                    style={({ pressed }) => [
                       styles.uploadClearBtn,
                       (profileSaving || avatarPicking) &&
                         styles.disabledControl,
@@ -1368,7 +1505,9 @@ export function MeScreen({
                     }}
                     disabled={profileSaving || avatarPicking}
                   >
-                    <Text style={styles.uploadClearBtnText}>Clear</Text>
+                    <Text style={styles.uploadClearBtnText}>
+                      {tr('清除', 'Clear')}
+                    </Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -1383,7 +1522,8 @@ export function MeScreen({
               ) : null}
               {avatarDraftFile ? (
                 <Text style={styles.uploadPickedText}>
-                  Selected: {avatarDraftFile.name}
+                  {tr('已选择：', 'Selected: ')}
+                  {avatarDraftFile.name}
                 </Text>
               ) : null}
 
@@ -1401,9 +1541,12 @@ export function MeScreen({
               >
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Cancel profile editing"
-                  accessibilityState={{disabled: profileSaving}}
-                  style={({pressed}) => [
+                  accessibilityLabel={tr(
+                    '取消编辑资料',
+                    'Cancel profile editing',
+                  )}
+                  accessibilityState={{ disabled: profileSaving }}
+                  style={({ pressed }) => [
                     styles.editCancelBtn,
                     profileSaving && styles.disabledControl,
                     pressed && !profileSaving && styles.pressablePressed,
@@ -1411,18 +1554,22 @@ export function MeScreen({
                   disabled={profileSaving}
                   onPress={() => setProfileEditOpen(false)}
                 >
-                  <Text style={styles.editCancelBtnText}>Cancel</Text>
+                  <Text style={styles.editCancelBtnText}>
+                    {tr('取消', 'Cancel')}
+                  </Text>
                 </Pressable>
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={
-                    profileSaving ? 'Saving profile' : 'Save profile'
+                    profileSaving
+                      ? tr('正在保存个人资料', 'Saving profile')
+                      : tr('保存个人资料', 'Save profile')
                   }
                   accessibilityState={{
                     disabled: profileSaving || avatarPicking,
                     busy: profileSaving,
                   }}
-                  style={({pressed}) => [
+                  style={({ pressed }) => [
                     styles.editSaveBtn,
                     (profileSaving || avatarPicking) && styles.disabledControl,
                     pressed &&
@@ -1434,7 +1581,9 @@ export function MeScreen({
                   onPress={saveProfileEdit}
                 >
                   <Text style={styles.editSaveBtnText}>
-                    {profileSaving ? 'Saving...' : 'Save'}
+                    {profileSaving
+                      ? tr('保存中...', 'Saving...')
+                      : tr('保存', 'Save')}
                   </Text>
                 </Pressable>
               </View>
@@ -1686,7 +1835,7 @@ const styles = StyleSheet.create({
   },
   markerListRowPressed: {
     backgroundColor: colors.primarySoft,
-    transform: [{scale: 0.99}],
+    transform: [{ scale: 0.99 }],
   },
   markerListRowContent: {
     flex: 1,
@@ -1838,7 +1987,7 @@ const styles = StyleSheet.create({
     borderColor: colors.blush,
     backgroundColor: colors.surface,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 18,
     elevation: 3,
@@ -2166,7 +2315,7 @@ const styles = StyleSheet.create({
   },
   pressablePressed: {
     opacity: 0.78,
-    transform: [{scale: 0.985}],
+    transform: [{ scale: 0.985 }],
   },
   disabledControl: {
     opacity: 0.46,

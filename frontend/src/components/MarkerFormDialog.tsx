@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from 'react'
 import imageCompression from 'browser-image-compression'
 import type { MarkerCategory } from '../types/marker'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 export type DraftMarker = {
     tempId: string
@@ -64,8 +65,9 @@ export default function MarkerFormDialog({
     onMarkImageChange,
     canUploadImage = true,
     saving = false,
-    saveLabel = 'Save',
+    saveLabel,
 }: Props) {
+    const { tr } = useLanguage()
     const [imageError, setImageError] = useState('')
     const [imageHint, setImageHint] = useState('')
     const [processingImage, setProcessingImage] = useState(false)
@@ -74,7 +76,7 @@ export default function MarkerFormDialog({
     const [endHourInput, setEndHourInput] = useState('')
     const [endMinuteInput, setEndMinuteInput] = useState('')
     const saveDisabled = saving || processingImage
-    const displayedSaveLabel = processingImage ? 'Processing image…' : saveLabel
+    const displayedSaveLabel = processingImage ? tr('处理图片中…', 'Processing image…') : (saveLabel ?? tr('保存', 'Save'))
 
     useEffect(() => {
         if (!open) {
@@ -244,7 +246,7 @@ export default function MarkerFormDialog({
                         'radial-gradient(circle at 50% 0%, rgba(252, 221, 236, 0.8), rgba(252, 221, 236, 0) 58%)',
                 }}
             >
-                {editingId ? 'Edit place' : 'Add a place'}
+                {editingId ? tr('编辑点位', 'Edit place') : tr('新增点位', 'Add a place')}
             </DialogTitle>
             <DialogContent
                 sx={{
@@ -270,10 +272,10 @@ export default function MarkerFormDialog({
 
                 <Stack spacing={2}>
                     <FormControl fullWidth>
-                        <InputLabel id="cat-label">Category</InputLabel>
+                        <InputLabel id="cat-label">{tr('类别', 'Category')}</InputLabel>
                         <Select
                             labelId="cat-label"
-                            label="Category"
+                            label={tr('类别', 'Category')}
                             value={draft?.category ?? 'accessible_toilet'}
                             disabled={saving}
                             sx={fieldSx}
@@ -290,21 +292,21 @@ export default function MarkerFormDialog({
                     </FormControl>
 
                     <TextField
-                        label="Title"
+                        label={tr('标题', 'Title')}
                         value={draft?.title ?? ''}
                         disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, title: e.target.value } : d))}
-                        placeholder="For example: Accessible restroom at Metro Exit A"
+                        placeholder={tr('例如：地铁站A口无障碍卫生间', 'For example: Accessible restroom at Metro Exit A')}
                         fullWidth
                         sx={fieldSx}
                     />
 
                     <TextField
-                        label="Description"
+                        label={tr('描述', 'Description')}
                         value={draft?.description ?? ''}
                         disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, description: e.target.value } : d))}
-                        placeholder="For example: The entrance is next to…; closes at…"
+                        placeholder={tr('例如：入口在XX旁边，晚上关闭时间…', 'For example: The entrance is next to…; closes at…')}
                         fullWidth
                         multiline
                         minRows={4}
@@ -335,7 +337,7 @@ export default function MarkerFormDialog({
                             },
                         }}
                     >
-                        {canUploadImage ? 'Choose an image (optional)' : 'Only the creator can upload images'}
+                        {canUploadImage ? tr('选择图片（可选）', 'Choose an image (optional)') : tr('仅点位创建者可上传图片', 'Only the creator can upload images')}
                             <input
                                 type="file"
                                 accept="image/*"
@@ -389,18 +391,18 @@ export default function MarkerFormDialog({
                                         }
 
                                         if (nextFile.size > MAX_MARKER_IMAGE_SIZE) {
-                                            throw new Error('The processed image is still over 5 MB.')
+                                            throw new Error(tr('处理后图片仍超过 5MB。', 'The processed image is still over 5 MB.'))
                                         }
 
                                         if (nextFile !== f) {
                                             setImageHint(
-                                                `Image processed automatically (${(f.size / 1024 / 1024).toFixed(2)} MB → ${(nextFile.size / 1024 / 1024).toFixed(2)} MB).`
+                                                tr(`已自动处理图片（${(f.size / 1024 / 1024).toFixed(2)}MB → ${(nextFile.size / 1024 / 1024).toFixed(2)}MB）`, `Image processed automatically (${(f.size / 1024 / 1024).toFixed(2)} MB → ${(nextFile.size / 1024 / 1024).toFixed(2)} MB).`)
                                             )
                                         }
 
                                         onMarkImageChange(nextFile)
                                     } catch (err: unknown) {
-                                        const message = err instanceof Error ? err.message : 'Could not process the image. Please try another one.'
+                                        const message = err instanceof Error ? err.message : tr('图片处理失败，请换一张图片试试。', 'Could not process the image. Please try another one.')
                                         setImageError(message)
                                         onMarkImageChange(null)
                                         e.currentTarget.value = ''
@@ -416,7 +418,7 @@ export default function MarkerFormDialog({
                             icon={<CircularProgress size={16} color="inherit" />}
                             sx={{ borderRadius: 2 }}
                         >
-                            Processing image…
+                            {tr('处理图片中…', 'Processing image…')}
                         </Alert>
                     ) : null}
                     {imageHint ? (
@@ -431,7 +433,7 @@ export default function MarkerFormDialog({
                     ) : null}
                     {markImageFile ? (
                         <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                            Selected: {markImageFile.name}
+                            {tr('已选择：', 'Selected: ')}{markImageFile.name}
                         </Typography>
                     ) : null}
 
@@ -456,17 +458,17 @@ export default function MarkerFormDialog({
                                 }
                             />
                         }
-                        label="Share publicly"
+                        label={tr('公开分享', 'Share publicly')}
                     />
 
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} alignItems="stretch">
                         <Stack spacing={1} sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                Available from
+                                {tr('开放开始时间', 'Available from')}
                             </Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TextField
-                                    label="Hour"
+                                    label={tr('小时', 'Hour')}
                                     value={startHourInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'hour', e.target.value)}
@@ -477,7 +479,7 @@ export default function MarkerFormDialog({
                                 />
                                 <Typography sx={{ opacity: 0.7 }}>:</Typography>
                                 <TextField
-                                    label="Minute"
+                                    label={tr('分钟', 'Minute')}
                                     value={startMinuteInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'minute', e.target.value)}
@@ -491,11 +493,11 @@ export default function MarkerFormDialog({
 
                         <Stack spacing={1} sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                Available until
+                                {tr('开放结束时间', 'Available until')}
                             </Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TextField
-                                    label="Hour"
+                                    label={tr('小时', 'Hour')}
                                     value={endHourInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'hour', e.target.value)}
@@ -506,7 +508,7 @@ export default function MarkerFormDialog({
                                 />
                                 <Typography sx={{ opacity: 0.7 }}>:</Typography>
                                 <TextField
-                                    label="Minute"
+                                    label={tr('分钟', 'Minute')}
                                     value={endMinuteInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'minute', e.target.value)}
@@ -519,7 +521,7 @@ export default function MarkerFormDialog({
                         </Stack>
                     </Stack>
                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                        Leave both times blank for all-day availability. Otherwise, enter both a start and end time; the schedule repeats daily.
+                        {tr('全天开放可将开始和结束时间都留空；否则请同时填写，时间范围每日重复。', 'Leave both times blank for all-day availability. Otherwise, enter both a start and end time; the schedule repeats daily.')}
                     </Typography>
 
                     <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
@@ -534,7 +536,7 @@ export default function MarkerFormDialog({
                                 '&:hover': { bgcolor: 'rgba(252, 221, 236, 0.38)' },
                             }}
                         >
-                            Cancel
+                            {tr('取消', 'Cancel')}
                         </Button>
                         {editingId && canDelete ? (
                             <Button
@@ -549,7 +551,7 @@ export default function MarkerFormDialog({
                                     '&:hover': { bgcolor: 'rgba(255, 205, 210, 0.86)' },
                                 }}
                             >
-                                Delete
+                                {tr('删除', 'Delete')}
                             </Button>
                         ) : null}
                         <Button
@@ -566,7 +568,7 @@ export default function MarkerFormDialog({
                                 '&:hover': { bgcolor: '#c8afff', boxShadow: '0 14px 28px rgba(208, 188, 255, 0.44)' },
                             }}
                         >
-                            {saveDisabled ? displayedSaveLabel : 'Save'}
+                            {saveDisabled ? displayedSaveLabel : tr('保存', 'Save')}
                         </Button>
                     </Stack>
                 </Stack>

@@ -11,6 +11,7 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import imageCompression from 'browser-image-compression'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024
 const COMPRESSED_TARGET_MB = 2
@@ -42,6 +43,7 @@ export default function EditProfileDialog({
     onClose,
     onSave,
 }: EditProfileDialogProps) {
+    const { tr } = useLanguage()
     const [avatarError, setAvatarError] = useState('')
     const [avatarHint, setAvatarHint] = useState('')
     const [isCompressing, setIsCompressing] = useState(false)
@@ -71,11 +73,11 @@ export default function EditProfileDialog({
                             py: 0.5,
                         }}
                     >
-                        Edit profile
+                        {tr('编辑资料', 'Edit profile')}
                     </Typography>
 
                     <TextField
-                        label="Display name"
+                        label={tr('昵称', 'Display name')}
                         value={nickname}
                         onChange={(e) => onNicknameChange(e.target.value)}
                         fullWidth
@@ -83,19 +85,19 @@ export default function EditProfileDialog({
                     />
 
                     <TextField
-                        label="Pronouns"
+                        label={tr('称谓（Pronouns）', 'Pronouns')}
                         value={pronouns}
                         onChange={(e) => onPronounsChange(e.target.value)}
-                        placeholder="For example, she/her"
+                        placeholder={tr('例如 she/her', 'For example, she/her')}
                         fullWidth
                         sx={fieldSx}
                     />
 
                     <TextField
-                        label="Bio"
+                        label={tr('个性签名', 'Bio')}
                         value={signature}
                         onChange={(e) => onSignatureChange(e.target.value)}
-                        placeholder="Tell people a little about yourself"
+                        placeholder={tr('写一点想展示的话', 'Tell people a little about yourself')}
                         fullWidth
                         multiline
                         minRows={2}
@@ -113,7 +115,7 @@ export default function EditProfileDialog({
                                 color: '#744988',
                             }}
                         >
-                            Choose profile photo
+                            {tr('选择头像', 'Choose profile photo')}
                             <input
                                 type="file"
                                 accept="image/*"
@@ -151,10 +153,10 @@ export default function EditProfileDialog({
                                             const converted = Array.isArray(blob) ? blob[0] : blob
                                             const safeName = f.name.replace(/\.(heic|heif)$/i, '.jpg')
                                             finalFile = new File([converted], safeName, { type: 'image/jpeg' })
-                                            setAvatarHint('HEIC converted to JPG automatically.')
+                                            setAvatarHint(tr('已自动将 HEIC 转换为 JPG', 'HEIC converted to JPG automatically.'))
                                         }
                                     } catch {
-                                        setAvatarError('Could not convert the HEIC image. Please try another image.')
+                                        setAvatarError(tr('HEIC 图片转换失败，请换一张图片试试。', 'Could not convert the HEIC image. Please try another image.'))
                                         onAvatarChange(null)
                                         e.currentTarget.value = ''
                                         setIsCompressing(false)
@@ -172,9 +174,9 @@ export default function EditProfileDialog({
                                             finalFile = new File([compressed], finalFile.name, {
                                                 type: compressed.type || finalFile.type,
                                             })
-                                            setAvatarHint(`Profile photo compressed automatically (${(f.size / 1024 / 1024).toFixed(2)} MB → ${(finalFile.size / 1024 / 1024).toFixed(2)} MB).`)
+                                            setAvatarHint(tr(`已自动压缩头像（${(f.size / 1024 / 1024).toFixed(2)}MB → ${(finalFile.size / 1024 / 1024).toFixed(2)}MB）`, `Profile photo compressed automatically (${(f.size / 1024 / 1024).toFixed(2)} MB → ${(finalFile.size / 1024 / 1024).toFixed(2)} MB).`))
                                         } catch {
-                                            setAvatarError('Could not compress the profile photo. Please try a smaller image.')
+                                            setAvatarError(tr('头像压缩失败，请尝试更小的图片。', 'Could not compress the profile photo. Please try a smaller image.'))
                                             onAvatarChange(null)
                                             e.currentTarget.value = ''
                                             setIsCompressing(false)
@@ -183,7 +185,7 @@ export default function EditProfileDialog({
                                     }
 
                                     if (finalFile.size > MAX_AVATAR_SIZE) {
-                                        setAvatarError('The compressed image is still over 5 MB. Please choose a smaller image.')
+                                        setAvatarError(tr('压缩后仍超过 5MB，请换一张更小的图片。', 'The compressed image is still over 5 MB. Please choose a smaller image.'))
                                         onAvatarChange(null)
                                         e.currentTarget.value = ''
                                         setIsCompressing(false)
@@ -201,7 +203,7 @@ export default function EditProfileDialog({
                                 icon={<CircularProgress size={16} color="inherit" />}
                                 sx={{ mt: 1, borderRadius: 2 }}
                             >
-                                Compressing your profile photo…
+                                {tr('正在压缩头像，请稍候…', 'Compressing your profile photo…')}
                             </Alert>
                         ) : null}
                         {avatarHint ? (
@@ -216,14 +218,14 @@ export default function EditProfileDialog({
                         ) : null}
                         {avatarFile ? (
                             <Alert severity="info" sx={{ mt: 1, borderRadius: 2 }}>
-                                Selected: {avatarFile.name}
+                                {tr('已选择：', 'Selected: ')}{avatarFile.name}
                             </Alert>
                         ) : null}
                     </Box>
 
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Button onClick={onClose} disabled={isCompressing} sx={{ borderRadius: 999, textTransform: 'none' }}>
-                            Cancel
+                            {tr('取消', 'Cancel')}
                         </Button>
                         <Button
                             variant="contained"
@@ -236,7 +238,7 @@ export default function EditProfileDialog({
                                 '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
                             }}
                         >
-                            Save
+                            {tr('保存', 'Save')}
                         </Button>
                     </Stack>
                 </Stack>

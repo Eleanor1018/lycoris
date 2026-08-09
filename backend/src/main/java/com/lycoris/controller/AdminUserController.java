@@ -13,6 +13,17 @@ import org.springframework.web.bind.annotation.*;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import static com.lycoris.i18n.UserMessages.Key.CANNOT_DELETE_CURRENT_ADMIN;
+import static com.lycoris.i18n.UserMessages.Key.DELETED_USER_PASSWORD_RESET_FORBIDDEN;
+import static com.lycoris.i18n.UserMessages.Key.PASSWORD_RESET_TO_DEFAULT;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_VERIFICATION_EXPIRED;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_VERIFICATION_REQUIRED;
+import static com.lycoris.i18n.UserMessages.Key.USER_DELETED;
+import static com.lycoris.i18n.UserMessages.Key.USER_NOT_DELETED;
+import static com.lycoris.i18n.UserMessages.Key.USER_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.Key.USER_RESTORED;
+import static com.lycoris.i18n.UserMessages.text;
+
 @RestController
 @RequestMapping("/api/admin/users")
 public class AdminUserController {
@@ -67,15 +78,15 @@ public class AdminUserController {
         return userService.findAnyById(id)
                 .<ResponseEntity<?>>map(user -> {
                     if (Boolean.TRUE.equals(user.getDeleted())) {
-                        return ResponseEntity.badRequest().body("Deleted users cannot have their password reset");
+                        return ResponseEntity.badRequest().body(text(DELETED_USER_PASSWORD_RESET_FORBIDDEN));
                     }
                     userService.resetPassword(user, defaultUserPassword);
                     return ResponseEntity.ok(Map.of(
-                            "message", "Password has been reset to the default password",
+                            "message", text(PASSWORD_RESET_TO_DEFAULT),
                             "username", user.getUsername()
                     ));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("User not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(USER_NOT_FOUND)));
     }
 
     @DeleteMapping("/{id}")
@@ -85,14 +96,14 @@ public class AdminUserController {
 
         Integer currentUserId = (Integer) session.getAttribute("userId");
         if (currentUserId != null && currentUserId.equals(id)) {
-            return ResponseEntity.status(400).body("You cannot delete the currently signed-in administrator account");
+            return ResponseEntity.status(400).body(text(CANNOT_DELETE_CURRENT_ADMIN));
         }
 
         boolean deleted = userService.deleteById(id);
         if (!deleted) {
-            return ResponseEntity.status(404).body("User not found");
+            return ResponseEntity.status(404).body(text(USER_NOT_FOUND));
         }
-        return ResponseEntity.ok(Map.of("message", "User deleted"));
+        return ResponseEntity.ok(Map.of("message", text(USER_DELETED)));
     }
 
     @PostMapping("/{id}/restore")
@@ -103,12 +114,12 @@ public class AdminUserController {
         return userService.findAnyById(id)
                 .<ResponseEntity<?>>map(user -> {
                     if (!Boolean.TRUE.equals(user.getDeleted())) {
-                        return ResponseEntity.badRequest().body("This user has not been deleted");
+                        return ResponseEntity.badRequest().body(text(USER_NOT_DELETED));
                     }
                     userService.restore(user);
-                    return ResponseEntity.ok(Map.of("message", "User restored"));
+                    return ResponseEntity.ok(Map.of("message", text(USER_RESTORED)));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("User not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(USER_NOT_FOUND)));
     }
 
     private Map<String, Object> toAdminUser(User user) {
@@ -134,7 +145,7 @@ public class AdminUserController {
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {
-            return ResponseEntity.status(403).body("Secondary password verification required");
+            return ResponseEntity.status(403).body(text(SECONDARY_PASSWORD_VERIFICATION_REQUIRED));
         }
         if (at instanceof Long) {
             long elapsed = System.currentTimeMillis() - (Long) at;
@@ -142,7 +153,7 @@ public class AdminUserController {
                 session.removeAttribute("adminSecondVerified");
                 session.removeAttribute("adminSecondVerifiedAt");
                 return ResponseEntity.status(403)
-                        .body("Secondary password verification has expired. Please verify again");
+                        .body(text(SECONDARY_PASSWORD_VERIFICATION_EXPIRED));
             }
         }
         return null;

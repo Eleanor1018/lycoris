@@ -1,4 +1,5 @@
-import {launchImageLibrary} from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { tr } from '../i18n/LanguageProvider';
 
 export const MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -10,9 +11,9 @@ export type LocalUploadImage = {
 };
 
 export type PickUploadImageResult =
-  | {cancelled: true; file: null}
-  | {cancelled: false; file: null; error: string}
-  | {cancelled: false; file: LocalUploadImage; hint: string};
+  | { cancelled: true; file: null }
+  | { cancelled: false; file: null; error: string }
+  | { cancelled: false; file: LocalUploadImage; hint: string };
 
 type PickUploadImageOptions = {
   mode: 'avatar' | 'marker';
@@ -30,7 +31,7 @@ const extFromMime = (mime: string): string => {
   return 'jpg';
 };
 
-const looksLikeHeic = (file: {name: string; type: string}) =>
+const looksLikeHeic = (file: { name: string; type: string }) =>
   /image\/hei(c|f)/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
 
 const normalizeUploadImage = (
@@ -61,7 +62,7 @@ const normalizeUploadImage = (
       ? Math.max(0, Math.floor(asset.fileSize))
       : 0;
 
-  return {uri, name, type, size};
+  return { uri, name, type, size };
 };
 
 export const pickUploadImage = async (
@@ -80,14 +81,16 @@ export const pickUploadImage = async (
     });
 
     if (result.didCancel) {
-      return {cancelled: true, file: null};
+      return { cancelled: true, file: null };
     }
     if (result.errorCode) {
       return {
         cancelled: false,
         file: null,
-        error:
-          result.errorMessage || 'Could not select an image. Please try again.',
+        error: tr(
+          '选择图片失败，请稍后重试。',
+          'Could not select an image. Please try again.',
+        ),
       };
     }
 
@@ -99,7 +102,7 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error: 'No valid image was selected.',
+        error: tr('未获取到有效图片。', 'No valid image was selected.'),
       };
     }
 
@@ -107,9 +110,14 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error: `The processed image is still larger than 5 MB (currently ${formatMb(
-          normalized.size,
-        )}). Please choose a smaller image.`,
+        error: tr(
+          `图片处理后仍超过 5MB（当前 ${formatMb(
+            normalized.size,
+          )}），请换一张更小的图片。`,
+          `The processed image is still larger than 5 MB (currently ${formatMb(
+            normalized.size,
+          )}). Please choose a smaller image.`,
+        ),
       };
     }
 
@@ -117,21 +125,34 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error:
+        error: tr(
+          '当前头像仍是 HEIC 格式，地图中可能无法显示。请在相册中导出为 JPG/PNG 后再上传。',
           'This image is still in HEIC format and may not display on the map. Export it as JPG or PNG before uploading.',
+        ),
       };
     }
 
     const hint =
       normalized.size > 0
-        ? `Image processed: ${normalized.name} (${formatMb(normalized.size)})`
-        : `Image selected: ${normalized.name}`;
-    return {cancelled: false, file: normalized, hint};
+        ? tr(
+            `已处理图片：${normalized.name}（${formatMb(normalized.size)}）`,
+            `Image processed: ${normalized.name} (${formatMb(
+              normalized.size,
+            )})`,
+          )
+        : tr(
+            `已选择图片：${normalized.name}`,
+            `Image selected: ${normalized.name}`,
+          );
+    return { cancelled: false, file: normalized, hint };
   } catch {
     return {
       cancelled: false,
       file: null,
-      error: 'Could not process the image. Please try again.',
+      error: tr(
+        '图片处理失败，请重试。',
+        'Could not process the image. Please try again.',
+      ),
     };
   }
 };

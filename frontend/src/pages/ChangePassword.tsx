@@ -3,9 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import { Alert, Box, Button, IconButton, Stack, TextField, Typography } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import axios from 'axios'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 export default function ChangePassword() {
     const navigate = useNavigate()
+    const { tr } = useLanguage()
     const [form, setForm] = useState({ oldPassword: '', newPassword: '', confirm: '' })
     const [error, setError] = useState('')
     const [success, setSuccess] = useState('')
@@ -32,11 +34,11 @@ export default function ChangePassword() {
         setError('')
         setSuccess('')
         if (!form.oldPassword || !form.newPassword) {
-            setError('Please complete all fields.')
+            setError(tr('请填写所有字段。', 'Please complete all fields.'))
             return
         }
         if (form.newPassword !== form.confirm) {
-            setError('The new passwords do not match.')
+            setError(tr('两次输入的新密码不一致。', 'The new passwords do not match.'))
             return
         }
 
@@ -47,13 +49,13 @@ export default function ChangePassword() {
                 { withCredentials: true }
             )
             if (res.data?.code === 0) {
-                setSuccess('Password changed successfully.')
+                setSuccess(tr('密码修改成功。', 'Password changed successfully.'))
                 setTimeout(() => navigate('/me'), 800)
             } else {
-                setError(res.data?.message || 'Could not change the password.')
+                setError(res.data?.message || tr('无法修改密码。', 'Could not change the password.'))
             }
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not change the password.'))
+            setError(getErrorMessage(e, tr('无法修改密码。', 'Could not change the password.')))
         }
     }
 
@@ -71,7 +73,7 @@ export default function ChangePassword() {
         >
             <IconButton
                 onClick={() => navigate('/me')}
-                aria-label="back"
+                aria-label={tr('返回', 'Back')}
                 sx={{
                     position: 'absolute',
                     top: { xs: 16, md: 20 },
@@ -89,7 +91,7 @@ export default function ChangePassword() {
                     py: 2,
                 }}
             >
-                Change password
+                {tr('修改密码', 'Change password')}
             </Typography>
             <Stack
                 component="form"
@@ -109,7 +111,7 @@ export default function ChangePassword() {
                 {success && <Alert severity="success">{success}</Alert>}
 
                 <TextField
-                    label="Current password"
+                    label={tr('当前密码', 'Current password')}
                     type="password"
                     value={form.oldPassword}
                     onChange={(e) => setForm((s) => ({ ...s, oldPassword: e.target.value }))}
@@ -117,7 +119,7 @@ export default function ChangePassword() {
                     sx={fieldSx}
                 />
                 <TextField
-                    label="New password"
+                    label={tr('新密码', 'New password')}
                     type="password"
                     value={form.newPassword}
                     onChange={(e) => setForm((s) => ({ ...s, newPassword: e.target.value }))}
@@ -125,7 +127,7 @@ export default function ChangePassword() {
                     sx={fieldSx}
                 />
                 <TextField
-                    label="Confirm new password"
+                    label={tr('确认新密码', 'Confirm new password')}
                     type="password"
                     value={form.confirm}
                     onChange={(e) => setForm((s) => ({ ...s, confirm: e.target.value }))}
@@ -144,7 +146,7 @@ export default function ChangePassword() {
                         '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
                     }}
                     >
-                    Save
+                    {tr('保存', 'Save')}
                 </Button>
             </Stack>
         </Box>

@@ -20,6 +20,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.lycoris.i18n.UserMessages.Key.EDIT_PROPOSAL_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.Key.IMAGE_PROPOSAL_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.Key.INVALID_IMAGE_LINKS_CLEANED;
+import static com.lycoris.i18n.UserMessages.Key.MARKER_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.Key.PROPOSAL_ALREADY_REVIEWED;
+import static com.lycoris.i18n.UserMessages.Key.RELATED_MARKER_NOT_FOUND;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_VERIFICATION_EXPIRED;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_VERIFICATION_REQUIRED;
+import static com.lycoris.i18n.UserMessages.text;
+
 @RestController
 @RequestMapping("/api/admin/markers")
 public class AdminMarkerController {
@@ -61,7 +71,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @GetMapping("/pending-edits")
@@ -100,7 +110,7 @@ public class AdminMarkerController {
         return editProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
+                        return ResponseEntity.badRequest().body(text(PROPOSAL_ALREADY_REVIEWED));
                     }
 
                     return markerService.findById(p.getMarkerId())
@@ -123,9 +133,9 @@ public class AdminMarkerController {
                                 editProposalRepo.save(p);
                                 return ResponseEntity.ok(marker);
                             })
-                            .orElseGet(() -> ResponseEntity.status(404).body("Related marker not found"));
+                            .orElseGet(() -> ResponseEntity.status(404).body(text(RELATED_MARKER_NOT_FOUND)));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Edit proposal not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(EDIT_PROPOSAL_NOT_FOUND)));
     }
 
     @PostMapping("/edit-proposals/{id}/reject")
@@ -135,7 +145,7 @@ public class AdminMarkerController {
         return editProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
+                        return ResponseEntity.badRequest().body(text(PROPOSAL_ALREADY_REVIEWED));
                     }
                     p.setStatus("REJECTED");
                     p.setReviewedBy(String.valueOf(session.getAttribute("username")));
@@ -143,7 +153,7 @@ public class AdminMarkerController {
                     editProposalRepo.save(p);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Edit proposal not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(EDIT_PROPOSAL_NOT_FOUND)));
     }
 
     @PostMapping("/{id}/reject")
@@ -156,7 +166,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @GetMapping("/pending-images")
@@ -186,7 +196,7 @@ public class AdminMarkerController {
         return imageProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
+                        return ResponseEntity.badRequest().body(text(PROPOSAL_ALREADY_REVIEWED));
                     }
                     return markerService.findById(p.getMarkerId())
                             .<ResponseEntity<?>>map(marker -> {
@@ -200,9 +210,9 @@ public class AdminMarkerController {
 
                                 return ResponseEntity.ok(marker);
                             })
-                            .orElseGet(() -> ResponseEntity.status(404).body("Related marker not found"));
+                            .orElseGet(() -> ResponseEntity.status(404).body(text(RELATED_MARKER_NOT_FOUND)));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Image proposal not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(IMAGE_PROPOSAL_NOT_FOUND)));
     }
 
     @PostMapping("/image-proposals/{id}/reject")
@@ -212,7 +222,7 @@ public class AdminMarkerController {
         return imageProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
+                        return ResponseEntity.badRequest().body(text(PROPOSAL_ALREADY_REVIEWED));
                     }
                     p.setStatus("REJECTED");
                     p.setReviewedBy(String.valueOf(session.getAttribute("username")));
@@ -220,7 +230,7 @@ public class AdminMarkerController {
                     imageProposalRepo.save(p);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Image proposal not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(IMAGE_PROPOSAL_NOT_FOUND)));
     }
 
     @GetMapping("/all")
@@ -256,7 +266,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @DeleteMapping("/{id}")
@@ -269,7 +279,7 @@ public class AdminMarkerController {
                     markerService.delete(marker);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
+                .orElseGet(() -> ResponseEntity.status(404).body(text(MARKER_NOT_FOUND)));
     }
 
     @PostMapping("/cleanup-missing-images")
@@ -300,7 +310,7 @@ public class AdminMarkerController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("checked", totalChecked);
         result.put("cleared", cleared);
-        result.put("message", "Invalid image links have been cleaned up");
+        result.put("message", text(INVALID_IMAGE_LINKS_CLEANED));
         return ResponseEntity.ok(result);
     }
 
@@ -311,7 +321,7 @@ public class AdminMarkerController {
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {
-            return ResponseEntity.status(403).body("Secondary password verification required");
+            return ResponseEntity.status(403).body(text(SECONDARY_PASSWORD_VERIFICATION_REQUIRED));
         }
         if (at instanceof Long) {
             long elapsed = System.currentTimeMillis() - (Long) at;
@@ -319,7 +329,7 @@ public class AdminMarkerController {
                 session.removeAttribute("adminSecondVerified");
                 session.removeAttribute("adminSecondVerifiedAt");
                 return ResponseEntity.status(403)
-                        .body("Secondary password verification has expired. Please verify again");
+                        .body(text(SECONDARY_PASSWORD_VERIFICATION_EXPIRED));
             }
         }
         return null;

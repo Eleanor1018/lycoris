@@ -2,6 +2,19 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      (() => {
+        let language = ''
+        try {
+          const saved = window.localStorage.getItem('lycoris.language.v1')
+          if (saved === 'zh' || saved === 'en') language = saved
+        } catch {
+          // The browser language below remains available when storage is blocked.
+        }
+        if (!language) language = window.navigator.language.toLowerCase().startsWith('zh') ? 'zh' : 'en'
+        document.documentElement.lang = language === 'zh' ? 'zh-CN' : 'en'
+      })()
+    </script>
     <link rel="icon" type="image/svg+xml" href="/LycorisIcon.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />

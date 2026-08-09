@@ -10,6 +10,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import static com.lycoris.i18n.UserMessages.Key.INCORRECT_SECONDARY_PASSWORD;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_NOT_CONFIGURED;
+import static com.lycoris.i18n.UserMessages.Key.SECONDARY_PASSWORD_REQUIRED;
+import static com.lycoris.i18n.UserMessages.text;
+
 @RestController
 @RequestMapping("/api/admin")
 public class AdminAuthController {
@@ -28,14 +33,14 @@ public class AdminAuthController {
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody AdminVerifyRequest request, HttpSession session) {
         if (secondPasswordHash.isBlank()) {
-            return ResponseEntity.status(403).body("Secondary password is not configured");
+            return ResponseEntity.status(403).body(text(SECONDARY_PASSWORD_NOT_CONFIGURED));
         }
         String passcode = request == null ? null : request.getPasscode();
         if (passcode == null || passcode.isBlank()) {
-            return ResponseEntity.badRequest().body("Secondary password is required");
+            return ResponseEntity.badRequest().body(text(SECONDARY_PASSWORD_REQUIRED));
         }
         if (!passwordEncoder.matches(passcode, secondPasswordHash)) {
-            return ResponseEntity.status(403).body("Incorrect secondary password");
+            return ResponseEntity.status(403).body(text(INCORRECT_SECONDARY_PASSWORD));
         }
         session.setAttribute("adminSecondVerified", true);
         session.setAttribute("adminSecondVerifiedAt", System.currentTimeMillis());

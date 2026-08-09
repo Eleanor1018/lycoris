@@ -15,6 +15,7 @@ import { useNavigate } from 'react-router-dom'
 import MarkerFormDialog, { type DraftMarker } from '../components/MarkerFormDialog'
 import AdminNav from '../components/AdminNav'
 import { adminContainedButtonSx, adminOutlinedButtonSx, adminPaginationSx } from '../styles/adminButtons'
+import { useLanguage } from '../i18n/LanguageProvider'
 
 type AdminMarker = {
     id: number
@@ -35,24 +36,6 @@ type AdminMarker = {
     lastEditedByOwner?: boolean
 }
 
-const categoryLabel: Record<string, string> = {
-    accessible_toilet: 'Accessible Restroom',
-    friendly_clinic: 'Trans-Friendly Clinic',
-    baby_room: 'Nursing Room',
-    self_definition: 'Custom',
-}
-
-const reviewStatusLabel: Record<string, string> = {
-    PENDING: 'Pending',
-    APPROVED: 'Approved',
-    REJECTED: 'Rejected',
-}
-
-const formatReviewStatus = (status?: string) => {
-    if (!status) return 'Unknown'
-    return reviewStatusLabel[status.toUpperCase()] ?? status
-}
-
 const toDraft = (marker: AdminMarker): DraftMarker => ({
     tempId: String(marker.id),
     lat: marker.lat,
@@ -69,6 +52,22 @@ const toDraft = (marker: AdminMarker): DraftMarker => ({
 export default function AdminAll() {
     const PAGE_SIZE = 10
     const navigate = useNavigate()
+    const { tr } = useLanguage()
+    const categoryLabel: Record<string, string> = {
+        accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
+        friendly_clinic: tr('跨性别友好医疗机构', 'Trans-Friendly Clinic'),
+        baby_room: tr('母婴室', 'Nursing Room'),
+        self_definition: tr('自定义', 'Custom'),
+    }
+    const reviewStatusLabel: Record<string, string> = {
+        PENDING: tr('待审核', 'Pending'),
+        APPROVED: tr('已通过', 'Approved'),
+        REJECTED: tr('已驳回', 'Rejected'),
+    }
+    const formatReviewStatus = (status?: string) => {
+        if (!status) return tr('未知', 'Unknown')
+        return reviewStatusLabel[status.toUpperCase()] ?? status
+    }
     const [markers, setMarkers] = useState<AdminMarker[]>([])
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState<string | null>(null)
@@ -103,11 +102,11 @@ export default function AdminAll() {
             setMarkers(res.data || [])
             setError(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not load the places.'))
+            setError(getErrorMessage(e, tr('点位加载失败。', 'Could not load the places.')))
         } finally {
             setLoading(false)
         }
-    }, [])
+    }, [tr])
 
     useEffect(() => {
         void loadAll()
@@ -143,7 +142,7 @@ export default function AdminAll() {
             setEditingId(null)
             setDraft(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not save the place.'))
+            setError(getErrorMessage(e, tr('点位保存失败。', 'Could not save the place.')))
         }
     }
 
@@ -155,7 +154,7 @@ export default function AdminAll() {
             setEditingId(null)
             setDraft(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, 'Could not delete the place.'))
+            setError(getErrorMessage(e, tr('点位删除失败。', 'Could not delete the place.')))
         }
     }
 
@@ -163,10 +162,10 @@ export default function AdminAll() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    Admin · All places
+                    {tr('管理 · 全量点位', 'Admin · All places')}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    Edit or delete any place here.
+                    {tr('在这里编辑或删除任意点位。', 'Edit or delete any place here.')}
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -182,7 +181,7 @@ export default function AdminAll() {
                         </Paper>
                         {/secondary (passcode|password)/i.test(String(error)) ? (
                             <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
-                                Verify the secondary passcode
+                                {tr('校验二级口令', 'Verify the secondary passcode')}
                             </Button>
                         ) : null}
                     </Stack>
@@ -195,34 +194,34 @@ export default function AdminAll() {
                                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                             {item.title}
                                         </Typography>
-                                        <Chip size="small" label={categoryLabel[item.category] ?? 'Custom'} />
-                                        <Chip size="small" label={`Status: ${formatReviewStatus(item.reviewStatus)}`} />
+                                        <Chip size="small" label={categoryLabel[item.category] ?? tr('自定义', 'Custom')} />
+                                        <Chip size="small" label={tr(`状态：${formatReviewStatus(item.reviewStatus)}`, `Status: ${formatReviewStatus(item.reviewStatus)}`)} />
                                         {item.lastEditedByOwner === false ? (
-                                            <Chip size="small" color="warning" label="Edited by someone else" />
+                                            <Chip size="small" color="warning" label={tr('由他人编辑', 'Edited by someone else')} />
                                         ) : null}
                                     </Stack>
                                     <Typography variant="body2" color="text.secondary">
-                                        {item.description || '(No description)'}
+                                        {item.description || tr('（无描述）', '(No description)')}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        Coordinates: {item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
-                                        Submitted by: {item.username}
+                                        {tr('坐标：', 'Coordinates: ')}{item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
+                                        {tr('提交者：', 'Submitted by: ')}{item.username}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        Edited by: {item.lastEditedBy || item.username}
-                                        {item.lastEditedByOwner === false ? ' (not the creator)' : ''}
+                                        {tr('编辑者：', 'Edited by: ')}{item.lastEditedBy || item.username}
+                                        {item.lastEditedByOwner === false ? tr('（非创建者）', ' (not the creator)') : ''}
                                     </Typography>
                                     {item.lastEditedByOwner === false ? (
                                         <Typography variant="caption" color="warning.main">
-                                            Review note: edited by someone other than the creator
+                                            {tr('审核提示：由创建者之外的用户编辑', 'Review note: edited by someone other than the creator')}
                                         </Typography>
                                     ) : null}
                                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                         <Button variant="outlined" onClick={() => openEditor(item)} sx={adminOutlinedButtonSx}>
-                                            Edit
+                                            {tr('编辑', 'Edit')}
                                         </Button>
                                         <Button variant="text" color="error" onClick={() => openEditor(item)}>
-                                            Delete
+                                            {tr('删除', 'Delete')}
                                         </Button>
                                     </Stack>
                                 </Stack>

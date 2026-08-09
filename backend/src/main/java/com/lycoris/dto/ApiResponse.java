@@ -3,6 +3,9 @@ package com.lycoris.dto;
 import lombok.Getter;
 import lombok.Setter;
 
+import static com.lycoris.i18n.UserMessages.Key.SUCCESS;
+import static com.lycoris.i18n.UserMessages.text;
+
 @Getter
 @Setter
 public class ApiResponse<T> {
@@ -18,7 +21,7 @@ public class ApiResponse<T> {
 
     //success
     public static <T> ApiResponse<T> success(T data) {
-        return new ApiResponse<>(0, "ok", data);
+        return new ApiResponse<>(0, text(SUCCESS), data);
     }
 
 //    public static <T> ApiResponse<T> success() {
