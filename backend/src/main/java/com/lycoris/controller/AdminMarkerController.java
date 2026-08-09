@@ -76,7 +76,7 @@ public class AdminMarkerController {
                     item.put("markerTitle", p.getMarkerTitle());
                     item.put("lat", p.getMarkerLat());
                     item.put("lng", p.getMarkerLng());
-                    item.put("category", p.getCategory());
+                    item.put("category", markerService.normalizeStoredCategoryForRead(p.getCategory()));
                     item.put("title", p.getTitle());
                     item.put("description", p.getDescription());
                     item.put("isPublic", p.getIsPublic());
@@ -105,7 +105,7 @@ public class AdminMarkerController {
 
                     return markerService.findById(p.getMarkerId())
                             .<ResponseEntity<?>>map(marker -> {
-                                marker.setCategory(markerService.normalizeCategoryForWrite(p.getCategory()));
+                                marker.setCategory(markerService.normalizeStoredCategoryForApproval(p.getCategory()));
                                 marker.setTitle(p.getTitle());
                                 marker.setDescription(p.getDescription());
                                 marker.setIsPublic(p.getIsPublic());

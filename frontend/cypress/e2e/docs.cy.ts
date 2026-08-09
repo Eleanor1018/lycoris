@@ -15,6 +15,6 @@ describe('Documents', () => {
     it('shows floating toc button on mobile', () => {
         cy.viewport(390, 844)
         cy.visit('/documents/nora-hrt-guide')
-        cy.get('button[aria-label="open toc"]').should('be.visible')
+        cy.get('button[aria-label="打开文档目录"]').should('be.visible')
     })
 })

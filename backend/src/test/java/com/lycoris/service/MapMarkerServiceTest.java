@@ -5,15 +5,21 @@ import com.lycoris.dto.MarkerCreateRequest;
 import com.lycoris.entity.MapMarker;
 import com.lycoris.repository.MapMarkerRepository;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyDouble;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -21,6 +27,75 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class MapMarkerServiceTest {
+
+    @Test
+    void categoryContractAcceptsBabyRoomAndRejectsRemovedConversionTherapy() {
+        MapMarkerService service = serviceWith(mock(MapMarkerRepository.class));
+
+        assertThat(service.normalizeCategoryForWrite(" baby_room ")).isEqualTo("baby_room");
+        assertThatThrownBy(() -> service.normalizeCategoryForWrite("conversion_therapy"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不支持的 category");
+    }
+
+    @Test
+    void createPersistsBabyRoomCategory() {
+        MapMarkerRepository repo = mock(MapMarkerRepository.class);
+        MapMarkerService service = serviceWith(repo);
+        MarkerCreateRequest request = validRequest();
+        request.setCategory("baby_room");
+
+        when(repo.save(any(MapMarker.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        MapMarker saved = service.create("nora", "public-1", request);
+
+        assertThat(saved.getCategory()).isEqualTo("baby_room");
+        verify(repo, times(1)).save(any(MapMarker.class));
+    }
+
+    @Test
+    void removedCategoryFromStoredMarkerReadsAsSelfDefinition() {
+        MapMarkerRepository repo = mock(MapMarkerRepository.class);
+        MapMarkerService service = serviceWith(repo);
+        MapMarker stored = new MapMarker();
+        stored.setId(7L);
+        stored.setCategory("conversion_therapy");
+        when(repo.findById(7L)).thenReturn(Optional.of(stored));
+
+        MapMarker result = service.findById(7L).orElseThrow();
+
+        assertThat(result.getCategory()).isEqualTo("self_definition");
+        assertThat(service.normalizeStoredCategoryForApproval("conversion_therapy"))
+                .isEqualTo("self_definition");
+        assertThatThrownBy(() -> service.normalizeStoredCategoryForApproval("unknown_category"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("不支持的存量 category");
+    }
+
+    @Test
+    void selfDefinitionNearbyQueryIncludesLegacyStoredCategories() {
+        MapMarkerRepository repo = mock(MapMarkerRepository.class);
+        MapMarkerService service = serviceWith(repo);
+        when(repo.findNearbyByCategories(anyDouble(), anyDouble(), anyInt(), anyList()))
+                .thenReturn(List.of());
+
+        service.nearbyPublicActive(31.2304, 121.4737, 1000, "self_definition");
+
+        @SuppressWarnings("unchecked")
+        ArgumentCaptor<List<String>> categoriesCaptor = ArgumentCaptor.forClass(List.class);
+        verify(repo).findNearbyByCategories(
+                anyDouble(),
+                anyDouble(),
+                anyInt(),
+                categoriesCaptor.capture()
+        );
+        assertThat(categoriesCaptor.getValue()).containsExactlyInAnyOrder(
+                "self_definition",
+                "safe_place",
+                "dangerous_place",
+                "conversion_therapy"
+        );
+    }
 
     @Test
     void createReturnsExistingMarkerForRepeatedClientRequestId() {

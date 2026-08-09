@@ -39,7 +39,7 @@ public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
             from map_markers m
             where m.is_public = true
               and m.review_status = 'APPROVED'
-              and m.category = :category
+              and m.category in (:categories)
               and (
                 6371000 * 2 * asin(sqrt(
                   power(sin(radians((m.lat - :lat) / 2)), 2)
@@ -55,11 +55,11 @@ public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
                 ))
             ) asc
             """, nativeQuery = true)
-    List<MapMarker> findNearbyByCategory(
+    List<MapMarker> findNearbyByCategories(
             @Param("lat") double lat,
             @Param("lng") double lng,
             @Param("radius") int radius,
-            @Param("category") String category
+            @Param("categories") List<String> categories
     );
 
     List<MapMarker> findByReviewStatusOrderByUpdatedAtDesc(String reviewStatus);

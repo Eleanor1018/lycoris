@@ -184,7 +184,7 @@ export default function AdminAll() {
                                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                             {item.title}
                                         </Typography>
-                                        <Chip size="small" label={item.category} />
+                                        <Chip size="small" label={categoryLabel[item.category] ?? '自定义'} />
                                         <Chip size="small" label={`状态: ${item.reviewStatus ?? '未知'}`} />
                                         {item.lastEditedByOwner === false ? (
                                             <Chip size="small" color="warning" label="非本人编辑" />

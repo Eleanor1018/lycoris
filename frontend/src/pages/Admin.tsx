@@ -64,6 +64,15 @@ type PendingEditProposal = {
     createdAt?: string
 }
 
+const categoryLabel: Record<string, string> = {
+    accessible_toilet: '无障碍卫生间',
+    friendly_clinic: '友好医疗机构',
+    baby_room: '母婴室',
+    self_definition: '自定义',
+}
+
+const formatCategory = (category: string) => categoryLabel[category] ?? '自定义'
+
 const statusColor = (status?: string) => {
     switch ((status || '').toUpperCase()) {
         case 'APPROVED':
@@ -222,7 +231,7 @@ export default function Admin() {
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                                 {item.title}
                                             </Typography>
-                                            <Chip size="small" label={item.category} />
+                                            <Chip size="small" label={formatCategory(item.category)} />
                                             <Chip size="small" color={statusColor(item.reviewStatus)} label="待审核" />
                                             {item.lastEditedByOwner === false ? (
                                                 <Chip size="small" color="warning" label="非本人编辑" />
@@ -290,7 +299,7 @@ export default function Admin() {
                                             <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                                 {item.title}
                                             </Typography>
-                                            <Chip size="small" label={item.category} />
+                                            <Chip size="small" label={formatCategory(item.category)} />
                                             <Chip size="small" color="warning" label="编辑待审核" />
                                             {item.proposerIsOwner === false ? (
                                                 <Chip size="small" color="warning" label="非本人编辑" />

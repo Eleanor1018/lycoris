@@ -14,7 +14,7 @@ describe('Maps legend menu on mobile', () => {
     it('closes legend menu after tapping map area', () => {
         cy.visit('/maps')
 
-        cy.contains('筛选点位').click()
+        cy.contains('button', '筛选点位').click()
         cy.contains('图例').should('be.visible')
 
         cy.get('.leaflet-container').click('center')

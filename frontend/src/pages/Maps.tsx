@@ -1385,6 +1385,7 @@ export default function Maps() {
                     <Button
                         variant="contained"
                         onClick={() => setSettingsOpen(true)}
+                        aria-label="打开地图设置"
                         sx={{
                             position: 'fixed',
                             zIndex: 1200,
@@ -1469,7 +1470,10 @@ export default function Maps() {
                         <Box sx={{ display: 'flex', justifyContent: legendOpen ? 'flex-end' : 'flex-start' }}>
                             <Button
                                 size="small"
-                                onClick={() => setLegendOpen((v) => !v)}
+                                onClick={() => {
+                                    if (!legendOpen && addHintOpen) dismissAddHint()
+                                    setLegendOpen((v) => !v)
+                                }}
                                 sx={{
                                     borderRadius: 999,
                                     textTransform: 'none',
@@ -1632,7 +1636,7 @@ export default function Maps() {
                                 position={[m.lat, m.lng]}
                                 icon={getMarkerIcon(normalizeCategory(m.category), m.isActive)}
                             >
-                                <Popup>
+                                <Popup autoPanPaddingTopLeft={[16, 120]}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {isLoggedIn ? (
                                             <IconButton size="small" onClick={() => openEdit(m)} aria-label="编辑点位">

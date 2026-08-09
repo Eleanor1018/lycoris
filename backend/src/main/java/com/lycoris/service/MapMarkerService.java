@@ -44,6 +44,13 @@ public class MapMarkerService {
             "safe_place",
             "dangerous_place"
     );
+    // Stored-value compatibility for reads, filters, and approvals. conversion_therapy
+    // intentionally remains absent from the accepted write aliases above.
+    private static final Set<String> LEGACY_STORED_CATEGORIES = Set.of(
+            "safe_place",
+            "dangerous_place",
+            "conversion_therapy"
+    );
     private static final TypeReference<List<MapMarker>> MARKER_LIST_TYPE = new TypeReference<>() {};
     private static final String NEARBY_CACHE_PREFIX = "cache:marker:nearby:v1:";
     private static final String VIEWPORT_CACHE_PREFIX = "cache:marker:viewport:v1:";
@@ -136,7 +143,10 @@ public class MapMarkerService {
         if (cached != null) {
             return normalizeForRead(cached);
         }
-        List<MapMarker> computed = normalizeForRead(repo.findNearbyByCategory(lat, lng, safeRadius, normalizedCategory));
+        List<String> storedCategories = expandStoredCategories(normalizedCategory);
+        List<MapMarker> computed = normalizeForRead(
+                repo.findNearbyByCategories(lat, lng, safeRadius, storedCategories)
+        );
         writeMarkerListToCache(cacheKey, computed, nearbyCacheTtlSeconds);
         return computed;
     }
@@ -169,7 +179,17 @@ public class MapMarkerService {
             for (String category : categories) {
                 normalized.add(normalizeCategoryForWrite(category));
             }
-            result = repo.findPublicActiveInBoundsAndCategoryIn(minLat, maxLat, minLng, maxLng, normalized);
+            List<String> storedCategories = normalized.stream()
+                    .flatMap(category -> expandStoredCategories(category).stream())
+                    .distinct()
+                    .toList();
+            result = repo.findPublicActiveInBoundsAndCategoryIn(
+                    minLat,
+                    maxLat,
+                    minLng,
+                    maxLng,
+                    storedCategories
+            );
         }
         List<MapMarker> computed = normalizeForRead(result);
         writeMarkerListToCache(cacheKey, computed, viewportCacheTtlSeconds);
@@ -263,6 +283,29 @@ public class MapMarkerService {
         throw new IllegalArgumentException("不支持的 category：" + category + "，仅支持：" + String.join(", ", SUPPORTED_CATEGORIES));
     }
 
+    public String normalizeStoredCategoryForRead(String category) {
+        if (category == null) return "self_definition";
+        String normalized = category.trim().toLowerCase(Locale.ROOT);
+        if (SUPPORTED_CATEGORIES.contains(normalized)) {
+            return normalized;
+        }
+        return "self_definition";
+    }
+
+    public String normalizeStoredCategoryForApproval(String category) {
+        if (category == null) {
+            throw new IllegalArgumentException("存量 category 不能为空");
+        }
+        String normalized = category.trim().toLowerCase(Locale.ROOT);
+        if (SUPPORTED_CATEGORIES.contains(normalized)) {
+            return normalized;
+        }
+        if (LEGACY_STORED_CATEGORIES.contains(normalized)) {
+            return "self_definition";
+        }
+        throw new IllegalArgumentException("不支持的存量 category：" + category);
+    }
+
     private String normalizeClientRequestId(String clientRequestId) {
         if (clientRequestId == null) return null;
         String normalized = clientRequestId.trim();
@@ -279,15 +322,19 @@ public class MapMarkerService {
 
     private MapMarker normalizeOneForRead(MapMarker marker) {
         if (marker == null) return null;
-        String raw = marker.getCategory();
-        String normalized = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
-        if (!SUPPORTED_CATEGORIES.contains(normalized)) {
-            marker.setCategory("self_definition");
-        } else {
-            marker.setCategory(normalized);
-        }
+        marker.setCategory(normalizeStoredCategoryForRead(marker.getCategory()));
         applyAvailabilityStatus(marker);
         return marker;
+    }
+
+    private List<String> expandStoredCategories(String normalizedCategory) {
+        if (!"self_definition".equals(normalizedCategory)) {
+            return List.of(normalizedCategory);
+        }
+        List<String> categories = new ArrayList<>();
+        categories.add("self_definition");
+        categories.addAll(LEGACY_STORED_CATEGORIES);
+        return categories;
     }
 
     private Optional<double[]> parseLatLng(String query) {

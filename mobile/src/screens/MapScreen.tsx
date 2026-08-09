@@ -38,7 +38,7 @@ import {colors} from '../theme/colors';
 import type {MapMarker, MarkerCategory} from '../types/marker';
 
 type OwnerFilter = 'all' | 'mine' | 'fav';
-type NearbyCategory = 'accessible_toilet' | 'friendly_clinic' | 'baby_room';
+export type NearbyCategory = 'accessible_toilet' | 'friendly_clinic' | 'baby_room';
 type TileProvider = 'osm' | 'tf_atlas' | 'tianditu_vec';
 type NearbyResult = MapMarker & {distanceMeters: number};
 type MapFocusRequest = {
@@ -137,7 +137,13 @@ const categoryLabel: Record<MarkerCategory, string> = {
   self_definition: '自定义',
 };
 
-const nearbyCategoryLabel: Record<NearbyCategory, string> = {
+export const nearbyCategories: NearbyCategory[] = [
+  'accessible_toilet',
+  'friendly_clinic',
+  'baby_room',
+];
+
+export const nearbyCategoryLabel: Record<NearbyCategory, string> = {
   accessible_toilet: '无障碍卫生间',
   friendly_clinic: '友好医疗机构',
   baby_room: '母婴室',
@@ -2878,13 +2884,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
               <Text style={styles.sheetSectionTitle}>附近查询类型</Text>
               <View style={styles.sheetChipRow}>
-              {(
-                [
-                  'accessible_toilet',
-                  'friendly_clinic',
-                  'baby_room',
-                ] as NearbyCategory[]
-              ).map(key => {
+              {nearbyCategories.map(key => {
                   const active = nearbyCategory === key;
                   return (
                     <Pressable
