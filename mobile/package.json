@@ -52,7 +52,9 @@
     "typescript": "^5.8.3"
   },
   "overrides": {
-    "@react-navigation/elements": "2.9.19"
+    "@react-navigation/core": "7.17.5",
+    "@react-navigation/elements": "2.9.19",
+    "@react-navigation/routers": "7.5.5"
   },
   "engines": {
     "node": ">=20"
