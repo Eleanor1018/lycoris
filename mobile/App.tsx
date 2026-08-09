@@ -318,9 +318,7 @@ function AppTabs() {
           headerShown: false,
           // eslint-disable-next-line react/no-unstable-nested-components
           tabBarIcon: ({ focused, color }) => (
-            <View
-              style={[styles.tabIconPill, focused && styles.tabIconPillActive]}
-            >
+            <View style={styles.tabIconPill}>
               <Icon
                 source={focused ? tab.focusedIcon : tab.unfocusedIcon}
                 size={21}
@@ -413,9 +411,6 @@ const styles = StyleSheet.create({
     borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  tabIconPillActive: {
-    backgroundColor: colors.navIndicator,
   },
   tabItemLabel: {
     ...typography.label,
