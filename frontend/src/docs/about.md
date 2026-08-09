@@ -1,61 +1,62 @@
-# 关于夏水仙
+# About Lycoris
 
-## 欢迎来到 夏水仙 Lycoris 🌸
+## Welcome to Lycoris 🌸
 
-**夏水仙**是一个为**跨性别者**提供**无障碍设施信息**和**互助信息**的平台 💗
+**Lycoris** is a platform that shares **accessible-facility information** and **mutual-aid resources** for **transgender people**. 💗
 
-夏水仙目前由以下页面组成：
-- 地图：夏水仙的**核心功能**，我们可以在地图上标注无障碍卫生间、跨性别友好的医疗机构、母婴室等地点，实现信息共享
-- 文档：目前编写了**雪雁的HRT指南**；旨在尽量用最简洁的语言、最容易理解的方式，把行之有效的HRT方案和踩过的坑分享给大家
-- 关于：介绍夏水仙的项目理念、背景故事与联系方式，让来到这里的人知道这盏小灯为何被点亮
+Lycoris currently includes the following pages:
 
-目前有**网页端**和基于 **React Native** 的**移动端**可供使用。
+- Map: the **heart of Lycoris**, where we share locations such as accessible restrooms, trans-friendly clinics, and nursing rooms.
+- Guide: currently home to **Nora's HRT Guide**, which shares practical HRT approaches and lessons learned in concise, approachable language.
+- About: the ideas, story, and contact details behind Lycoris—and why this little light was first lit.
 
-## 地图的内置功能
+Lycoris is available on the **web** and as a **React Native mobile app**.
 
-- 标记：可以在地图上标注无障碍卫生间，友好医疗机构，母婴室等点位信息，包含名称 图片 开放时间等。
-- 搜索附近：快速搜索定位点附近（0-10000m）的无障碍卫生间等信息。
-- 收藏：可以把点位添加到自己的收藏列表中，需要时快速查看。
+## Map features
 
-**注意：添加或编辑点位需要管理员审核，这是为了防止被恶意破坏，敬请谅解。**
+- Add places: share accessible restrooms, trans-friendly clinics, nursing rooms, and other locations, including their names, photos, and opening hours.
+- Search nearby: quickly find facilities within 0–10,000 meters of a selected location.
+- Favorites: save useful places to your favorites for quick access later.
 
-## 背后的故事
+**Please note: new and edited places require administrator review to help protect the map from malicious changes. Thank you for understanding.**
 
-### 雪雁的小故事1
+## Our story
 
-&ensp;&ensp;&ensp;&ensp;“小姑娘，这里是男卫生间！”又一次，我被热心的大叔叫住。  
-&ensp;&ensp;&ensp;&ensp;应该开心吗？我被认成了女孩子，被人友善的对待，这说明我至少有一点点pass；应该难过吗？我没有手术，身份证也没有改，在社会意义上，我仍然是男性。  
-&ensp;&ensp;&ensp;&ensp;我尴尬地笑了笑，甚至不敢和大叔说“谢谢”，因为我半成品的伪音只会吓到路人；我只好跑出去，趁着没人的时候去卫生间，或者跑回家...我总是因此徘徊而踌躇着，我不想吓到普通的路人，更不想自己被审视。我总会遇到这样的困难，每次都让我觉得，我是被世界排斥和抛弃的异类。  
-&ensp;&ensp;&ensp;&ensp;出门时，我戴上口罩和帽子，把自己遮得严严实实的，以此来逃避人们的目光和社会的批判。我总是逃避着，躲在阴影里隐藏自己。
-&ensp;&ensp;&ensp;&ensp;这时候我在想...如果有**无障碍卫生间**，我就可以避免这样的尴尬了。
+### Nora's story, part 1
 
-## 我们的理念
+&ensp;&ensp;&ensp;&ensp;“Miss, this is the men's restroom!” Once again, a well-meaning older man stopped me.<br />
+&ensp;&ensp;&ensp;&ensp;Should I have been happy? He read me as a girl and treated me kindly, which meant I passed at least a little. Or should I have been sad? I had not had surgery, and the gender marker on my ID had not been changed, so society still classified me as male.<br />
+&ensp;&ensp;&ensp;&ensp;I smiled awkwardly. I did not even dare to say “thank you,” because my still-unpolished voice training might only startle people. I would rush out, wait until no one was around to use the restroom, or simply run home. I kept hesitating because I did not want to make anyone uncomfortable, and I certainly did not want to be scrutinized. Every time this happened, I felt like an outsider rejected and abandoned by the world.<br />
+&ensp;&ensp;&ensp;&ensp;Whenever I went out, I covered myself with a mask and hat to escape other people's gaze and society's judgment. I kept retreating, hiding myself in the shadows.
+&ensp;&ensp;&ensp;&ensp;Then I thought: if there were an **accessible restroom**, I could avoid situations like this.
 
-&ensp;&ensp;&ensp;&ensp;**以温柔与专业守护跨性别者的日常安全，让信息共享成为彼此的光。**
+## What we believe
 
-&ensp;&ensp;&ensp;&ensp;所有跨性别都有权利生活在阳光下，自然的展示自己，不必躲闪，不必隐藏，堂堂正正，大大方方。每一个人都应当有平等的权益，跨性别者也不例外。
+&ensp;&ensp;&ensp;&ensp;**With care and professionalism, we protect transgender people's everyday safety—and let shared information become a light for one another.**
 
-&ensp;&ensp;&ensp;&ensp;社会的进步是缓慢的，然而每一个微小的努力都会被看见。就从无障碍卫生间开始。  
+&ensp;&ensp;&ensp;&ensp;Every transgender person has the right to live openly and to be themselves without evasion or concealment. Everyone deserves equal rights, and transgender people are no exception.
 
-&ensp;&ensp;&ensp;&ensp;我们会搜集很多个无障碍卫生间，只要打开手机，就可以看到哪里可以上厕所。这样做，就可以让跨性别者，尽量不被误解、避免尴尬，能够放心大胆的出门。
+&ensp;&ensp;&ensp;&ensp;Social progress can be slow, but every small effort matters. We can begin with accessible restrooms.
 
-&ensp;&ensp;&ensp;&ensp;**你不是孤单的。**
-无论你现在处在探索、挣扎，还是重建生活的哪一步，你都值得被尊重、被认真对待。我们希望在你需要的时候，给你一点真实可用的支持，让你在现实世界里更安全一点、少受一点伤。
+&ensp;&ensp;&ensp;&ensp;By collecting information about accessible restrooms, we make it possible to open a phone and see where a restroom is available. This can help transgender people avoid misunderstanding and embarrassment and feel safer and more confident going out.
 
-&ensp;&ensp;&ensp;&ensp;如果这盏小灯能在某个夜晚帮到你，那我们做的一切，就都值得。
+&ensp;&ensp;&ensp;&ensp;**You are not alone.**
+Wherever you are—exploring, struggling, or rebuilding your life—you deserve respect and genuine care. When you need it, we hope to offer practical support that makes the real world a little safer and a little less painful.
 
-## 感谢
+&ensp;&ensp;&ensp;&ensp;If this little light helps you through even one night, then everything we have done is worthwhile.
 
-&ensp;&ensp;&ensp;&ensp;感谢您访问**夏水仙 Lycoris**项目网站，也谢谢您的驻足阅读。如果夏水仙能帮助到您，哪怕只是一点微小的帮助，我们也会因此感到快乐和荣幸。
+## Thank you
 
-## 联系方式
+&ensp;&ensp;&ensp;&ensp;Thank you for visiting **Lycoris** and taking the time to read our story. If Lycoris helps you in even a small way, we will be deeply happy and honored.
 
-&ensp;&ensp;&ensp;&ensp;夏水仙由 雪雁 Nora，鹿鹿 Alicia 和 温晓 Aurora 共同设计并运营。
+## Contact us
 
-&ensp;&ensp;&ensp;&ensp;如果有建议、遇到问题，请联系：LycorisTrans@gmail.com
+&ensp;&ensp;&ensp;&ensp;Lycoris is designed and operated by Nora, Alicia, and Aurora.
 
-&ensp;&ensp;&ensp;&ensp;相关代码已在Github开源：https://github.com/Eleanor1018/lycoris
+&ensp;&ensp;&ensp;&ensp;For suggestions or support, email: LycorisTrans@gmail.com
 
-&ensp;&ensp;&ensp;&ensp;Twitter官方账号：https://x.com/LycorisTrans
+&ensp;&ensp;&ensp;&ensp;Source code on GitHub: https://github.com/Eleanor1018/lycoris
+
+&ensp;&ensp;&ensp;&ensp;Official Twitter account: https://x.com/LycorisTrans
 
 

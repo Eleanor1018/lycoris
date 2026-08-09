@@ -26,7 +26,7 @@ export default function AdminEntry() {
 
     const handleVerify = async () => {
         if (!passcode.trim()) {
-            setError('请输入二级密码')
+            setError('Enter the secondary passcode.')
             return
         }
         try {
@@ -35,7 +35,7 @@ export default function AdminEntry() {
             setError(null)
             navigate('/admin/review')
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '二级密码验证失败'))
+            setError(getErrorMessage(e, 'Could not verify the secondary passcode.'))
         } finally {
             setLoading(false)
         }
@@ -45,10 +45,10 @@ export default function AdminEntry() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    管理后台入口
+                    Admin access
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    如果二级验证已开启，请先在这里验证；临时停用时，管理员账号可直接进入后台页面。
+                    If secondary verification is enabled, verify here first. When it is temporarily disabled, an administrator can open the admin pages directly.
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -57,7 +57,7 @@ export default function AdminEntry() {
                     <Stack spacing={2}>
                         <TextField
                             type="password"
-                            label="二级密码"
+                            label="Secondary passcode"
                             value={passcode}
                             onChange={(e) => setPasscode(e.target.value)}
                             fullWidth
@@ -69,16 +69,16 @@ export default function AdminEntry() {
                         ) : null}
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                             <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ ...adminContainedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                {loading ? '验证中...' : '验证并进入审核中心'}
+                                {loading ? 'Verifying…' : 'Verify and open review center'}
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/review')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                直接去审核中心
+                                Open review center
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                直接去全量点位
+                                Open all places
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/usr')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
-                                直接去用户管理
+                                Open user management
                             </Button>
                         </Stack>
                     </Stack>

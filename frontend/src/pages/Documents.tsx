@@ -80,18 +80,18 @@ export default function Documents() {
     const { slug } = useParams<{ slug?: string }>()
 
     const orderedDocs = [
-        { slug: 'nora-hrt-guide', title: 'HRT 指南' },
+        { slug: 'nora-hrt-guide', title: 'HRT Guide' },
     ]
 
-    // 默认文档：取列表第一篇；如果没有，兜底 intro
+    // Use the first guide as the default, with intro as a fallback.
     const defaultSlug = orderedDocs[0]?.slug ?? 'intro'
     const activeSlug = slug ?? defaultSlug
 
-    // 手机端 drawer 开关
+    // Mobile drawer state.
     const [mobileOpen, setMobileOpen] = useState(false)
     const [hrtOpen, setHrtOpen] = useState(true)
 
-    // markdown 内容
+    // Markdown content.
     const [content, setContent] = useState<string>('# Loading...')
     const [err, setErr] = useState<string>('')
     const [tocItems, setTocItems] = useState<TocItem[]>([])
@@ -101,7 +101,7 @@ export default function Documents() {
     const hrtToggleId = `documents-${activeSlug}-toc-toggle`
     const hrtSectionId = `documents-${activeSlug}-toc-section`
 
-    // 如果访问 /documents（没有 slug），自动跳到默认文档
+    // Redirect /documents to the default guide when no slug is provided.
     useEffect(() => {
         if (!slug) {
             navigate(`/documents/${defaultSlug}`, { replace: true })
@@ -109,7 +109,7 @@ export default function Documents() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [slug, defaultSlug])
 
-    // 根据 activeSlug 加载 markdown
+    // Load Markdown for the active slug.
     useEffect(() => {
         let alive = true
         setErr('')
@@ -124,7 +124,7 @@ export default function Documents() {
             .catch((e) => {
                 if (!alive) return
                 setErr(String(e?.message ?? e))
-                setContent('# 文档加载失败')
+                setContent('# Could not load the guide')
                 setTocItems([])
             })
 
@@ -145,7 +145,7 @@ export default function Documents() {
         return () => window.clearTimeout(handle)
     }, [location.hash, content])
 
-    // Drawer 内部内容（菜单）
+    // Drawer menu content.
     const drawer = useMemo(
         () => (
             <Box sx={{ width: '100%', px: 1.25, py: 1 }}>
@@ -164,7 +164,7 @@ export default function Documents() {
                         }}
                     >
                         <ListItemText
-                            primary="雪雁的HRT指南(MTF)"
+                            primary="Nora's HRT Guide (MTF)"
                             primaryTypographyProps={{ fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}
                         />
                         {hrtOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -181,7 +181,7 @@ export default function Documents() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding aria-label="文档目录">
+                            <List dense disablePadding aria-label="Guide table of contents">
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -272,7 +272,7 @@ export default function Documents() {
                             variant="body2"
                             sx={{ mt: 0.75, color: 'var(--ly-color-muted)' }}
                         >
-                            文档目录
+                            Contents
                         </Typography>
                     </Box>
                     <Box sx={{ height: 'calc(100% - 78px)', overflowY: 'auto', py: 0.75 }}>
@@ -307,7 +307,7 @@ export default function Documents() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="打开文档目录"
+                    aria-label="Open guide table of contents"
                     sx={{
                         position: 'fixed',
                         right: 16,

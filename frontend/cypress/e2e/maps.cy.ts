@@ -12,19 +12,19 @@ describe('Maps', () => {
 
     it('renders nearby button in disabled state by default', () => {
         cy.visit('/maps')
-        cy.contains('附近无障碍卫生间').should('exist').and('be.disabled')
-        cy.contains('button', '筛选点位').click()
-        cy.contains('图例').should('be.visible')
-        cy.contains('label', '母婴室').should('be.visible')
-        cy.contains('扭转机构').should('not.exist')
+        cy.contains('Nearby accessible restrooms').should('exist').and('be.disabled')
+        cy.contains('button', 'Filter places').click()
+        cy.contains('Legend').should('be.visible')
+        cy.contains('label', 'Nursing Room').should('be.visible')
+        cy.contains('Conversion therapy').should('not.exist')
 
-        cy.get('button[aria-label="打开地图设置"]').click()
-        cy.contains('附近查询类型')
+        cy.get('button[aria-label="Open map settings"]').click()
+        cy.contains('Nearby category')
             .parent()
             .within(() => {
-                cy.contains('button', '母婴室').should('be.visible')
+                cy.contains('button', 'nursing rooms').should('be.visible')
             })
-        cy.contains('扭转机构').should('not.exist')
+        cy.contains('Conversion therapy').should('not.exist')
     })
 
     it('enables nearby button after geolocation resolves', () => {
@@ -58,7 +58,7 @@ describe('Maps', () => {
             },
         })
 
-        cy.contains('附近无障碍卫生间')
+        cy.contains('Nearby accessible restrooms')
             .should('exist')
             .and('not.be.disabled')
     })

@@ -47,7 +47,7 @@ import MarkerFormDialog from '../components/MarkerFormDialog'
 import type { DraftMarker } from '../components/MarkerFormDialog'
 import { toBackendAssetUrl } from '../config/runtime'
 
-// ====== 后端返回的 Marker（id 是 number / Long）======
+// Marker returned by the backend (id is a number / Long).
 type ApiMarker = {
     id: number
     lat: number
@@ -111,7 +111,7 @@ const extractApiErrorMessage = (error: unknown, fallback: string): string => {
     return fallback
 }
 
-// —— 小工具：生成临时 id
+// Generate a temporary ID.
 const uid = () => (crypto?.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()))
 const MARKER_IMAGE_UPLOAD_TIMEOUT_MS = 30000
 
@@ -128,10 +128,10 @@ const nearbyCategories = ['accessible_toilet', 'friendly_clinic', 'baby_room'] a
 type NearbyCategory = (typeof nearbyCategories)[number]
 
 const categoryLabel: Record<SupportedCategory, string> = {
-    accessible_toilet: '无障碍卫生间',
-    friendly_clinic: '友好医疗机构',
-    baby_room: '母婴室',
-    self_definition: '自定义',
+    accessible_toilet: 'Accessible Restroom',
+    friendly_clinic: 'Trans-Friendly Clinic',
+    baby_room: 'Nursing Room',
+    self_definition: 'Custom',
 }
 
 const categoryColor: Record<SupportedCategory, string> = {
@@ -150,9 +150,9 @@ const MAP_BOTTOM_CONTROL_EDGE_OFFSET = { xs: 20, md: 'clamp(20px, 2.5vw, 36px)' 
 const MAP_HINT_LEFT_OFFSET = { xs: 68, md: 'calc(clamp(20px, 2.5vw, 36px) + 58px)' } as const
 
 const nearbyCategoryLabel: Record<NearbyCategory, string> = {
-    accessible_toilet: '无障碍卫生间',
-    friendly_clinic: '友好医疗机构',
-    baby_room: '母婴室',
+    accessible_toilet: 'accessible restrooms',
+    friendly_clinic: 'trans-friendly clinics',
+    baby_room: 'nursing rooms',
 }
 
 const nearbyCategoryHoverColor: Record<NearbyCategory, string> = {
@@ -215,10 +215,10 @@ const tileProviderConfig: Record<
         attribution: '&copy; OpenStreetMap contributors, Tiles style by Thunderforest',
     },
     tianditu_vec: {
-        label: '天地图·矢量',
+        label: 'TianDiTu · Vector',
         url: `https://t0.tianditu.gov.cn/vec_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=vec&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=${TIANDITU_API_KEY}`,
         labelUrl: `https://t0.tianditu.gov.cn/cva_w/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=cva&STYLE=default&TILEMATRIXSET=w&FORMAT=tiles&TILEMATRIX={z}&TILEROW={y}&TILECOL={x}&tk=${TIANDITU_API_KEY}`,
-        attribution: '© 天地图',
+        attribution: '© TianDiTu',
     },
 }
 
@@ -370,17 +370,17 @@ export default function Maps() {
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
     const { isLoggedIn, user } = useAuth()
-    // 已保存点（来自后端）
+    // Saved map points from the backend.
     const [markers, setMarkers] = useState<ApiMarker[]>([])
     const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set())
 
-    // 新建草稿
+    // New draft.
     const [draft, setDraft] = useState<DraftMarker | null>(null)
     const [markImageFile, setMarkImageFile] = useState<File | null>(null)
     const [savingDraft, setSavingDraft] = useState(false)
     const [saveDraftPhase, setSaveDraftPhase] = useState<'idle' | 'marker' | 'image'>('idle')
 
-    // Drawer 开关
+    // Drawer state.
     const dialogOpen = Boolean(draft)
     const [addMode, setAddMode] = useState(false)
     const [editingId, setEditingId] = useState<number | null>(null)
@@ -433,7 +433,7 @@ export default function Maps() {
     const [nearbyLoading, setNearbyLoading] = useState(false)
     const [reviewNoticeOpen, setReviewNoticeOpen] = useState(false)
     const [copyNoticeOpen, setCopyNoticeOpen] = useState(false)
-    const [copyNoticeText, setCopyNoticeText] = useState('坐标已复制')
+    const [copyNoticeText, setCopyNoticeText] = useState('Coordinates copied.')
     const [noticeOpen, setNoticeOpen] = useState(false)
     const [noticeText, setNoticeText] = useState('')
     const [noticeSeverity, setNoticeSeverity] = useState<AlertColor>('info')
@@ -444,7 +444,7 @@ export default function Maps() {
     const [canDeleteDraft, setCanDeleteDraft] = useState(true)
     const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<Set<number>>(new Set())
     const saveDraftLabel =
-        saveDraftPhase === 'image' ? '上传图片中...' : saveDraftPhase === 'marker' ? '保存中...' : '保存'
+        saveDraftPhase === 'image' ? 'Uploading image…' : saveDraftPhase === 'marker' ? 'Saving…' : 'Save'
     const overlayTopOffsetWithNav = `calc(var(--nav-offset, var(--nav-height, 64px)) + env(safe-area-inset-top, 0px) + var(${MAP_VISUAL_VIEWPORT_TOP_VAR}, 0px) + 12px)`
     const desktopOverlayTopOffsetWithNav = 'calc(var(--nav-offset, var(--nav-height, 64px)) + 16px)'
     const overlayBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + var(${MAP_VISUAL_VIEWPORT_BOTTOM_VAR}, 0px) + 20px)`
@@ -682,7 +682,7 @@ export default function Maps() {
                     const title = resolved.title || targetTitle
                     L.popup()
                         .setLatLng([resolved.lat, resolved.lng])
-                        .setContent(title ? `<strong>${title}</strong>` : '点位')
+                        .setContent(title ? `<strong>${title}</strong>` : 'Place')
                         .openOn(map)
                 }
             }, 200)
@@ -978,11 +978,11 @@ export default function Maps() {
     const applyNearbyRadiusInput = () => {
         const parsed = Number(nearbyRadiusInput.trim())
         if (!Number.isFinite(parsed)) {
-            setNearbyRadiusError('请输入数字（0-10000）')
+            setNearbyRadiusError('Enter a number from 0 to 10,000.')
             return
         }
         if (parsed < 0 || parsed > 10000) {
-            setNearbyRadiusError('范围需在 0-10000m，已自动修正')
+            setNearbyRadiusError('The range was adjusted to stay between 0 and 10,000 m.')
         } else {
             setNearbyRadiusError('')
         }
@@ -1012,11 +1012,11 @@ export default function Maps() {
             setNearbyPanelOpen(results.length > 0)
 
             if (list.length === 0) {
-                showNotice(`你附近 ${nearbyRadius}m 内暂无${nearbyCategoryLabel[nearbyCategory]}点位。`, 'info')
+                showNotice(`No ${nearbyCategoryLabel[nearbyCategory]} found within ${nearbyRadius} m.`, 'info')
                 return
             }
         } catch (e: unknown) {
-            showNotice(extractApiErrorMessage(e, '附近查询失败'), 'error')
+            showNotice(extractApiErrorMessage(e, 'Nearby search failed.'), 'error')
         } finally {
             setNearbyLoading(false)
         }
@@ -1026,7 +1026,7 @@ export default function Maps() {
         if (!draft) return
         if (savingDraft) return
         if (!draft.title.trim()) {
-            showNotice('请填写标题（例如：地铁站 A 口无障碍卫生间）', 'warning')
+            showNotice('Enter a title, such as “Accessible restroom at Metro Exit A.”', 'warning')
             return
         }
 
@@ -1098,15 +1098,15 @@ export default function Maps() {
             if (imageUploadFailed) {
                 showNotice(
                     editingId
-                        ? '修改已提交审核，但图片上传失败。可以稍后重新编辑点位补传图片。'
-                        : '点位已提交审核，但图片上传失败。可以稍后编辑点位补传图片。',
+                        ? 'Your changes were submitted for review, but the image could not be uploaded. You can edit the place later to try again.'
+                        : 'The place was submitted for review, but the image could not be uploaded. You can edit it later to try again.',
                     'warning'
                 )
             } else {
                 setReviewNoticeOpen(true)
             }
         } catch (e: unknown) {
-            showNotice(extractApiErrorMessage(e, '保存失败'), 'error')
+            showNotice(extractApiErrorMessage(e, 'Could not save the place.'), 'error')
         } finally {
             setSavingDraft(false)
             setSaveDraftPhase('idle')
@@ -1124,17 +1124,17 @@ export default function Maps() {
                 await loadMarkersInCurrentViewport(map, selectedVisibleCategories)
             }
             await loadFavorites()
-            showNotice('点位已删除', 'success')
+            showNotice('Place deleted.', 'success')
         } catch (e: unknown) {
-            showNotice(extractApiErrorMessage(e, '删除失败'), 'error')
+            showNotice(extractApiErrorMessage(e, 'Could not delete the place.'), 'error')
         } finally {
             setDeleting(false)
         }
     }
 
     const addHintText = isLoggedIn
-        ? '点击左上角按钮即可在地图上标记点位。'
-        : '登录后点击左上角按钮可在地图上标记点位。'
+        ? 'Use the button in the upper-left corner to add a place.'
+        : 'Log in, then use the button in the upper-left corner to add a place.'
 
     return (
         <Box
@@ -1204,7 +1204,7 @@ export default function Maps() {
                                       }
                                     : null),
                             }}
-                            aria-label={!isLoggedIn ? '登录后添加' : addMode ? '添加中' : '添加标记点'}
+                            aria-label={!isLoggedIn ? 'Log in to add a place' : addMode ? 'Adding a place' : 'Add a place'}
                         >
                             <Box sx={{ position: 'relative', width: 22, height: 22 }}>
                                 <MapOutlinedIcon sx={{ fontSize: 20 }} />
@@ -1274,7 +1274,7 @@ export default function Maps() {
                                                 '&:hover': { bgcolor: 'rgba(208, 188, 255, 0.24)' },
                                             }}
                                         >
-                                            我知道了
+                                            Got it
                                         </Button>
                                     </Stack>
                                 </CardContent>
@@ -1312,7 +1312,7 @@ export default function Maps() {
                                     '&:hover': { bgcolor: '#c8afff', borderColor: MAP_UI_LILAC },
                                 }}
                             >
-                                退出附近筛选
+                                Exit nearby search
                             </Button>
                         ) : null}
 
@@ -1378,14 +1378,14 @@ export default function Maps() {
                             }}
                         >
                             {renderNearbyCategoryIcon(nearbyCategory)}
-                            {nearbyLoading ? '查询中...' : `附近${nearbyCategoryLabel[nearbyCategory]}`}
+                            {nearbyLoading ? 'Searching…' : `Nearby ${nearbyCategoryLabel[nearbyCategory]}`}
                         </Button>
                     </Box>
 
                     <Button
                         variant="contained"
                         onClick={() => setSettingsOpen(true)}
-                        aria-label="打开地图设置"
+                        aria-label="Open map settings"
                         sx={{
                             position: 'fixed',
                             zIndex: 1200,
@@ -1419,7 +1419,7 @@ export default function Maps() {
                             severity="info"
                             sx={{ borderRadius: 3, bgcolor: 'rgba(123, 79, 143, 0.92)', color: '#fff' }}
                         >
-                            已提交管理员审核，将在审核通过后显示
+                            Submitted for administrator review. It will appear after approval.
                         </Alert>
                     </Snackbar>
 
@@ -1449,7 +1449,7 @@ export default function Maps() {
                         </Alert>
                     </Snackbar>
 
-                    {/* 图例与筛选 */}
+                    {/* Legend and filters. */}
                     <Box
                         sx={{
                             position: 'absolute',
@@ -1487,20 +1487,20 @@ export default function Maps() {
                                     '&:hover': { bgcolor: '#c8afff' },
                                 }}
                             >
-                                筛选点位 {legendOpen ? '▲' : '▼'}
+                                Filter places {legendOpen ? '▲' : '▼'}
                             </Button>
                         </Box>
 
                         {legendOpen ? (
                             <Box sx={{ mt: 1, pointerEvents: 'auto' }}>
                                 <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
-                                    <Typography fontWeight={700}>图例</Typography>
+                                    <Typography fontWeight={700}>Legend</Typography>
                                     <Stack direction="row" spacing={0.5}>
                                         <Button size="small" onClick={showAllCats} sx={{ minWidth: 0, px: 1 }}>
-                                            全选
+                                            Select all
                                         </Button>
                                         <Button size="small" onClick={hideAllCats} sx={{ minWidth: 0, px: 1 }}>
-                                            全不选
+                                            Clear all
                                         </Button>
                                     </Stack>
                                 </Stack>
@@ -1520,7 +1520,7 @@ export default function Maps() {
                                             },
                                         }}
                                     >
-                                        全部
+                                        All
                                     </Button>
                                     <Button
                                         size="small"
@@ -1538,7 +1538,7 @@ export default function Maps() {
                                             },
                                         }}
                                     >
-                                        我添加的
+                                        Added by me
                                     </Button>
                                     <Button
                                         size="small"
@@ -1556,7 +1556,7 @@ export default function Maps() {
                                             },
                                         }}
                                     >
-                                        我收藏的
+                                        My favorites
                                     </Button>
                                 </Stack>
 
@@ -1618,7 +1618,7 @@ export default function Maps() {
                             />
                         ) : null}
 
-                        {/* 点击地图创建点 */}
+                        {/* Create a map point by selecting the map. */}
                         <ClickToAdd
                             enabled={addMode && isLoggedIn}
                             onPick={openDraft}
@@ -1629,7 +1629,7 @@ export default function Maps() {
                             }}
                         />
 
-                        {/* 已保存的点 */}
+                        {/* Saved map points. */}
                         {filteredMarkers.map((m) => (
                             <Marker
                                 key={m.id}
@@ -1639,7 +1639,7 @@ export default function Maps() {
                                 <Popup autoPanPaddingTopLeft={[16, 120]}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {isLoggedIn ? (
-                                            <IconButton size="small" onClick={() => openEdit(m)} aria-label="编辑点位">
+                                            <IconButton size="small" onClick={() => openEdit(m)} aria-label="Edit place">
                                                 <EditRoundedIcon fontSize="small" />
                                             </IconButton>
                                         ) : null}
@@ -1667,7 +1667,7 @@ export default function Maps() {
                                                     await loadFavorites()
                                                 }
                                             }}
-                                            aria-label={favoriteIds.has(m.id) ? '取消收藏点位' : '收藏点位'}
+                                            aria-label={favoriteIds.has(m.id) ? 'Remove place from favorites' : 'Add place to favorites'}
                                         >
                                             {favoriteIds.has(m.id) ? (
                                                 <StarIcon sx={{ color: '#f6c344' }} />
@@ -1681,15 +1681,15 @@ export default function Maps() {
                                         {categoryLabel[normalizeCategory(m.category)]}
                                     </Typography>
                                     <Typography variant="caption" sx={{ mt: 0.4, opacity: 0.8, display: 'block' }}>
-                                        可用时间：
+                                        Available:
                                         {m.openTimeStart && m.openTimeEnd
                                             ? `${m.openTimeStart} - ${m.openTimeEnd}`
-                                            : '全天'}
+                                            : 'All day'}
                                     </Typography>
 
                                     {!m.isActive ? (
                                         <Typography variant="body2" sx={{ mt: 0.5, color: '#757575', fontWeight: 600 }}>
-                                            此点位暂不可用
+                                            This place is currently unavailable.
                                         </Typography>
                                     ) : null}
 
@@ -1729,10 +1729,10 @@ export default function Maps() {
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 copyCoords(m.lat, m.lng)
-                                                setCopyNoticeText('坐标已复制')
+                                                setCopyNoticeText('Coordinates copied.')
                                                 setCopyNoticeOpen(true)
                                             }}
-                                            aria-label="复制坐标"
+                                            aria-label="Copy coordinates"
                                         >
                                             <ContentCopyIcon sx={{ fontSize: 14, color: '#9e9e9e' }} />
                                         </IconButton>
@@ -1792,10 +1792,10 @@ export default function Maps() {
                     }}
                 >
                     <Typography fontWeight={800} sx={{ color: MAP_UI_INK, fontSize: 20 }}>
-                        地图设置
+                        Map settings
                     </Typography>
                     <Typography variant="body2" sx={{ color: MAP_UI_MUTED, mt: 0.4 }}>
-                        地图来源与附近查询范围
+                        Map provider and nearby-search range
                     </Typography>
                 </Box>
                 <Stack spacing={1.5} sx={{ p: 2.2 }}>
@@ -1808,7 +1808,7 @@ export default function Maps() {
                         }}
                     >
                         <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
-                            地图来源
+                            Map provider
                         </Typography>
                         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                     {(Object.keys(tileProviderConfig) as TileProvider[]).map((key) => (
@@ -1851,7 +1851,7 @@ export default function Maps() {
                         }}
                     >
                         <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
-                            附近查询类型
+                            Nearby category
                         </Typography>
                         <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap' }}>
                             {nearbyCategories.map((key) => (
@@ -1894,7 +1894,7 @@ export default function Maps() {
                         }}
                     >
                         <Typography variant="body2" fontWeight={800} sx={{ mb: 1, color: MAP_UI_INK }}>
-                            附近查询范围
+                            Nearby range
                         </Typography>
                         <Stack direction="row" spacing={1}>
                             {[1000, 2500].map((radius) => (
@@ -1924,7 +1924,7 @@ export default function Maps() {
                         <Stack direction="row" spacing={1} sx={{ mt: 1.2, alignItems: 'flex-start' }}>
                             <TextField
                                 size="small"
-                                label="自定义(m)"
+                                label="Custom (m)"
                                 value={nearbyRadiusInput}
                                 onChange={(e) => {
                                     setNearbyRadiusInput(e.target.value)
@@ -1970,11 +1970,11 @@ export default function Maps() {
                                     '&:hover': { borderColor: MAP_UI_LILAC, bgcolor: 'rgba(208, 188, 255, 0.24)' },
                                 }}
                             >
-                                应用
+                                Apply
                             </Button>
                         </Stack>
                         <Typography variant="caption" sx={{ color: MAP_UI_MUTED }}>
-                            范围 0-10000m，超出会自动修正。
+                            Range: 0–10,000 m. Values outside this range are adjusted automatically.
                         </Typography>
                     </Box>
                 </Stack>
@@ -1999,10 +1999,10 @@ export default function Maps() {
             >
                 <Box sx={{ p: 2, borderBottom: '1px solid', borderColor: 'divider' }}>
                     <Typography fontWeight={800}>
-                        附近 {nearbyRadius}m {nearbyCategoryLabel[nearbyCategory]}
+                        {nearbyCategoryLabel[nearbyCategory]} within {nearbyRadius} m
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.75, mt: 0.5 }}>
-                        共 {nearbyResults.length} 个结果，点击可在地图上定位
+                        {nearbyResults.length} results. Select one to locate it on the map.
                     </Typography>
                 </Box>
                 <Box sx={{ p: 1.5, overflowY: 'auto' }}>
@@ -2045,9 +2045,9 @@ export default function Maps() {
                                                 fontWeight: 700,
                                             }}
                                         >
-                                            当前不可用
+                                            Currently unavailable
                                             {m.openTimeStart && m.openTimeEnd
-                                                ? `（可用时段 ${m.openTimeStart} - ${m.openTimeEnd}）`
+                                                ? ` (available ${m.openTimeStart}–${m.openTimeEnd})`
                                                 : ''}
                                         </Typography>
                                     ) : null}
@@ -2065,10 +2065,10 @@ export default function Maps() {
                                             onClick={(e) => {
                                                 e.stopPropagation()
                                                 copyCoords(m.lat, m.lng)
-                                                setCopyNoticeText('坐标已复制')
+                                                setCopyNoticeText('Coordinates copied.')
                                                 setCopyNoticeOpen(true)
                                             }}
-                                            aria-label="复制坐标"
+                                            aria-label="Copy coordinates"
                                         >
                                             <ContentCopyIcon sx={{ fontSize: 14, color: '#9e9e9e' }} />
                                         </IconButton>
@@ -2105,10 +2105,10 @@ export default function Maps() {
                 fullWidth
                 maxWidth="xs"
             >
-                <DialogTitle sx={{ pb: 1 }}>确认删除点位？</DialogTitle>
+                <DialogTitle sx={{ pb: 1 }}>Delete this place?</DialogTitle>
                 <DialogContent sx={{ pt: '8px !important' }}>
                     <DialogContentText>
-                        删除后将无法恢复。你确定要删除这个点位吗？
+                        This cannot be undone. Are you sure you want to delete this place?
                     </DialogContentText>
                 </DialogContent>
                 <DialogActions sx={{ px: 2, pb: 2 }}>
@@ -2118,7 +2118,7 @@ export default function Maps() {
                         variant="outlined"
                         sx={{ textTransform: 'none', borderRadius: 2 }}
                     >
-                        取消
+                        Cancel
                     </Button>
                     <Button
                         onClick={confirmDeleteMarker}
@@ -2127,7 +2127,7 @@ export default function Maps() {
                         variant="contained"
                         sx={{ textTransform: 'none', borderRadius: 2 }}
                     >
-                        {deleting ? '删除中...' : '确认删除'}
+                        {deleting ? 'Deleting…' : 'Delete'}
                     </Button>
                 </DialogActions>
             </Dialog>

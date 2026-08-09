@@ -67,15 +67,15 @@ public class AdminUserController {
         return userService.findAnyById(id)
                 .<ResponseEntity<?>>map(user -> {
                     if (Boolean.TRUE.equals(user.getDeleted())) {
-                        return ResponseEntity.badRequest().body("已删除用户不能重置密码");
+                        return ResponseEntity.badRequest().body("Deleted users cannot have their password reset");
                     }
                     userService.resetPassword(user, defaultUserPassword);
                     return ResponseEntity.ok(Map.of(
-                            "message", "密码已重置为默认密码",
+                            "message", "Password has been reset to the default password",
                             "username", user.getUsername()
                     ));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("用户不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("User not found"));
     }
 
     @DeleteMapping("/{id}")
@@ -85,14 +85,14 @@ public class AdminUserController {
 
         Integer currentUserId = (Integer) session.getAttribute("userId");
         if (currentUserId != null && currentUserId.equals(id)) {
-            return ResponseEntity.status(400).body("不能删除当前登录管理员账号");
+            return ResponseEntity.status(400).body("You cannot delete the currently signed-in administrator account");
         }
 
         boolean deleted = userService.deleteById(id);
         if (!deleted) {
-            return ResponseEntity.status(404).body("用户不存在");
+            return ResponseEntity.status(404).body("User not found");
         }
-        return ResponseEntity.ok(Map.of("message", "用户已删除"));
+        return ResponseEntity.ok(Map.of("message", "User deleted"));
     }
 
     @PostMapping("/{id}/restore")
@@ -103,12 +103,12 @@ public class AdminUserController {
         return userService.findAnyById(id)
                 .<ResponseEntity<?>>map(user -> {
                     if (!Boolean.TRUE.equals(user.getDeleted())) {
-                        return ResponseEntity.badRequest().body("该用户未被删除");
+                        return ResponseEntity.badRequest().body("This user has not been deleted");
                     }
                     userService.restore(user);
-                    return ResponseEntity.ok(Map.of("message", "用户已恢复"));
+                    return ResponseEntity.ok(Map.of("message", "User restored"));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("用户不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("User not found"));
     }
 
     private Map<String, Object> toAdminUser(User user) {
@@ -134,14 +134,15 @@ public class AdminUserController {
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {
-            return ResponseEntity.status(403).body("需要二级密码");
+            return ResponseEntity.status(403).body("Secondary password verification required");
         }
         if (at instanceof Long) {
             long elapsed = System.currentTimeMillis() - (Long) at;
             if (elapsed > SECOND_FACTOR_TTL_MS) {
                 session.removeAttribute("adminSecondVerified");
                 session.removeAttribute("adminSecondVerifiedAt");
-                return ResponseEntity.status(403).body("二级密码已过期，请重新验证");
+                return ResponseEntity.status(403)
+                        .body("Secondary password verification has expired. Please verify again");
             }
         }
         return null;

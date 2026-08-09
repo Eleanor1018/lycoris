@@ -59,7 +59,7 @@ export default function Register() {
     const handleRegister = async () => {
         setErrorMessage("");
         if (registerForm.password !== password2) {
-            setErrorMessage("两次密码输入不一致");
+            setErrorMessage("The passwords do not match.");
             return;
         }
         try{
@@ -75,12 +75,12 @@ export default function Register() {
                 navigate('/');
             }
             else{
-                setErrorMessage(response.data.message ?? "注册失败，请检查用户名和密码是否正确");
+                setErrorMessage(response.data.message ?? "Sign-up failed. Please check your username and password.");
             }
 
             }
         catch(error: unknown){
-            const errorMsg = getErrorMessage(error, "注册失败，请检查用户名和密码是否正确")
+            const errorMsg = getErrorMessage(error, "Sign-up failed. Please check your username and password.")
             setErrorMessage(errorMsg);
         }
 
@@ -93,12 +93,12 @@ export default function Register() {
 
     return (
         <AuthPageShell
-            title="注册"
+            title="Sign up"
             onSubmit={handleSubmit}
             maxWidth={540}
             footer={
                 <Typography variant="body2" sx={{ color: '#1d1b20', textAlign: 'center' }}>
-                    已经有账号？ <RouterLink to="/login">去登录</RouterLink>
+                    Already have an account? <RouterLink to="/login">Log in</RouterLink>
                 </Typography>
             }
         >
@@ -123,7 +123,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="用户名"
+                    label="Username"
                     value={registerForm.username}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, username: e.target.value}))}
                     autoComplete="username"
@@ -131,7 +131,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="昵称"
+                    label="Display name"
                     value={registerForm.nickname}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, nickname: e.target.value}))}
                     autoComplete="nickname"
@@ -139,7 +139,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="邮箱"
+                    label="Email"
                     value={registerForm.email}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, email: e.target.value}))}
                     autoComplete="email"
@@ -147,7 +147,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="密码"
+                    label="Password"
                     type="password"
                     value={registerForm.password}
                     onChange={(e) => setRegisterForm((prev) => ({...prev, password: e.target.value}))}
@@ -156,7 +156,7 @@ export default function Register() {
                 />
 
                 <TextField
-                    label="再次输入密码"
+                    label="Confirm password"
                     type="password"
                     value={password2}
                     onChange={(e) => setPassword2(e.target.value)}
@@ -180,7 +180,7 @@ export default function Register() {
                         '&:hover': { bgcolor: '#c8afff' },
                     }}
                 >
-                    注册
+                    Sign up
                 </Button>
         </AuthPageShell>
 

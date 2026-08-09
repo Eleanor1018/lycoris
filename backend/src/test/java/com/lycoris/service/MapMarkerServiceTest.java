@@ -35,7 +35,7 @@ class MapMarkerServiceTest {
         assertThat(service.normalizeCategoryForWrite(" baby_room ")).isEqualTo("baby_room");
         assertThatThrownBy(() -> service.normalizeCategoryForWrite("conversion_therapy"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("不支持的 category");
+                .hasMessageContaining("Unsupported category");
     }
 
     @Test
@@ -69,7 +69,7 @@ class MapMarkerServiceTest {
                 .isEqualTo("self_definition");
         assertThatThrownBy(() -> service.normalizeStoredCategoryForApproval("unknown_category"))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("不支持的存量 category");
+                .hasMessageContaining("Unsupported stored category");
     }
 
     @Test

@@ -59,19 +59,19 @@ public class MarkerController {
         Object u = session.getAttribute("username");
         Integer userId = (Integer) session.getAttribute("userId");
         if (u == null || userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String username = String.valueOf(u);
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         // 最小校验
         if (req.getLat() == null || req.getLng() == null || req.getCategory() == null || req.getTitle() == null) {
-            return ResponseEntity.badRequest().body("缺少必要字段");
+            return ResponseEntity.badRequest().body("Required fields are missing");
         }
 
         try {
@@ -103,10 +103,10 @@ public class MarkerController {
             @RequestParam(value = "category", defaultValue = "accessible_toilet") String category
     ) {
         if (lat == null || lng == null) {
-            return ResponseEntity.badRequest().body("缺少 lat/lng 参数");
+            return ResponseEntity.badRequest().body("Missing lat/lng parameters");
         }
         if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-            return ResponseEntity.badRequest().body("lat/lng 不合法");
+            return ResponseEntity.badRequest().body("Invalid lat/lng values");
         }
         try {
             return ResponseEntity.ok(markerService.nearbyPublicActive(lat, lng, radius == null ? 1000 : radius, category));
@@ -115,7 +115,8 @@ public class MarkerController {
         } catch (Exception e) {
             String msg = e.getMessage() == null ? "" : e.getMessage().toLowerCase();
             if (msg.contains("st_dwithin") || msg.contains("postgis")) {
-                return ResponseEntity.status(500).body("数据库未启用 PostGIS，请先执行：CREATE EXTENSION postgis;");
+                return ResponseEntity.status(500)
+                        .body("PostGIS is not enabled in the database. Run: CREATE EXTENSION postgis;");
             }
             throw e;
         }
@@ -130,7 +131,7 @@ public class MarkerController {
             @RequestParam(value = "categories", required = false) String categoriesCsv
     ) {
         if (minLat == null || maxLat == null || minLng == null || maxLng == null) {
-            return ResponseEntity.badRequest().body("缺少视口边界参数");
+            return ResponseEntity.badRequest().body("Viewport bounds are required");
         }
         try {
             List<String> categories = null;
@@ -162,10 +163,10 @@ public class MarkerController {
     ) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body("文件为空");
+            return ResponseEntity.badRequest().body("File is empty");
         }
 
         return markerService.findById(id).map(marker -> {
@@ -173,7 +174,7 @@ public class MarkerController {
                     .map(user -> String.valueOf(user.getPublicId()))
                     .orElse(null);
             if (userPublicId == null) {
-                return ResponseEntity.status(401).body("请先登录");
+                return ResponseEntity.status(401).body("Please sign in first");
             }
             try {
                 String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
@@ -196,9 +197,9 @@ public class MarkerController {
 
                 return ResponseEntity.ok(marker);
             } catch (Exception e) {
-                return ResponseEntity.status(500).body("上传失败");
+                return ResponseEntity.status(500).body("Upload failed");
             }
-        }).orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @PatchMapping("/{id}")
@@ -209,13 +210,13 @@ public class MarkerController {
     ) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         return markerService.findById(id)
@@ -236,7 +237,7 @@ public class MarkerController {
                 proposedOpenStart = markerService.normalizeOpenTime(req.getOpenTimeStart());
                 proposedOpenEnd = markerService.normalizeOpenTime(req.getOpenTimeEnd());
                 if ((proposedOpenStart == null) != (proposedOpenEnd == null)) {
-                    throw new IllegalArgumentException("请同时填写开始和结束时间，或都留空");
+                    throw new IllegalArgumentException("Provide both opening and closing times, or leave both empty");
                 }
             }
 
@@ -262,7 +263,7 @@ public class MarkerController {
             editProposalRepo.save(proposal);
 
             return ResponseEntity.ok(marker);
-        }).orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @ExceptionHandler(IllegalArgumentException.class)
@@ -275,40 +276,40 @@ public class MarkerController {
     public ResponseEntity<?> deleteMarker(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         return markerService.findById(id).map(marker -> {
             if (marker.getUserPublicId() == null || !userPublicId.equals(marker.getUserPublicId())) {
-                return ResponseEntity.status(403).body("无权限");
+                return ResponseEntity.status(403).body("Permission denied");
             }
             favoriteRepo.deleteByMarkerId(id);
             markerService.delete(marker);
             return ResponseEntity.ok().build();
-        }).orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+        }).orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @PostMapping("/{id}/favorite")
     public ResponseEntity<?> favorite(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         if (!markerService.findById(id).isPresent()) {
-            return ResponseEntity.status(404).body("点位不存在");
+            return ResponseEntity.status(404).body("Marker not found");
         }
         if (!favoriteRepo.existsByUserPublicIdAndMarkerId(userPublicId, id)) {
             MarkerFavorite fav = new MarkerFavorite();
@@ -323,13 +324,13 @@ public class MarkerController {
     public ResponseEntity<?> unfavorite(@PathVariable("id") Long id, HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         favoriteRepo.deleteByUserPublicIdAndMarkerId(userPublicId, id);
@@ -340,13 +341,13 @@ public class MarkerController {
     public ResponseEntity<?> myFavorites(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         List<MarkerFavorite> favs = favoriteRepo.findByUserPublicId(userPublicId);
@@ -358,13 +359,13 @@ public class MarkerController {
     public ResponseEntity<?> myCreatedMarkers(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         return ResponseEntity.ok(markerService.listByUserPublicId(userPublicId));
     }
@@ -373,13 +374,13 @@ public class MarkerController {
     public ResponseEntity<?> myFavoriteMarkers(HttpSession session) {
         Integer userId = (Integer) session.getAttribute("userId");
         if (userId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
         String userPublicId = userService.findById(userId)
                 .map(user -> String.valueOf(user.getPublicId()))
                 .orElse(null);
         if (userPublicId == null) {
-            return ResponseEntity.status(401).body("请先登录");
+            return ResponseEntity.status(401).body("Please sign in first");
         }
 
         List<Long> ids = favoriteRepo.findByUserPublicId(userPublicId)

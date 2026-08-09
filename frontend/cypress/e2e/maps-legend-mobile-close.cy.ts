@@ -14,11 +14,11 @@ describe('Maps legend menu on mobile', () => {
     it('closes legend menu after tapping map area', () => {
         cy.visit('/maps')
 
-        cy.contains('button', '筛选点位').click()
-        cy.contains('图例').should('be.visible')
+        cy.contains('button', 'Filter places').click()
+        cy.contains('Legend').should('be.visible')
 
         cy.get('.leaflet-container').click('center')
 
-        cy.contains('图例').should('not.exist')
+        cy.contains('Legend').should('not.exist')
     })
 })

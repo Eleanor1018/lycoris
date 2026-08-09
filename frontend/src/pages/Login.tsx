@@ -77,18 +77,18 @@ export default function Login(){
 
     return(
         <AuthPageShell
-            title="登录"
+            title="Log in"
             onSubmit={handleLogin}
             footer={
                 <Typography variant="body2" sx={{ color: '#1d1b20', textAlign: 'center' }}>
-                    没有账号？ <RouterLink to="/register">去注册</RouterLink>
+                    New here? <RouterLink to="/register">Create an account</RouterLink>
                 </Typography>
             }
         >
                 {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
 
                 <TextField
-                    label="用户名或邮箱"
+                    label="Username or email"
                     value={loginForm.username}
                     onChange={(e) => setLoginForm((prev) => ({...prev, username: e.target.value}))}
                     autoComplete="username"
@@ -96,7 +96,7 @@ export default function Login(){
                 />
 
                 <TextField
-                    label="密码"
+                    label="Password"
                     type="password"
                     value={loginForm.password}
                     onChange={(e) => setLoginForm((prev) => ({...prev, password: e.target.value}))}
@@ -120,7 +120,7 @@ export default function Login(){
                         '&:hover': { bgcolor: '#c8afff' },
                     }}
                 >
-                    登录
+                    Log in
                 </Button>
         </AuthPageShell>
 

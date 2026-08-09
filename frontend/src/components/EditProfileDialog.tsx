@@ -71,11 +71,11 @@ export default function EditProfileDialog({
                             py: 0.5,
                         }}
                     >
-                        编辑资料
+                        Edit profile
                     </Typography>
 
                     <TextField
-                        label="昵称"
+                        label="Display name"
                         value={nickname}
                         onChange={(e) => onNicknameChange(e.target.value)}
                         fullWidth
@@ -83,19 +83,19 @@ export default function EditProfileDialog({
                     />
 
                     <TextField
-                        label="称谓（Pronouns）"
+                        label="Pronouns"
                         value={pronouns}
                         onChange={(e) => onPronounsChange(e.target.value)}
-                        placeholder="例如 she/her"
+                        placeholder="For example, she/her"
                         fullWidth
                         sx={fieldSx}
                     />
 
                     <TextField
-                        label="个性签名"
+                        label="Bio"
                         value={signature}
                         onChange={(e) => onSignatureChange(e.target.value)}
-                        placeholder="写一点想展示的话"
+                        placeholder="Tell people a little about yourself"
                         fullWidth
                         multiline
                         minRows={2}
@@ -113,7 +113,7 @@ export default function EditProfileDialog({
                                 color: '#744988',
                             }}
                         >
-                            选择头像
+                            Choose profile photo
                             <input
                                 type="file"
                                 accept="image/*"
@@ -151,10 +151,10 @@ export default function EditProfileDialog({
                                             const converted = Array.isArray(blob) ? blob[0] : blob
                                             const safeName = f.name.replace(/\.(heic|heif)$/i, '.jpg')
                                             finalFile = new File([converted], safeName, { type: 'image/jpeg' })
-                                            setAvatarHint('已自动将 HEIC 转换为 JPG')
+                                            setAvatarHint('HEIC converted to JPG automatically.')
                                         }
                                     } catch {
-                                        setAvatarError('HEIC 图片转换失败，请换一张图片试试。')
+                                        setAvatarError('Could not convert the HEIC image. Please try another image.')
                                         onAvatarChange(null)
                                         e.currentTarget.value = ''
                                         setIsCompressing(false)
@@ -172,9 +172,9 @@ export default function EditProfileDialog({
                                             finalFile = new File([compressed], finalFile.name, {
                                                 type: compressed.type || finalFile.type,
                                             })
-                                            setAvatarHint(`已自动压缩头像（${(f.size / 1024 / 1024).toFixed(2)}MB → ${(finalFile.size / 1024 / 1024).toFixed(2)}MB）`)
+                                            setAvatarHint(`Profile photo compressed automatically (${(f.size / 1024 / 1024).toFixed(2)} MB → ${(finalFile.size / 1024 / 1024).toFixed(2)} MB).`)
                                         } catch {
-                                            setAvatarError('头像压缩失败，请尝试更小的图片。')
+                                            setAvatarError('Could not compress the profile photo. Please try a smaller image.')
                                             onAvatarChange(null)
                                             e.currentTarget.value = ''
                                             setIsCompressing(false)
@@ -183,7 +183,7 @@ export default function EditProfileDialog({
                                     }
 
                                     if (finalFile.size > MAX_AVATAR_SIZE) {
-                                        setAvatarError('压缩后仍超过 5MB，请换一张更小的图片。')
+                                        setAvatarError('The compressed image is still over 5 MB. Please choose a smaller image.')
                                         onAvatarChange(null)
                                         e.currentTarget.value = ''
                                         setIsCompressing(false)
@@ -201,7 +201,7 @@ export default function EditProfileDialog({
                                 icon={<CircularProgress size={16} color="inherit" />}
                                 sx={{ mt: 1, borderRadius: 2 }}
                             >
-                                正在压缩头像，请稍候...
+                                Compressing your profile photo…
                             </Alert>
                         ) : null}
                         {avatarHint ? (
@@ -216,14 +216,14 @@ export default function EditProfileDialog({
                         ) : null}
                         {avatarFile ? (
                             <Alert severity="info" sx={{ mt: 1, borderRadius: 2 }}>
-                                已选择：{avatarFile.name}
+                                Selected: {avatarFile.name}
                             </Alert>
                         ) : null}
                     </Box>
 
                     <Stack direction="row" spacing={1} justifyContent="flex-end">
                         <Button onClick={onClose} disabled={isCompressing} sx={{ borderRadius: 999, textTransform: 'none' }}>
-                            取消
+                            Cancel
                         </Button>
                         <Button
                             variant="contained"
@@ -236,7 +236,7 @@ export default function EditProfileDialog({
                                 '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
                             }}
                         >
-                            保存
+                            Save
                         </Button>
                     </Stack>
                 </Stack>

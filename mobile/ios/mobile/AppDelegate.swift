@@ -79,12 +79,12 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     reject: @escaping RCTPromiseRejectBlock
   ) {
     if requestInFlight {
-      reject("LOCATION_BUSY", "定位请求进行中。", nil)
+      reject("LOCATION_BUSY", "A location request is already in progress.", nil)
       return
     }
 
     guard CLLocationManager.locationServicesEnabled() else {
-      reject("LOCATION_PROVIDER_DISABLED", "定位服务未开启。", nil)
+      reject("LOCATION_PROVIDER_DISABLED", "Location Services are turned off.", nil)
       return
     }
 
@@ -110,7 +110,7 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     guard let manager = locationManager else {
       finishFailure(
         code: "LOCATION_INTERNAL_ERROR",
-        message: "原生定位初始化失败。",
+        message: "Could not initialize native location services.",
         error: nil
       )
       return
@@ -131,13 +131,13 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     case .denied, .restricted:
       finishFailure(
         code: "LOCATION_PERMISSION_DENIED",
-        message: "定位权限未授予。",
+        message: "Location permission was not granted.",
         error: nil
       )
     @unknown default:
       finishFailure(
         code: "LOCATION_INTERNAL_ERROR",
-        message: "定位状态不可用。",
+        message: "Location status is unavailable.",
         error: nil
       )
     }
@@ -184,7 +184,7 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     let workItem = DispatchWorkItem { [weak self] in
       self?.finishFailure(
         code: "LOCATION_TIMEOUT",
-        message: "定位超时，请稍后重试。",
+        message: "Location request timed out. Please try again.",
         error: nil
       )
     }
@@ -249,7 +249,7 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     case .denied, .restricted:
       finishFailure(
         code: "LOCATION_PERMISSION_DENIED",
-        message: "定位权限未授予。",
+        message: "Location permission was not granted.",
         error: nil
       )
     case .notDetermined:
@@ -257,7 +257,7 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     @unknown default:
       finishFailure(
         code: "LOCATION_INTERNAL_ERROR",
-        message: "定位状态不可用。",
+        message: "Location status is unavailable.",
         error: nil
       )
     }
@@ -266,7 +266,7 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
   func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
     guard requestInFlight else { return }
     guard let location = locations.last(where: { $0.horizontalAccuracy >= 0 }) ?? locations.last else {
-      finishFailure(code: "LOCATION_UNAVAILABLE", message: "无法获取当前位置。", error: nil)
+      finishFailure(code: "LOCATION_UNAVAILABLE", message: "Could not determine your current location.", error: nil)
       return
     }
     finishSuccess(location, provider: "core_location")
@@ -280,11 +280,11 @@ class NativeLocation: NSObject, CLLocationManagerDelegate {
     if let clError = error as? CLError, clError.code == .denied {
       finishFailure(
         code: "LOCATION_PERMISSION_DENIED",
-        message: "定位权限未授予。",
+        message: "Location permission was not granted.",
         error: error
       )
       return
     }
-    finishFailure(code: "LOCATION_UNAVAILABLE", message: "无法获取当前位置。", error: error)
+    finishFailure(code: "LOCATION_UNAVAILABLE", message: "Could not determine your current location.", error: error)
   }
 }

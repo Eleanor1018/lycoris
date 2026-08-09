@@ -28,14 +28,14 @@ public class AdminAuthController {
     @PostMapping("/verify")
     public ResponseEntity<?> verify(@RequestBody AdminVerifyRequest request, HttpSession session) {
         if (secondPasswordHash.isBlank()) {
-            return ResponseEntity.status(403).body("未配置二级密码");
+            return ResponseEntity.status(403).body("Secondary password is not configured");
         }
         String passcode = request == null ? null : request.getPasscode();
         if (passcode == null || passcode.isBlank()) {
-            return ResponseEntity.badRequest().body("缺少二级密码");
+            return ResponseEntity.badRequest().body("Secondary password is required");
         }
         if (!passwordEncoder.matches(passcode, secondPasswordHash)) {
-            return ResponseEntity.status(403).body("二级密码错误");
+            return ResponseEntity.status(403).body("Incorrect secondary password");
         }
         session.setAttribute("adminSecondVerified", true);
         session.setAttribute("adminSecondVerifiedAt", System.currentTimeMillis());

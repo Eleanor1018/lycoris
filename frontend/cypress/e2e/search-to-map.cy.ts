@@ -42,7 +42,7 @@ describe('Search to map focus flow', () => {
         cy.get('.leaflet-popup-content').should('be.visible')
         cy.get('.leaflet-popup-content').within(() => {
             cy.contains('Search Marker 101').should('be.visible')
-            cy.contains('无障碍卫生间').should('be.visible')
+            cy.contains('Accessible Restroom').should('be.visible')
             cy.contains('Popup detail from viewport marker data').should('be.visible')
         })
     })

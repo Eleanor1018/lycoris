@@ -159,10 +159,10 @@ public class MapMarkerService {
             List<String> categories
     ) {
         if (minLat > maxLat || minLng > maxLng) {
-            throw new IllegalArgumentException("边界参数不合法");
+            throw new IllegalArgumentException("Invalid viewport bounds");
         }
         if (minLat < -90 || maxLat > 90 || minLng < -180 || maxLng > 180) {
-            throw new IllegalArgumentException("边界超出合法经纬度范围");
+            throw new IllegalArgumentException("Viewport bounds are outside the valid latitude/longitude range");
         }
 
         String cacheKey = buildViewportCacheKey(minLat, maxLat, minLng, maxLng, categories);
@@ -233,7 +233,7 @@ public class MapMarkerService {
             LocalTime parsed = LocalTime.parse(normalized);
             return parsed.withSecond(0).withNano(0).toString().substring(0, 5);
         } catch (DateTimeParseException ex) {
-            throw new IllegalArgumentException("时间格式不合法，请使用 HH:mm");
+            throw new IllegalArgumentException("Invalid time format. Use HH:mm");
         }
     }
 
@@ -263,7 +263,7 @@ public class MapMarkerService {
         String normalizedStart = normalizeOpenTime(start);
         String normalizedEnd = normalizeOpenTime(end);
         if ((normalizedStart == null) != (normalizedEnd == null)) {
-            throw new IllegalArgumentException("请同时填写开始和结束时间，或都留空");
+            throw new IllegalArgumentException("Provide both opening and closing times, or leave both empty");
         }
         marker.setOpenTimeStart(normalizedStart);
         marker.setOpenTimeEnd(normalizedEnd);
@@ -271,7 +271,7 @@ public class MapMarkerService {
 
     public String normalizeCategoryForWrite(String category) {
         if (category == null) {
-            throw new IllegalArgumentException("category 不能为空");
+            throw new IllegalArgumentException("category is required");
         }
         String normalized = category.trim().toLowerCase(Locale.ROOT);
         if (LEGACY_TO_SELF_DEFINITION.contains(normalized)) {
@@ -280,7 +280,10 @@ public class MapMarkerService {
         if (SUPPORTED_CATEGORIES.contains(normalized)) {
             return normalized;
         }
-        throw new IllegalArgumentException("不支持的 category：" + category + "，仅支持：" + String.join(", ", SUPPORTED_CATEGORIES));
+        throw new IllegalArgumentException(
+                "Unsupported category: " + category
+                        + ". Supported values: " + String.join(", ", SUPPORTED_CATEGORIES)
+        );
     }
 
     public String normalizeStoredCategoryForRead(String category) {
@@ -294,7 +297,7 @@ public class MapMarkerService {
 
     public String normalizeStoredCategoryForApproval(String category) {
         if (category == null) {
-            throw new IllegalArgumentException("存量 category 不能为空");
+            throw new IllegalArgumentException("Stored category is required");
         }
         String normalized = category.trim().toLowerCase(Locale.ROOT);
         if (SUPPORTED_CATEGORIES.contains(normalized)) {
@@ -303,7 +306,7 @@ public class MapMarkerService {
         if (LEGACY_STORED_CATEGORIES.contains(normalized)) {
             return "self_definition";
         }
-        throw new IllegalArgumentException("不支持的存量 category：" + category);
+        throw new IllegalArgumentException("Unsupported stored category: " + category);
     }
 
     private String normalizeClientRequestId(String clientRequestId) {
@@ -311,7 +314,7 @@ public class MapMarkerService {
         String normalized = clientRequestId.trim();
         if (normalized.isEmpty()) return null;
         if (normalized.length() > CLIENT_REQUEST_ID_MAX_LENGTH) {
-            throw new IllegalArgumentException("clientRequestId 过长");
+            throw new IllegalArgumentException("clientRequestId is too long");
         }
         return normalized;
     }

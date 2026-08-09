@@ -20,14 +20,14 @@ type Result = {
 }
 
 const CUP_TABLE = [
-    { threshold: 5, size: 'AA以下', message: '小妹妹你还不需要穿内衣哦' },
-    { threshold: 7.5, size: 'AA', message: 'AA，买少女小背心去吧' },
+    { threshold: 5, size: 'Below AA', message: 'You may not need a bra yet.' },
+    { threshold: 7.5, size: 'AA', message: 'AA — a light bralette may be a good fit.' },
     { threshold: 10, size: 'A', message: '' },
     { threshold: 12.5, size: 'B', message: '' },
     { threshold: 15, size: 'C', message: '' },
     { threshold: 17.5, size: 'D', message: '' },
     { threshold: 20, size: 'E', message: '' },
-    { threshold: Number.POSITIVE_INFINITY, size: 'E+', message: '你胸大你说了算（罩杯超出预设）' },
+    { threshold: Number.POSITIVE_INFINITY, size: 'E+', message: 'Your cup size is beyond the preset range.' },
 ]
 
 const toNumber = (v: string) => {
@@ -56,7 +56,7 @@ const calcCup = (inputs: Inputs): Result => {
             cupSize: null,
             bandSize: null,
             fullSize: null,
-            message: '请完成所有测量步骤',
+            message: 'Please enter all five measurements.',
         }
     }
 
@@ -74,7 +74,7 @@ const calcCup = (inputs: Inputs): Result => {
             cupSize: null,
             bandSize: null,
             fullSize: null,
-            message: '数值错误，请检查输入的数据',
+            message: 'Please check the measurements you entered.',
         }
     }
 
@@ -90,13 +90,13 @@ const calcCup = (inputs: Inputs): Result => {
             cupSize: null,
             bandSize: null,
             fullSize: null,
-            message: '请检查测量数据',
+            message: 'Please check your measurements.',
         }
     }
 
     const hit = CUP_TABLE.find((x) => cupDiff <= x.threshold) ?? CUP_TABLE[CUP_TABLE.length - 1]
     const bandSize = 5 * Math.ceil(underBust / 5)
-    const fullSize = `${bandSize}${hit.size}`
+    const fullSize = hit.size === 'Below AA' ? `${bandSize} band, below AA cup` : `${bandSize}${hit.size}`
 
     return {
         isValid: true,
@@ -105,7 +105,7 @@ const calcCup = (inputs: Inputs): Result => {
         cupSize: hit.size,
         bandSize,
         fullSize,
-        message: hit.message || `您的内衣尺寸是：${fullSize}`,
+        message: hit.message || `Your estimated bra size is ${fullSize}.`,
     }
 }
 
@@ -125,15 +125,15 @@ export default function CupCalculator() {
         <Card sx={{ maxWidth: 720, mx: 'auto' }}>
             <CardContent>
                 <Typography variant="h5" fontWeight={800}>
-                    罩杯计算器
+                    Bra Size Calculator
                 </Typography>
                 <Typography variant="body2" sx={{ opacity: 0.7, mt: 1 }}>
-                    说明：输入 5 个测量值（单位：cm），计算结果仅供参考。
+                    Enter five measurements in centimeters. Results are estimates only.
                 </Typography>
 
                 <Stack spacing={2} sx={{ mt: 2 }}>
                     <TextField
-                        label="胸下围（放松）cm"
+                        label="Underbust, relaxed (cm)"
                         value={inputs.underBustRelaxed}
                         onChange={(e) => setInputs((s) => ({ ...s, underBustRelaxed: e.target.value }))}
                         type="number"
@@ -141,7 +141,7 @@ export default function CupCalculator() {
                         fullWidth
                     />
                     <TextField
-                        label="胸下围（呼气）cm"
+                        label="Underbust, exhaled (cm)"
                         value={inputs.underBustExhale}
                         onChange={(e) => setInputs((s) => ({ ...s, underBustExhale: e.target.value }))}
                         type="number"
@@ -149,7 +149,7 @@ export default function CupCalculator() {
                         fullWidth
                     />
                     <TextField
-                        label="胸围（放松）cm"
+                        label="Bust, relaxed (cm)"
                         value={inputs.bustRelaxed}
                         onChange={(e) => setInputs((s) => ({ ...s, bustRelaxed: e.target.value }))}
                         type="number"
@@ -157,7 +157,7 @@ export default function CupCalculator() {
                         fullWidth
                     />
                     <TextField
-                        label="胸围（45°）cm"
+                        label="Bust at 45° (cm)"
                         value={inputs.bustBend45}
                         onChange={(e) => setInputs((s) => ({ ...s, bustBend45: e.target.value }))}
                         type="number"
@@ -165,7 +165,7 @@ export default function CupCalculator() {
                         fullWidth
                     />
                     <TextField
-                        label="胸围（90°）cm"
+                        label="Bust at 90° (cm)"
                         value={inputs.bustBend90}
                         onChange={(e) => setInputs((s) => ({ ...s, bustBend90: e.target.value }))}
                         type="number"
@@ -178,7 +178,7 @@ export default function CupCalculator() {
                         disabled={!isComplete}
                         onClick={() => setResult(calcCup(inputs))}
                     >
-                        计算
+                        Calculate
                     </Button>
                 </Stack>
 
@@ -189,8 +189,8 @@ export default function CupCalculator() {
                         </Alert>
                         {result.isValid ? (
                             <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
-                                胸下围：{result.underBust?.toFixed(1)} cm ｜ 罩杯差值：
-                                {result.cupDifference?.toFixed(1)} cm ｜ 罩杯：{result.cupSize}
+                                Underbust: {result.underBust?.toFixed(1)} cm | Cup difference:{' '}
+                                {result.cupDifference?.toFixed(1)} cm | Cup: {result.cupSize}
                             </Typography>
                         ) : null}
                     </Box>

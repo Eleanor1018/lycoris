@@ -61,7 +61,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @GetMapping("/pending-edits")
@@ -100,7 +100,7 @@ public class AdminMarkerController {
         return editProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("该提案已处理");
+                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
                     }
 
                     return markerService.findById(p.getMarkerId())
@@ -123,9 +123,9 @@ public class AdminMarkerController {
                                 editProposalRepo.save(p);
                                 return ResponseEntity.ok(marker);
                             })
-                            .orElseGet(() -> ResponseEntity.status(404).body("关联点位不存在"));
+                            .orElseGet(() -> ResponseEntity.status(404).body("Related marker not found"));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("编辑提案不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Edit proposal not found"));
     }
 
     @PostMapping("/edit-proposals/{id}/reject")
@@ -135,7 +135,7 @@ public class AdminMarkerController {
         return editProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("该提案已处理");
+                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
                     }
                     p.setStatus("REJECTED");
                     p.setReviewedBy(String.valueOf(session.getAttribute("username")));
@@ -143,7 +143,7 @@ public class AdminMarkerController {
                     editProposalRepo.save(p);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("编辑提案不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Edit proposal not found"));
     }
 
     @PostMapping("/{id}/reject")
@@ -156,7 +156,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @GetMapping("/pending-images")
@@ -186,7 +186,7 @@ public class AdminMarkerController {
         return imageProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("该提案已处理");
+                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
                     }
                     return markerService.findById(p.getMarkerId())
                             .<ResponseEntity<?>>map(marker -> {
@@ -200,9 +200,9 @@ public class AdminMarkerController {
 
                                 return ResponseEntity.ok(marker);
                             })
-                            .orElseGet(() -> ResponseEntity.status(404).body("关联点位不存在"));
+                            .orElseGet(() -> ResponseEntity.status(404).body("Related marker not found"));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("图片提案不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Image proposal not found"));
     }
 
     @PostMapping("/image-proposals/{id}/reject")
@@ -212,7 +212,7 @@ public class AdminMarkerController {
         return imageProposalRepo.findById(id)
                 .<ResponseEntity<?>>map(p -> {
                     if (!"PENDING".equalsIgnoreCase(p.getStatus())) {
-                        return ResponseEntity.badRequest().body("该提案已处理");
+                        return ResponseEntity.badRequest().body("This proposal has already been reviewed");
                     }
                     p.setStatus("REJECTED");
                     p.setReviewedBy(String.valueOf(session.getAttribute("username")));
@@ -220,7 +220,7 @@ public class AdminMarkerController {
                     imageProposalRepo.save(p);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("图片提案不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Image proposal not found"));
     }
 
     @GetMapping("/all")
@@ -256,7 +256,7 @@ public class AdminMarkerController {
                     MapMarker updated = markerService.save(marker);
                     return ResponseEntity.ok(updated);
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @DeleteMapping("/{id}")
@@ -269,7 +269,7 @@ public class AdminMarkerController {
                     markerService.delete(marker);
                     return ResponseEntity.ok().build();
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));
+                .orElseGet(() -> ResponseEntity.status(404).body("Marker not found"));
     }
 
     @PostMapping("/cleanup-missing-images")
@@ -300,7 +300,7 @@ public class AdminMarkerController {
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("checked", totalChecked);
         result.put("cleared", cleared);
-        result.put("message", "失效图片链接清理完成");
+        result.put("message", "Invalid image links have been cleaned up");
         return ResponseEntity.ok(result);
     }
 
@@ -311,14 +311,15 @@ public class AdminMarkerController {
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {
-            return ResponseEntity.status(403).body("需要二级密码");
+            return ResponseEntity.status(403).body("Secondary password verification required");
         }
         if (at instanceof Long) {
             long elapsed = System.currentTimeMillis() - (Long) at;
             if (elapsed > SECOND_FACTOR_TTL_MS) {
                 session.removeAttribute("adminSecondVerified");
                 session.removeAttribute("adminSecondVerifiedAt");
-                return ResponseEntity.status(403).body("二级密码已过期，请重新验证");
+                return ResponseEntity.status(403)
+                        .body("Secondary password verification has expired. Please verify again");
             }
         }
         return null;

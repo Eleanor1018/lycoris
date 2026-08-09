@@ -1,55 +1,54 @@
-# 关于夏水仙
+# About Lycoris
 
-## 欢迎来到 夏水仙 Lycoris 🌸
+## Welcome to Lycoris 🌸
 
-这是一个为**跨性别者**提供**无障碍设施信息**和**互助信息**的平台 💗
+Lycoris is a platform that provides **accessible-facility information** and **mutual-aid resources** for **transgender people**. 💗
 
-夏水仙由3个部分组成：
-- 地图：夏水仙的**核心功能**，我们可以在地图上标注无障碍卫生间、跨性别友好的医疗机构等地点，实现信息共享
-- 文档：目前编写了**雪雁的HRT指南**；旨在尽量用最简洁的语言、最容易理解的方式把行之有效的HRT方案/踩过的坑分享给大家
-- 工具（开发中）：隐私优先的健康管理工具将以**独立 App 形式**上线（如服药提醒、情绪与体征记录）
+Lycoris consists of three parts:
+- Map: the **core feature** of Lycoris, where we can mark accessible restrooms, trans-friendly medical facilities, and other places on the map to share information
+- Guides: currently home to **Nora's HRT Guide**, which aims to share effective HRT approaches and lessons learned in the clearest, most accessible language possible
+- Tools (in development): privacy-first health management tools will launch as a **standalone app** (such as medication reminders and mood and vital-sign tracking)
 
-## 背后的故事
+## The Story Behind Lycoris
 
-### 雪雁的小故事1
+### Nora's Story 1
 
-“小姑娘，这里是男卫生间！”又一次，我被热心的大叔叫住。
+“Miss, this is the men's restroom!” Once again, a well-meaning older man stopped me.
 
-应该开心吗？我被认成了女孩子，被人友善的对待，这说明我至少有一点点pass；应该难过吗？我没有手术，身份证也没有改，在社会意义上，我仍然是男性。
+Should I have been happy? I was seen as a girl and treated kindly, which meant that I passed at least a little. Or should I have been sad? I had not undergone surgery, and the gender marker on my ID had not been changed, so in society's eyes I was still male.
 
-我尴尬地笑了笑，甚至不敢和大叔说“谢谢”，因为我半成品的伪音只会吓到路人；我只好跑出去，趁着没人的时候去卫生间，或者跑回家...我总是因此徘徊而踌躇着，我不想吓到普通的路人，更不想自己被审视。我总会遇到这样的困难，每次都让我觉得，我是被世界排斥和抛弃的异类。
+I smiled awkwardly. I did not even dare to say “thank you,” because my still-unpolished voice training might only startle people. I had no choice but to run out, wait until no one was around to use the restroom, or run all the way home... I would always hesitate over this. I did not want to frighten ordinary passersby, and I certainly did not want to be scrutinized. I kept encountering situations like this, and each one made me feel like an outsider rejected and abandoned by the world.
 
-出门时，我戴上口罩和帽子，把自己遮得严严实实的，以此来逃避人们的目光和社会的批判。我总是逃避着，躲在阴影里隐藏自己。
+Whenever I went out, I wore a mask and hat and covered myself as completely as possible to escape people's gaze and society's judgment. I kept retreating, hiding myself in the shadows.
 
-这时候我在想...如果有**无障碍卫生间**，我就可以避免这样的尴尬了。
+At that moment, I thought... If there were an **accessible restroom**, I could avoid this kind of embarrassment.
 
-## 我们的理念
+## What We Believe
 
-&ensp;&ensp;&ensp;&ensp;**以温柔与专业守护跨性别者的日常安全，让信息共享成为彼此的光。**
+&ensp;&ensp;&ensp;&ensp;**With compassion and professionalism, we protect transgender people's everyday safety and let shared information become a light for one another.**
 
-&ensp;&ensp;&ensp;&ensp;所有跨性别都有权利生活在阳光下，自然的展示自己，不必躲闪，不必隐藏，堂堂正正，大大方方。每一个人都应当有平等的权益，跨性别者也不例外。
+&ensp;&ensp;&ensp;&ensp;All transgender people have the right to live in the sunlight and express themselves naturally—without evasion, concealment, or shame. Everyone deserves equal rights, and transgender people are no exception.
 
-&ensp;&ensp;&ensp;&ensp;社会的进步是缓慢的，然而每一个微小的努力都会被看见。就从无障碍卫生间开始。  
+&ensp;&ensp;&ensp;&ensp;Social progress is slow, but every small effort will be seen. We can begin with accessible restrooms.
 
-&ensp;&ensp;&ensp;&ensp;我们会搜集很多个无障碍卫生间，只要打开手机，就可以看到哪里可以上厕所。我们也会搜集很多地点，能买到国补的药房，能开药的内分泌科，友好的精神科。我们还会搜集，哪里有廉价的食物，有安全免费的过夜地点，甚至是母婴室的位置。
+&ensp;&ensp;&ensp;&ensp;We will collect information about many accessible restrooms, so that anyone can open their phone and see where a restroom is available. We will also collect many other places: pharmacies that carry government-subsidized medication, endocrinology departments where prescriptions are available, and trans-friendly psychiatry clinics. We will gather information about affordable food, safe and free places to stay overnight, and even nursing rooms.
 
-&ensp;&ensp;&ensp;&ensp;**你不是孤单的。**
-无论你现在处在探索、挣扎，还是重建生活的哪一步，你都值得被尊重、被认真对待。我们希望在你需要的时候，给你一点真实可用的支持，让你在现实世界里更安全一点、少受一点伤。
+&ensp;&ensp;&ensp;&ensp;**You are not alone.**
+Wherever you are right now—exploring, struggling, or rebuilding your life—you deserve respect and genuine care. When you need it, we hope to offer practical support that makes the real world a little safer and a little less painful.
 
-&ensp;&ensp;&ensp;&ensp;如果这盏小灯能在某个夜晚帮到你，那我们做的一切，就都值得。
+&ensp;&ensp;&ensp;&ensp;If this little light helps you through even one night, then everything we have done is worthwhile.
 
-## 感谢
+## Thank You
 
-&ensp;&ensp;&ensp;&ensp;感谢您访问**夏水仙 Lycoris**项目网站，也谢谢您的驻足阅读。如果夏水仙能帮助到您，哪怕只是一点微小的帮助，我们也会因此感到快乐和荣幸。
+&ensp;&ensp;&ensp;&ensp;Thank you for visiting the **Lycoris** project website and taking the time to read our story. If Lycoris helps you in even the smallest way, we will be happy and honored.
 
-## 联系方式
+## Contact Us
 
-&ensp;&ensp;&ensp;&ensp;夏水仙由 雪雁 Nora，鹿鹿 Alicia 和 温晓 Aurora 共同设计并运营。
+&ensp;&ensp;&ensp;&ensp;Lycoris is jointly designed and operated by Nora, Alicia, and Aurora.
 
-&ensp;&ensp;&ensp;&ensp;如果有建议、遇到问题，请联系：LycorisTrans@gmail.com
+&ensp;&ensp;&ensp;&ensp;For suggestions or help with a problem, please contact: LycorisTrans@gmail.com
 
-&ensp;&ensp;&ensp;&ensp;相关代码已在Github开源：https://github.com/Eleanor1018/lycoris
+&ensp;&ensp;&ensp;&ensp;The source code is available on GitHub: [https://github.com/Eleanor1018/lycoris](https://github.com/Eleanor1018/lycoris)
 
-&ensp;&ensp;&ensp;&ensp;Twitter官方账号：https://x.com/LycorisTrans
-
+&ensp;&ensp;&ensp;&ensp;Official Twitter account: [https://x.com/LycorisTrans](https://x.com/LycorisTrans)
 

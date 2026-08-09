@@ -92,11 +92,11 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<ApiResponse<UserResponse>> register(@RequestBody RegisterRequest request, HttpSession session, HttpServletRequest httpRequest){
         if (request.getWebsite() != null && !request.getWebsite().isBlank()) {
-            return ResponseEntity.status(400).body(ApiResponse.error(4004, "注册请求无效"));
+            return ResponseEntity.status(400).body(ApiResponse.error(4004, "Invalid registration request"));
         }
         String clientIp = resolveClientIp(httpRequest);
         if (!registerRateLimitService.tryAcquire(clientIp)) {
-            return ResponseEntity.status(429).body(ApiResponse.error(429, "请求过于频繁，请稍后再试"));
+            return ResponseEntity.status(429).body(ApiResponse.error(429, "Too many requests. Please try again later"));
         }
         User created = userService.register(
                 request.getUsername(),
@@ -130,7 +130,7 @@ public class AuthController {
         Integer userId = resolveSessionUserId(session);
 
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "未登录"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
         }
 
         return userService.findById(userId).map(user -> ResponseEntity.ok(
@@ -151,7 +151,7 @@ public class AuthController {
                     session.removeAttribute("username");
                     session.removeAttribute("email");
                     session.removeAttribute("role");
-                    return ResponseEntity.status(401).body(ApiResponse.error(401, "未登录"));
+                    return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
                 }
         );
     }
@@ -179,7 +179,7 @@ public class AuthController {
     public ResponseEntity<ApiResponse<UserResponse>> updateMe(@RequestBody UpdateProfileRequest request, HttpSession session) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "未登录"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
         }
 
         return userService.findById(userId).map(user -> {
@@ -209,7 +209,7 @@ public class AuthController {
                     updated.getSignature()
             );
             return ResponseEntity.ok(ApiResponse.success(data));
-        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "用户不存在")));
+        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "User not found")));
     }
 
     @PostMapping(value = "/me/avatar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -219,10 +219,10 @@ public class AuthController {
     ) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.error(401, "未登录"));
+            return ResponseEntity.status(401).body(ApiResponse.error(401, "Not signed in"));
         }
         if (file == null || file.isEmpty()) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(400, "文件为空"));
+            return ResponseEntity.badRequest().body(ApiResponse.error(400, "File is empty"));
         }
 
         return userService.findById(userId).map(user -> {
@@ -250,30 +250,33 @@ public class AuthController {
                 );
                 return ResponseEntity.ok(ApiResponse.success(data));
             } catch (Exception e) {
-                return ResponseEntity.status(500).body(ApiResponse.<UserResponse>error(500, "上传失败"));
+                return ResponseEntity.status(500).body(ApiResponse.<UserResponse>error(500, "Upload failed"));
             }
-        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "用户不存在")));
+        }).orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<UserResponse>error(404, "User not found")));
     }
 
     @PostMapping("/me/password")
     public ResponseEntity<ApiResponse<Void>> changePassword(@RequestBody ChangePasswordRequest request, HttpSession session) {
         Integer userId = resolveSessionUserId(session);
         if (userId == null) {
-            return ResponseEntity.status(401).body(ApiResponse.<Void>error(401, "未登录"));
+            return ResponseEntity.status(401).body(ApiResponse.<Void>error(401, "Not signed in"));
         }
         if (request.getOldPassword() == null || request.getNewPassword() == null) {
-            return ResponseEntity.badRequest().body(ApiResponse.<Void>error(400, "缺少参数"));
+            return ResponseEntity.badRequest().body(ApiResponse.<Void>error(400, "Missing parameters"));
         }
 
         return userService.findById(userId)
                 .map(user -> {
                     boolean ok = userService.changePassword(user, request.getOldPassword(), request.getNewPassword());
                     if (!ok) {
-                        return ResponseEntity.status(400).body(ApiResponse.<Void>error(400, "原密码错误或新密码不合法"));
+                        return ResponseEntity.status(400).body(ApiResponse.<Void>error(
+                                400,
+                                "Current password is incorrect or the new password is invalid"
+                        ));
                     }
                     return ResponseEntity.ok(ApiResponse.<Void>success(null));
                 })
-                .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<Void>error(404, "用户不存在")));
+                .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<Void>error(404, "User not found")));
     }
 
     @PostMapping("/logout")

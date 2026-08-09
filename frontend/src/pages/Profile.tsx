@@ -49,12 +49,12 @@ type MarkerApiRow = {
 }
 
 const categoryLabelMap: Record<string, string> = {
-    accessible_toilet: '无障碍卫生间',
-    friendly_clinic: '友好医疗机构',
-    baby_room: '母婴室',
-    self_definition: '自定义',
-    safe_place: '自定义',
-    dangerous_place: '自定义',
+    accessible_toilet: 'Accessible Restroom',
+    friendly_clinic: 'Trans-Friendly Clinic',
+    baby_room: 'Nursing Room',
+    self_definition: 'Custom',
+    safe_place: 'Custom',
+    dangerous_place: 'Custom',
 }
 //560px, 68vh, 700px
 export default function Profile() {
@@ -184,7 +184,7 @@ export default function Profile() {
     }
 
     const getRowAriaLabel = (row: MarkerRow) =>
-        `点位 ${row.title}，类型 ${row.category}，更新于 ${row.updatedAt || '未知'}。按回车键查看地图位置。`
+        `Place ${row.title}, category ${row.category}, updated ${row.updatedAt || 'at an unknown time'}. Press Enter to view it on the map.`
 
     useEffect(() => {
         return () => {
@@ -221,7 +221,7 @@ export default function Profile() {
                     }}
                 >
                     <IconButton
-                        aria-label="编辑资料"
+                        aria-label="Edit profile"
                         onClick={() => {
                             setNickname(user?.nickname || user?.username || '')
                             setPronouns(user?.pronouns || '')
@@ -278,7 +278,7 @@ export default function Profile() {
                                 '&:hover': { borderColor: '#744988', bgcolor: 'rgba(116, 73, 136, 0.08)' },
                             }}
                         >
-                            修改密码
+                            Change password
                         </Button>
                         <Button
                             onClick={async () => {
@@ -293,7 +293,7 @@ export default function Profile() {
                                 '&:hover': { bgcolor: '#d86a6a' },
                             }}
                         >
-                            退出登录
+                            Log out
                         </Button>
                     </Stack>
                 </Paper>
@@ -311,29 +311,29 @@ export default function Profile() {
                     }}
                 >
                     <Typography variant="h6" fontWeight={800}>
-                        点位列表
+                        Places
                     </Typography>
                     <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
-                        点位按“创建 / 收藏”分开展示
+                        Places you created and favorited are shown separately.
                     </Typography>
                     <Stack spacing={2} sx={{ mt: 2, flex: 1 }}>
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                我创建的点位
+                                Places I created
                             </Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>名称</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>类型</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>更新</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>Name</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>Category</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>Updated</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {createdRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">暂无创建点位</TableCell>
+                                                <TableCell colSpan={3} align="center">You have not created any places.</TableCell>
                                             </TableRow>
                                         ) : (
                                             createdSlice.map((row) => (
@@ -382,21 +382,21 @@ export default function Profile() {
 
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                我收藏的点位
+                                My favorites
                             </Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>名称</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>类型</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>更新</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>Name</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>Category</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>Updated</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {favoriteRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">暂无收藏点位</TableCell>
+                                                <TableCell colSpan={3} align="center">You have no favorites yet.</TableCell>
                                             </TableRow>
                                         ) : (
                                             favoriteSlice.map((row) => (
@@ -473,10 +473,10 @@ export default function Profile() {
                 }}
             />
             <Dialog open={jumpDialogOpen} onClose={() => setJumpDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle sx={{ fontWeight: 800 }}>跳转到地图上？</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 800 }}>Open on the map?</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                        将定位到“{pendingJumpMarker?.title ?? '该点位'}”，并尝试自动打开详情。
+                        The map will center on “{pendingJumpMarker?.title ?? 'this place'}” and try to open its details.
                     </Typography>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
                         <Checkbox
@@ -485,12 +485,12 @@ export default function Profile() {
                             size="small"
                             sx={{ p: 0.5 }}
                         />
-                        <Typography variant="body2">下次不再提示</Typography>
+                        <Typography variant="body2">Do not ask again</Typography>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ px: 2, pb: 1.5 }}>
                     <Button onClick={() => setJumpDialogOpen(false)} sx={{ borderRadius: 999, textTransform: 'none' }}>
-                        取消
+                        Cancel
                     </Button>
                     <Button
                         variant="contained"
@@ -502,7 +502,7 @@ export default function Profile() {
                             '&:hover': { bgcolor: '#a77597' },
                         }}
                     >
-                        确定
+                        Continue
                     </Button>
                 </DialogActions>
             </Dialog>
@@ -513,7 +513,7 @@ export default function Profile() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setSaveOpen(false)}>
-                    保存成功
+                    Saved successfully.
                 </Alert>
             </Snackbar>
         </Box>

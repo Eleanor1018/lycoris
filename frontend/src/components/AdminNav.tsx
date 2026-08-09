@@ -29,10 +29,10 @@ export default function AdminNav() {
     const location = useLocation()
 
     const items = [
-        { label: '管理入口', path: '/admin' },
-        { label: '审核中心', path: '/admin/review' },
-        { label: '全量点位', path: '/admin/all' },
-        { label: '用户管理', path: '/admin/usr' },
+        { label: 'Admin access', path: '/admin' },
+        { label: 'Review center', path: '/admin/review' },
+        { label: 'All places', path: '/admin/all' },
+        { label: 'User management', path: '/admin/usr' },
     ]
 
     return (

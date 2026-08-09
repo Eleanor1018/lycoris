@@ -139,14 +139,14 @@ export default function Home() {
                         }}
                     >
                         <Box component="span" sx={{ display: { xs: 'none', md: 'inline' } }}>
-                            欢迎来到夏水仙，一个为跨性别者提供无障碍设施信息和互助信息的平台
+                            Welcome to Lycoris, a platform sharing accessible facilities and mutual-aid resources for transgender people.
                         </Box>
                         <Box component="span" sx={{ display: { xs: 'inline', md: 'none' } }}>
-                            欢迎来到夏水仙
+                            Welcome to Lycoris
                             <br />
-                            一个为跨性别者提供
+                            A platform sharing accessible facilities
                             <br />
-                            无障碍设施信息和互助信息的平台
+                            and mutual-aid resources for transgender people
                         </Box>
                     </Typography>
 
@@ -173,7 +173,7 @@ export default function Home() {
                             },
                         }}
                     >
-                        进入地图
+                        Open map
                     </Button>
                 </Box>
             </Box>
@@ -211,7 +211,7 @@ export default function Home() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setSaveOpen(false)}>
-                    欢迎加入，资料保存成功
+                    Welcome! Your profile has been saved.
                 </Alert>
             </Snackbar>
         </>

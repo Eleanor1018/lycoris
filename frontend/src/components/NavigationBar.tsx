@@ -34,9 +34,9 @@ export default function NavigationBar() {
 
     const navItems: NavItem[] = useMemo(
         () => [
-            { label: '地图', to: '/maps' },
-            { label: '文档', to: '/documents' },
-            { label: '关于', to: '/about' },
+            { label: 'Map', to: '/maps' },
+            { label: 'Guides', to: '/documents' },
+            { label: 'About', to: '/about' },
         ],
         []
     )
@@ -130,7 +130,7 @@ export default function NavigationBar() {
                             color: '#1d1b20',
                             '&:hover': { bgcolor: '#c8afff' },
                         }}
-                        aria-label={isLoggedIn ? '打开个人导航菜单' : '打开登录导航菜单'}
+                        aria-label={isLoggedIn ? 'Open account navigation' : 'Open login navigation'}
                         aria-expanded={navOpen}
                     >
                         <Avatar
@@ -150,7 +150,7 @@ export default function NavigationBar() {
                     <Box
                         component={RouterLink}
                         to="/"
-                        aria-label="返回首页"
+                        aria-label="Back to home"
                         sx={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -224,7 +224,7 @@ export default function NavigationBar() {
                     <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
 
                     <IconButton
-                        aria-label="打开搜索页"
+                        aria-label="Open search"
                         onClick={() => navigate('/search')}
                         sx={{
                             display: { xs: navOpen ? 'none' : 'inline-flex', md: 'inline-flex' },
@@ -281,7 +281,7 @@ export default function NavigationBar() {
                     >
                         Lycoris
                     </Typography>
-                    <IconButton onClick={closeNavMenu} aria-label="关闭导航菜单">
+                    <IconButton onClick={closeNavMenu} aria-label="Close navigation menu">
                         <CloseIcon />
                     </IconButton>
                 </Box>
@@ -295,7 +295,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary="Log in" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={() => {
@@ -304,7 +304,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="注册" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary="Sign up" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 ) : (
@@ -316,7 +316,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="个人中心" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary="Profile" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={async () => {
@@ -326,7 +326,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="退出登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary="Log out" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 )}

@@ -28,12 +28,12 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
     val locationManager =
         appContext.getSystemService(Context.LOCATION_SERVICE) as? LocationManager
             ?: run {
-              promise.reject("LOCATION_SERVICE_UNAVAILABLE", "无法访问定位服务。")
+              promise.reject("LOCATION_SERVICE_UNAVAILABLE", "Unable to access location services.")
               return
             }
 
     if (!hasLocationPermission()) {
-      promise.reject("LOCATION_PERMISSION_DENIED", "定位权限未授予。")
+      promise.reject("LOCATION_PERMISSION_DENIED", "Location permission was not granted.")
       return
     }
 
@@ -42,7 +42,7 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
     val provider = pickProvider(locationManager)
 
     if (provider == null) {
-      promise.reject("LOCATION_PROVIDER_DISABLED", "定位服务未开启。")
+      promise.reject("LOCATION_PROVIDER_DISABLED", "Location services are turned off.")
       return
     }
 
@@ -132,7 +132,7 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
     val timeoutRunnable =
         Runnable {
           if (handled.compareAndSet(false, true)) {
-            promise.reject("LOCATION_TIMEOUT", "定位超时，请稍后重试。")
+            promise.reject("LOCATION_TIMEOUT", "Location request timed out. Please try again.")
           }
         }
 
@@ -151,7 +151,7 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
             return@getCurrentLocation
           }
           if (location == null) {
-            promise.reject("LOCATION_UNAVAILABLE", "无法获取当前位置。")
+            promise.reject("LOCATION_UNAVAILABLE", "Unable to get your current location.")
           } else {
             promise.resolve(toWritableMap(location, provider))
           }
@@ -182,7 +182,7 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
               handler.removeCallbacks(timeoutRunnable)
               if (!handled.compareAndSet(false, true)) return
               locationManager.removeUpdates(this)
-              promise.reject("LOCATION_PROVIDER_DISABLED", "定位服务未开启。")
+              promise.reject("LOCATION_PROVIDER_DISABLED", "Location services are turned off.")
             }
           }
 
@@ -193,7 +193,7 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
           {
             if (handled.compareAndSet(false, true)) {
               locationManager.removeUpdates(listener)
-              promise.reject("LOCATION_TIMEOUT", "定位超时，请稍后重试。")
+              promise.reject("LOCATION_TIMEOUT", "Location request timed out. Please try again.")
             }
           },
           timeoutMs.toLong(),
@@ -201,12 +201,12 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
     } catch (security: SecurityException) {
       handler.removeCallbacks(timeoutRunnable)
       if (handled.compareAndSet(false, true)) {
-        promise.reject("LOCATION_PERMISSION_DENIED", "定位权限未授予。", security)
+        promise.reject("LOCATION_PERMISSION_DENIED", "Location permission was not granted.", security)
       }
     } catch (error: Throwable) {
       handler.removeCallbacks(timeoutRunnable)
       if (handled.compareAndSet(false, true)) {
-        promise.reject("LOCATION_INTERNAL_ERROR", "原生定位失败。", error)
+        promise.reject("LOCATION_INTERNAL_ERROR", "Native location request failed.", error)
       }
     }
   }

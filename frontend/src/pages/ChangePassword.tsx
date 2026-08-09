@@ -32,11 +32,11 @@ export default function ChangePassword() {
         setError('')
         setSuccess('')
         if (!form.oldPassword || !form.newPassword) {
-            setError('请填写完整')
+            setError('Please complete all fields.')
             return
         }
         if (form.newPassword !== form.confirm) {
-            setError('两次新密码不一致')
+            setError('The new passwords do not match.')
             return
         }
 
@@ -47,13 +47,13 @@ export default function ChangePassword() {
                 { withCredentials: true }
             )
             if (res.data?.code === 0) {
-                setSuccess('修改成功')
+                setSuccess('Password changed successfully.')
                 setTimeout(() => navigate('/me'), 800)
             } else {
-                setError(res.data?.message || '修改失败')
+                setError(res.data?.message || 'Could not change the password.')
             }
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '修改失败'))
+            setError(getErrorMessage(e, 'Could not change the password.'))
         }
     }
 
@@ -89,7 +89,7 @@ export default function ChangePassword() {
                     py: 2,
                 }}
             >
-                修改密码
+                Change password
             </Typography>
             <Stack
                 component="form"
@@ -109,7 +109,7 @@ export default function ChangePassword() {
                 {success && <Alert severity="success">{success}</Alert>}
 
                 <TextField
-                    label="原密码"
+                    label="Current password"
                     type="password"
                     value={form.oldPassword}
                     onChange={(e) => setForm((s) => ({ ...s, oldPassword: e.target.value }))}
@@ -117,7 +117,7 @@ export default function ChangePassword() {
                     sx={fieldSx}
                 />
                 <TextField
-                    label="新密码"
+                    label="New password"
                     type="password"
                     value={form.newPassword}
                     onChange={(e) => setForm((s) => ({ ...s, newPassword: e.target.value }))}
@@ -125,7 +125,7 @@ export default function ChangePassword() {
                     sx={fieldSx}
                 />
                 <TextField
-                    label="确认新密码"
+                    label="Confirm new password"
                     type="password"
                     value={form.confirm}
                     onChange={(e) => setForm((s) => ({ ...s, confirm: e.target.value }))}
@@ -144,7 +144,7 @@ export default function ChangePassword() {
                         '&:hover': { bgcolor: '#b784a7', opacity: 0.9 },
                     }}
                     >
-                    保存
+                    Save
                 </Button>
             </Stack>
         </Box>

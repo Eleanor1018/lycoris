@@ -36,10 +36,21 @@ type AdminMarker = {
 }
 
 const categoryLabel: Record<string, string> = {
-    accessible_toilet: '无障碍卫生间',
-    friendly_clinic: '友好医疗机构',
-    baby_room: '母婴室',
-    self_definition: '自定义',
+    accessible_toilet: 'Accessible Restroom',
+    friendly_clinic: 'Trans-Friendly Clinic',
+    baby_room: 'Nursing Room',
+    self_definition: 'Custom',
+}
+
+const reviewStatusLabel: Record<string, string> = {
+    PENDING: 'Pending',
+    APPROVED: 'Approved',
+    REJECTED: 'Rejected',
+}
+
+const formatReviewStatus = (status?: string) => {
+    if (!status) return 'Unknown'
+    return reviewStatusLabel[status.toUpperCase()] ?? status
 }
 
 const toDraft = (marker: AdminMarker): DraftMarker => ({
@@ -92,7 +103,7 @@ export default function AdminAll() {
             setMarkers(res.data || [])
             setError(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '无法加载点位列表'))
+            setError(getErrorMessage(e, 'Could not load the places.'))
         } finally {
             setLoading(false)
         }
@@ -132,7 +143,7 @@ export default function AdminAll() {
             setEditingId(null)
             setDraft(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '保存失败'))
+            setError(getErrorMessage(e, 'Could not save the place.'))
         }
     }
 
@@ -144,7 +155,7 @@ export default function AdminAll() {
             setEditingId(null)
             setDraft(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '删除失败'))
+            setError(getErrorMessage(e, 'Could not delete the place.'))
         }
     }
 
@@ -152,10 +163,10 @@ export default function AdminAll() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    管理后台 · 全量点位
+                    Admin · All places
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    所有点位均可在这里编辑或删除。
+                    Edit or delete any place here.
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -169,9 +180,9 @@ export default function AdminAll() {
                         <Paper sx={{ p: 2, bgcolor: '#fff3f3', border: '1px solid #f5c2c2' }}>
                             <Typography color="error">{String(error)}</Typography>
                         </Paper>
-                        {String(error).includes('二级密码') ? (
+                        {/secondary (passcode|password)/i.test(String(error)) ? (
                             <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
-                                去管理入口验证二级密码
+                                Verify the secondary passcode
                             </Button>
                         ) : null}
                     </Stack>
@@ -184,34 +195,34 @@ export default function AdminAll() {
                                         <Typography variant="subtitle1" sx={{ fontWeight: 700 }}>
                                             {item.title}
                                         </Typography>
-                                        <Chip size="small" label={categoryLabel[item.category] ?? '自定义'} />
-                                        <Chip size="small" label={`状态: ${item.reviewStatus ?? '未知'}`} />
+                                        <Chip size="small" label={categoryLabel[item.category] ?? 'Custom'} />
+                                        <Chip size="small" label={`Status: ${formatReviewStatus(item.reviewStatus)}`} />
                                         {item.lastEditedByOwner === false ? (
-                                            <Chip size="small" color="warning" label="非本人编辑" />
+                                            <Chip size="small" color="warning" label="Edited by someone else" />
                                         ) : null}
                                     </Stack>
                                     <Typography variant="body2" color="text.secondary">
-                                        {item.description || '（无描述）'}
+                                        {item.description || '(No description)'}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        坐标：{item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
-                                        提交者：{item.username}
+                                        Coordinates: {item.lat.toFixed(6)}, {item.lng.toFixed(6)} ·
+                                        Submitted by: {item.username}
                                     </Typography>
                                     <Typography variant="caption" color="text.secondary">
-                                        编辑人：{item.lastEditedBy || item.username}
-                                        {item.lastEditedByOwner === false ? '（非本人编辑）' : ''}
+                                        Edited by: {item.lastEditedBy || item.username}
+                                        {item.lastEditedByOwner === false ? ' (not the creator)' : ''}
                                     </Typography>
                                     {item.lastEditedByOwner === false ? (
                                         <Typography variant="caption" color="warning.main">
-                                            审核备注：非本人编辑
+                                            Review note: edited by someone other than the creator
                                         </Typography>
                                     ) : null}
                                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                         <Button variant="outlined" onClick={() => openEditor(item)} sx={adminOutlinedButtonSx}>
-                                            编辑
+                                            Edit
                                         </Button>
                                         <Button variant="text" color="error" onClick={() => openEditor(item)}>
-                                            删除
+                                            Delete
                                         </Button>
                                     </Stack>
                                 </Stack>

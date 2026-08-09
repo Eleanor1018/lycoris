@@ -86,7 +86,8 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error: result.errorMessage || '选择图片失败，请稍后重试。',
+        error:
+          result.errorMessage || 'Could not select an image. Please try again.',
       };
     }
 
@@ -95,14 +96,20 @@ export const pickUploadImage = async (
       options.mode,
     );
     if (!normalized) {
-      return {cancelled: false, file: null, error: '未获取到有效图片。'};
+      return {
+        cancelled: false,
+        file: null,
+        error: 'No valid image was selected.',
+      };
     }
 
     if (normalized.size > MAX_UPLOAD_IMAGE_BYTES) {
       return {
         cancelled: false,
         file: null,
-        error: `图片处理后仍超过 5MB（当前 ${formatMb(normalized.size)}），请换一张更小的图片。`,
+        error: `The processed image is still larger than 5 MB (currently ${formatMb(
+          normalized.size,
+        )}). Please choose a smaller image.`,
       };
     }
 
@@ -110,17 +117,22 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error: '当前头像仍是 HEIC 格式，地图中可能无法显示。请在相册中导出为 JPG/PNG 后再上传。',
+        error:
+          'This image is still in HEIC format and may not display on the map. Export it as JPG or PNG before uploading.',
       };
     }
 
     const hint =
       normalized.size > 0
-        ? `已处理图片：${normalized.name}（${formatMb(normalized.size)}）`
-        : `已选择图片：${normalized.name}`;
+        ? `Image processed: ${normalized.name} (${formatMb(normalized.size)})`
+        : `Image selected: ${normalized.name}`;
     return {cancelled: false, file: normalized, hint};
   } catch {
-    return {cancelled: false, file: null, error: '图片处理失败，请重试。'};
+    return {
+      cancelled: false,
+      file: null,
+      error: 'Could not process the image. Please try again.',
+    };
   }
 };
 
@@ -129,12 +141,9 @@ export const appendUploadImageToFormData = (
   field: string,
   file: LocalUploadImage,
 ) => {
-  form.append(
-    field,
-    {
-      uri: file.uri,
-      type: file.type,
-      name: file.name,
-    } as unknown as Blob,
-  );
+  form.append(field, {
+    uri: file.uri,
+    type: file.type,
+    name: file.name,
+  } as unknown as Blob);
 };

@@ -1,553 +1,553 @@
-﻿# 雪雁的HRT指南（MTF）
+# Nora's HRT Guide (MTF)
 
-&ensp;&ensp;&ensp;&ensp;写在前面：性激素在人体中发挥着重要的作用。对于跨性别者来说，HRT（激素替代疗法）是缓解性别焦虑的有效手段。因此，本指南参考了一些文献和经验帖子，并结合作者自身的经验，希望能够帮助阅读到本指南的跨性别者 **安全** **有效** 的进行HRT，对可能出现的不良反应和风险有所准备。
+&ensp;&ensp;&ensp;&ensp;A note before we begin: sex hormones play important roles in the human body. For transgender people, HRT (hormone replacement therapy) is an effective way to relieve distress associated with gender incongruence. Drawing on published literature, experience-sharing posts, and the author's own experience, this guide aims to help transgender readers pursue HRT **safely** and **effectively**, and to prepare for possible adverse reactions and risks.
 
-## 1.基础概念
+## 1. Basic Concepts
 
-### 1.1 HRT和GAHT
+### 1.1 HRT and GAHT
 
-&ensp;&ensp;&ensp;&ensp;HRT (Hormone Replacement Therapy – 激素替代疗法)：这个词最初常用来代指顺性别女性在绝经期和围绝经期，因为自身激素水平下降而进行的外源激素（雌激素和孕激素）补充，旨在缓解潮热、情绪波动等症状。
+&ensp;&ensp;&ensp;&ensp;HRT (Hormone Replacement Therapy): this term was originally used mainly for the supplementation of exogenous hormones (estrogen and progestogens) in cisgender women during menopause and perimenopause, when their own hormone levels decline. Its purpose is to relieve symptoms such as hot flashes and mood swings.
 
-&ensp;&ensp;&ensp;&ensp;后来，这个词被用于代指——利用外源激素来帮助患者的医学干预手段。对于跨性别者的激素干预，有一种准确的说法：
+&ensp;&ensp;&ensp;&ensp;Later, the term came to refer more broadly to medical interventions that use exogenous hormones to help patients. A more precise term for hormone treatment for transgender people is:
 
-&ensp;&ensp;&ensp;&ensp;GAHT (Gender-Affirming Hormone Therapy – 性别肯定激素疗法)：这是目前国际医疗界更推崇的专业术语，专门指代为跨性别者和性别多样化（TGNC）人群提供的激素治疗。这种治疗旨在使跨性别者或性别非二元人群的身体**第二性征**与内心认同的性别相一致，从而缓解性别不安。
+&ensp;&ensp;&ensp;&ensp;GAHT (Gender-Affirming Hormone Therapy): this is the professional term now preferred by the international medical community for hormone treatment provided specifically to transgender and gender-nonconforming (TGNC) people. The treatment aims to bring a transgender or nonbinary person's physical **secondary sex characteristics** into alignment with their gender identity, thereby relieving distress associated with gender incongruence.
 
-&ensp;&ensp;&ensp;&ensp;（下文中，由于HRT这种说法被大多数跨性别者习惯，故仍用HRT来代指GAHT）。
+&ensp;&ensp;&ensp;&ensp;(Because most transgender people are accustomed to the term HRT, the remainder of this guide continues to use HRT to refer to GAHT.)
 
-### 1.2 了解常见的性激素
+### 1.2 Common Sex Hormones
 
-&ensp;&ensp;&ensp;&ensp;下面我要介绍3种最有代表性的性激素：雌二醇 / 睾酮 / 孕酮。了解这三者，对于理解HRT用药方案的原理十分重要。
+&ensp;&ensp;&ensp;&ensp;This section introduces three representative sex hormones: estradiol, testosterone, and progesterone. Understanding all three is very important for understanding the principles behind HRT regimens.
 
-#### 1.2.1 雌二醇
+#### 1.2.1 Estradiol
 
-&ensp;&ensp;&ensp;&ensp;雌二醇（Estradiol, E2），全称17β-雌二醇，是一种主要的雌激素（另外两种是雌酮和雌三醇，三者可以互相转化）。雌二醇的作用，包括但不限于：
+&ensp;&ensp;&ensp;&ensp;Estradiol (E2), in full 17β-estradiol, is a major estrogen. The other two are estrone and estriol, and the three can be converted into one another. The effects of estradiol include, but are not limited to:
 
-&ensp;&ensp;&ensp;&ensp;1）促进女性生殖器官（如子宫、阴道、输卵管）的成熟与发育，调节月经周期，维持排卵，并为受精卵着床提供适宜的内膜环境。
+&ensp;&ensp;&ensp;&ensp;1) Promoting the maturation and development of female reproductive organs such as the uterus, vagina, and fallopian tubes; regulating the menstrual cycle; maintaining ovulation; and providing a suitable endometrial environment for implantation of a fertilized egg.
 
-&ensp;&ensp;&ensp;&ensp;2）促进第二性征发育，包括乳房发育：诱导乳腺导管（Ducts）生长，身体脂肪分布（从腹部向臀和腿转移），让皮肤变得细腻，毛孔收缩。（效果是变pass）
+&ensp;&ensp;&ensp;&ensp;2) Promoting the development of secondary sex characteristics, including breast development by inducing growth of the mammary ducts; redistributing body fat from the abdomen toward the hips and legs; making the skin finer; and reducing the appearance of pores. (The effect is to help one pass.)
 
-&ensp;&ensp;&ensp;&ensp;3）保护骨骼，抑制破骨细胞，防止骨量流失。是青春期控制骨骼生长的主要激素之一。
+&ensp;&ensp;&ensp;&ensp;3) Protecting bones, inhibiting osteoclasts, and preventing bone loss. It is one of the main hormones that control bone growth during puberty.
 
-&ensp;&ensp;&ensp;&ensp;4）调节大脑中血清素（Serotonin），多巴胺（Dopamine）和谷氨酸的水平。对精神疾病患者（例如抑郁症和精神分裂症）有改善和辅助治疗的作用。
+&ensp;&ensp;&ensp;&ensp;4) Regulating serotonin, dopamine, and glutamate levels in the brain. It may improve symptoms and play a supportive role in treating people with psychiatric disorders such as depression and schizophrenia.
 
-&ensp;&ensp;&ensp;&ensp;5）保护心血管健康，保持血管弹性，并维持较好的胆固醇水平（提高 HDL，降低 LDL）。
+&ensp;&ensp;&ensp;&ensp;5) Protecting cardiovascular health, maintaining vascular elasticity, and supporting healthier cholesterol levels by raising HDL and lowering LDL.
 
-&ensp;&ensp;&ensp;&ensp;6）影响胰岛素敏感性，帮助维持正常的血糖代谢。降低血液尿酸浓度，减少中风的发病率。
+&ensp;&ensp;&ensp;&ensp;6) Affecting insulin sensitivity and helping maintain normal glucose metabolism. It lowers blood uric acid levels and reduces the incidence of stroke.
 
 <img src="/doc_images/figure-1-1-estradiol.svg" alt="Structure of Estradiol" width="260" />
 
-<div style="text-align: center;">图1.1 17β-雌二醇的结构</div>
+<div style="text-align: center;">Figure 1.1 Structure of 17β-estradiol</div>
 
-#### 1.2.2 睾酮
+#### 1.2.2 Testosterone
 
-&ensp;&ensp;&ensp;&ensp;睾酮（testosterone），是一种类固醇激素。睾酮的作用，包括但不限于（和上文的雌二醇几乎是对应的）：
+&ensp;&ensp;&ensp;&ensp;Testosterone is a steroid hormone. Its effects include, but are not limited to, the following, which largely correspond to the effects of estradiol described above:
 
-&ensp;&ensp;&ensp;&ensp;1）促进男性生殖器官的成熟和发育，维持其生殖功能。
+&ensp;&ensp;&ensp;&ensp;1) Promoting the maturation and development of male reproductive organs and maintaining their reproductive function.
 
-&ensp;&ensp;&ensp;&ensp;2）促进第二性征发育，包括毛发生长：体毛和胡须（但也导致毛发脱落，比如脱发，主要是由于DHT二氢睾酮导致）；喉部变化：喉结和变声；身体脂肪分布（从臀腿向腹部转移）。
+&ensp;&ensp;&ensp;&ensp;2) Promoting the development of secondary sex characteristics, including body and facial hair growth, while also causing hair loss such as pattern baldness, mainly due to DHT (dihydrotestosterone); changes to the larynx, including development of the Adam's apple and voice deepening; and redistribution of body fat from the hips and legs toward the abdomen.
 
-&ensp;&ensp;&ensp;&ensp;3）维持骨密度，增加骨骼的强度；促进蛋白质合成，增加肌肉纤维的体积和力量。
+&ensp;&ensp;&ensp;&ensp;3) Maintaining bone density and increasing bone strength; promoting protein synthesis; and increasing the size and strength of muscle fibers.
 
-&ensp;&ensp;&ensp;&ensp;4）提升人的精力和体力，但过高会增强人的攻击性。
+&ensp;&ensp;&ensp;&ensp;4) Increasing energy and physical stamina, although excessively high levels can increase aggression.
 
-&ensp;&ensp;&ensp;&ensp;5）刺激骨髓造血功能，增强免疫功能。
+&ensp;&ensp;&ensp;&ensp;5) Stimulating blood-cell production in the bone marrow and enhancing immune function.
 
 <img src="/doc_images/figure-1-2-testosterone.svg" alt="Structure of Testosterone" width="260" />
 
-<div style="text-align: center;">图1.2 睾酮的结构</div>
+<div style="text-align: center;">Figure 1.2 Structure of testosterone</div>
 
-#### 1.2.3 孕酮
+#### 1.2.3 Progesterone
 
-&ensp;&ensp;&ensp;&ensp;孕酮（英语：progesterone，缩写：P4），又称黄体酮，是一种类固醇激素。对于跨性别女性来说，孕酮的功能，包括但不限于：
+&ensp;&ensp;&ensp;&ensp;Progesterone (abbreviated P4), also known as progestational hormone, is a steroid hormone. For transgender women, its functions include, but are not limited to:
 
-&ensp;&ensp;&ensp;&ensp;1）促进乳腺发育的激素，孕酮负责小叶（Lobules）和肺泡组织（Alveoli）的发育，孕酮能让乳房的形状变得更饱满和圆润。
+&ensp;&ensp;&ensp;&ensp;1) Promoting mammary-gland development. Progesterone is responsible for the development of lobules and alveolar tissue and can make the breasts appear fuller and rounder.
 
-&ensp;&ensp;&ensp;&ensp;2）促进第二性征发育，和雌二醇一样使脂肪分布在臀部和腿部。
+&ensp;&ensp;&ensp;&ensp;2) Promoting the development of secondary sex characteristics and, like estradiol, encouraging fat distribution around the hips and legs.
 
-&ensp;&ensp;&ensp;&ensp;3）能够抗盐皮质激素，孕酮具有轻微的利尿作用，有助于抵消雌激素引起的水肿（水钠潴留）。
+&ensp;&ensp;&ensp;&ensp;3) Acting against mineralocorticoids. Progesterone has a mild diuretic effect that can help offset estrogen-related edema caused by water and sodium retention.
 
-&ensp;&ensp;&ensp;&ensp;4）能够安神，改善睡眠，稳定情绪。原理可能是孕酮在大脑中会代谢为一种叫 Allopregnanolone 的物质，它能作用于 GABA 受体。
+&ensp;&ensp;&ensp;&ensp;4) Having a calming effect, improving sleep, and stabilizing mood. A possible mechanism is that progesterone is metabolized in the brain into a substance called allopregnanolone, which acts on GABA receptors.
 
 <img src="/doc_images/figure-1-3-progesterone.svg" alt="Structure of Progesterone" width="260" />
 
-<div style="text-align: center;">图1.3 孕酮的结构</div>
+<div style="text-align: center;">Figure 1.3 Structure of progesterone</div>
 
-## 2.HRT原理和药物
+## 2. How HRT Works and the Medications Used
 
-### 2.1 人体的性激素调节机制
+### 2.1 How the Body Regulates Sex Hormones
 
-&ensp;&ensp;&ensp;&ensp;人体的性激素调节机制是**通过HPG轴进行的负反馈调节机制**。HPG轴（Hypothalamic--pituitary--gonadal axis，下丘脑-垂体-性腺轴），由下丘脑，垂体前叶和性腺三者组成，通过激素分泌和反馈调节来控制人体的性激素水平。因此，HRT的主要目的是：**利用外源药物来改变HPG轴的负反馈机制**。只有了解这种机制，我们才能科学合理的HRT。
+&ensp;&ensp;&ensp;&ensp;The body regulates sex hormones through a **negative-feedback mechanism involving the HPG axis**. The HPG axis (hypothalamic-pituitary-gonadal axis) consists of the hypothalamus, anterior pituitary, and gonads. It controls sex-hormone levels through hormone secretion and feedback regulation. The main purpose of HRT is therefore to **use exogenous medication to alter the HPG axis's negative-feedback mechanism**. Only by understanding this mechanism can we approach HRT scientifically and rationally.
 
-&ensp;&ensp;&ensp;&ensp;假如说有一家HPG公司，主营业务是生产性激素，它的总经理（H）是下丘脑；部门经理（P）是垂体；而性腺（G）是工厂的生产工人。那么公司的管理模式会是什么样的呢？
+&ensp;&ensp;&ensp;&ensp;Imagine an HPG company whose main business is producing sex hormones. Its general manager (H) is the hypothalamus, its department manager (P) is the pituitary, and the gonads (G) are the factory workers. How would this company be managed?
 
-&ensp;&ensp;&ensp;&ensp;下丘脑（H），这位总经理会去看"性激素生产报表"，ta的神经元能感知性激素的浓度。一旦浓度低了，下丘脑总经理就会给垂体（部门经理）发一封邮件"**GnRH**（促性腺激素释放激素）"。这份邮件告诉垂体这位部门经理，你该施工，制造一点性激素了。
+&ensp;&ensp;&ensp;&ensp;The hypothalamus (H), acting as general manager, reviews the "sex-hormone production report": its neurons can sense the concentration of sex hormones. When the concentration drops, the hypothalamus sends the pituitary, the department manager, an email called **GnRH** (gonadotropin-releasing hormone). The email tells the pituitary that it is time to get to work and produce some sex hormones.
 
-&ensp;&ensp;&ensp;&ensp;垂体（P），这位部门经理在接到总经理的邮件后，ta就会给手下的生产工人（睾丸或卵巢）发邮件。ta发的是两封邮件，分别是"FSH（促卵泡生成素）"
-和" LH（促黄体生成素）"。
+&ensp;&ensp;&ensp;&ensp;After the pituitary (P), the department manager, receives the general manager's email, it sends messages to the production workers, the testes or ovaries. It sends two messages: "FSH (follicle-stimulating hormone)"
+and "LH (luteinizing hormone)."
 
-&ensp;&ensp;&ensp;&ensp;性腺（G），这位生产工人在接到邮件之后，就开始生产激素。但是很不幸的是，不同的人体内的这位"生产工人"不一样：
+&ensp;&ensp;&ensp;&ensp;After the gonads (G), the production workers, receive the messages, they begin producing hormones. Unfortunately, different people have different kinds of "production workers":
 
-&ensp;&ensp;&ensp;&ensp;有一部分"生产工人"是睾丸，接到FSH会生产精子，接到LH会合成睾酮。
+&ensp;&ensp;&ensp;&ensp;For some people, the "production workers" are testes. In response to FSH, they produce sperm; in response to LH, they synthesize testosterone.
 
-&ensp;&ensp;&ensp;&ensp;有一部分"生产工人"是卵巢，接到FSH会促进卵泡成熟，合成雌激素，接到LH引发排卵并维持黄体功能，合成雌激素和孕激素。
+&ensp;&ensp;&ensp;&ensp;For some people, the "production workers" are ovaries. FSH promotes follicular maturation and estrogen synthesis, while LH triggers ovulation, maintains corpus luteum function, and promotes the synthesis of estrogen and progestogens.
 
-&ensp;&ensp;&ensp;&ensp;有一部分没有"生产工人"；
+&ensp;&ensp;&ensp;&ensp;Some people have no "production workers."
 
-&ensp;&ensp;&ensp;&ensp;有一部分有两位"生产工人"（真两性畸形）。
+&ensp;&ensp;&ensp;&ensp;Some people have two kinds of "production workers" (true hermaphroditism).
 
-&ensp;&ensp;&ensp;&ensp;**在性腺"生产工人"生产出足量的性激素后，下丘脑"总经理"和垂体"部门经理"看到生产报告，觉得"性激素生产的够多了"，就停止给生产工人发邮件，性腺就会减速或者停工。**
+&ensp;&ensp;&ensp;&ensp;**Once the gonadal "production workers" have produced enough sex hormones, the hypothalamic "general manager" and pituitary "department manager" review the production report, decide that "enough sex hormones have been produced," and stop sending messages to the workers. The gonads then slow down or stop production.**
 
-&ensp;&ensp;&ensp;&ensp;上边这句话是**负反馈调节**，意思是系统的输出会反过来抑制系统的输入。下丘脑输出了GnRH,导致了性激素升高。性激素升高抑制了GnRH的输出。这种机制能保持性激素水平的稳定可控。
+&ensp;&ensp;&ensp;&ensp;The paragraph above describes **negative-feedback regulation**, which means that a system's output feeds back to inhibit its input. The hypothalamus releases GnRH, which causes sex-hormone levels to rise. The higher sex-hormone levels then inhibit GnRH release. This mechanism keeps sex-hormone levels stable and controllable.
 
 <img src="/doc_images/Regulation-of-HPG-axis.png" alt="HPG axis" width="260"/>
 
-<div style="text-align: center;">图2.1 HPG轴的调节机制</div>
+<div style="text-align: center;">Figure 2.1 Regulation of the HPG axis</div>
 
-### 2.2 激素替代和抗雄
+### 2.2 Hormone Replacement and Androgen Suppression
 
-&ensp;&ensp;&ensp;&ensp;下丘脑和垂体这两位经理，在看生产报告的时候，不会区分"这到底是哪种性激素，是睾酮还是雌二醇"（事实上，雌激素/ 雄激素/ 孕激素的结构极为相似，都是类固醇），而只会看是多了还是少了。
+&ensp;&ensp;&ensp;&ensp;When the hypothalamus and pituitary review the production report, they do not distinguish between different sex hormones, such as testosterone and estradiol. In fact, estrogens, androgens, and progestogens have very similar steroid structures. They only respond to whether the overall level is high or low.
 
-&ensp;&ensp;&ensp;&ensp;而mtf要做的事情，是让体内有足够多的雌激素，和足够少的雄激素。所以我们可以做的是：
+&ensp;&ensp;&ensp;&ensp;The objective for an MTF person is to have enough estrogen and sufficiently little androgen in the body. We can therefore do the following:
 
-&ensp;&ensp;&ensp;&ensp;1.摄入大量我们想要的激素（对于mtf而言，是雌激素），让血液中的雌激素浓度足够高。
+&ensp;&ensp;&ensp;&ensp;1. Take a large amount of the hormone we want, which for an MTF person is estrogen, so that the estrogen concentration in the blood becomes sufficiently high.
 
-&ensp;&ensp;&ensp;&ensp;**雌激素浓度高 → 抑制下丘脑分泌GnRH + 抑制垂体分泌FSH和LH → 抑制睾丸功能**
+&ensp;&ensp;&ensp;&ensp;**High estrogen concentration → reduced hypothalamic GnRH secretion + reduced pituitary FSH and LH secretion → suppressed testicular function**
 
-&ensp;&ensp;&ensp;&ensp;这是雌二醇针剂（例如富士日雌）HRT的原理，雌二醇的浓度足够高，就能彻底用负反馈，给睾丸刹车，这样就达成了我们的目标：足够多的雌激素+足够少的雄激素。
+&ensp;&ensp;&ensp;&ensp;This is the principle behind HRT with estradiol injections such as Fuji Progynon Depot. When the estradiol concentration is sufficiently high, negative feedback can fully put the brakes on the testes. This achieves the objective: enough estrogen plus sufficiently little androgen.
 
-&ensp;&ensp;&ensp;&ensp;2.摄入一定量雌激素，配合一定量抗雄药物。这个量的雌激素仅仅满足"女性化的雌激素水平"，但对于抗雄不足够高，没办法完全激活上边的负反馈调节，但是还有另外的3条路抗雄：
+&ensp;&ensp;&ensp;&ensp;2. Take a certain amount of estrogen together with an antiandrogen. This amount of estrogen is enough to reach a "feminizing estrogen level," but not high enough for androgen suppression and therefore cannot fully activate the negative-feedback mechanism described above. There are three other routes for suppressing androgens:
 
-&ensp;&ensp;&ensp;&ensp;a.**孕激素（类似物）浓度高 → 抑制下丘脑分泌GnRH + 抑制垂体分泌FSH和LH → 抑制睾丸功能（色谱龙，醋酸环丙孕酮）**
+&ensp;&ensp;&ensp;&ensp;a. **High progestogen or progestogen-analogue concentration → reduced hypothalamic GnRH secretion + reduced pituitary FSH and LH secretion → suppressed testicular function (Androcur, cyproterone acetate)**
 
-&ensp;&ensp;&ensp;&ensp;b.**竞争结合睾酮受体 → 虽然有睾酮，但不发挥作用（螺内酯，比卡鲁胺）**
+&ensp;&ensp;&ensp;&ensp;b. **Competitive binding to testosterone receptors → testosterone is present but cannot exert its effects (spironolactone, bicalutamide)**
 
-&ensp;&ensp;&ensp;&ensp;c.GnRHa（GnRH Agonist,**GnRH受体激动剂**）：这种激动剂和GnRH本身结构相似，但更强效和持久，可以更紧密的和GnRH受体结合，竞争GnRH受体。GnRHa的抗雄原理分为几个阶段：
+&ensp;&ensp;&ensp;&ensp;c. GnRHa (GnRH agonist, **gonadotropin-releasing hormone receptor agonist**): this type of agonist has a structure similar to GnRH itself but is more potent and longer acting. It can bind more tightly to GnRH receptors and compete for them. The androgen-suppressing action of a GnRHa occurs in several stages:
 
-&ensp;&ensp;&ensp;&ensp;1.激增效应：初次注射之后，GnRH受体被强烈刺激，分泌大量FSH和LH，此时会刺激睾丸分泌，短时间内睾酮水平会有较大的上升。
+&ensp;&ensp;&ensp;&ensp;1. Flare effect: after the first injection, GnRH receptors are strongly stimulated and release large amounts of FSH and LH. This stimulates the testes and causes a substantial short-term rise in testosterone.
 
-&ensp;&ensp;&ensp;&ensp;2.受体下调：想象一下，如果你一直对着某人尖叫，时间久了，那个人就会选择戴上耳机，完全无视你。GnRH受体也是一样的。
+&ensp;&ensp;&ensp;&ensp;2. Receptor downregulation: imagine that someone keeps screaming at you. After a while, you put on headphones and ignore them completely. GnRH receptors behave similarly.
 
-&ensp;&ensp;&ensp;&ensp;由于 GnRHa 持续不断地占据着垂体上的受体，垂体开始觉得"受不了了"，于是它把所有的 GnRH 受体都偷偷地收进了细胞内部，这时，垂体对任何 GnRH 信号都变得完全麻木。因此，垂体就不再生产FSH和LH,因此性腺不再分泌性激素。
+&ensp;&ensp;&ensp;&ensp;Because the GnRHa continuously occupies receptors on the pituitary, the pituitary eventually "cannot take it anymore" and pulls all its GnRH receptors inside its cells. The pituitary then becomes completely insensitive to any GnRH signal. It stops producing FSH and LH, and the gonads therefore stop secreting sex hormones.
 
-&ensp;&ensp;&ensp;&ensp;这是主流的三种抗雄方法，中等剂量雌激素+抗雄 ，加上高剂量雌激素，一共4种常见的方案。
+&ensp;&ensp;&ensp;&ensp;These are the three mainstream methods of androgen suppression. Together with high-dose estrogen, moderate-dose estrogen plus an antiandrogen produces four common types of regimen in total.
 
-### 2.3 常见的HRT药物
+### 2.3 Common HRT Medications
 
-&ensp;&ensp;&ensp;&ensp;下面我只介绍最常用，最安全，自己用过的几种。我不会去介绍GnRHa，因为这种药物昂贵，而且一般用于青春期阻断，接受治疗者能得到医生的帮助，谨遵医嘱即可。建议经济不富裕 / 未成年 / 服药种类多（例如HRT之外同时吃精神类药物，降糖药，降压药，抗排异药等药物的），不要尝试未经验证的HRT方法。
+&ensp;&ensp;&ensp;&ensp;I will introduce only a few of the most commonly used and safest medications that I have personally taken. I will not discuss GnRHa because it is expensive and is generally used for puberty suppression, where the person receiving treatment can obtain medical help and should simply follow their clinician's instructions. People with limited finances, minors, and people taking many medications, such as psychiatric medication, glucose-lowering medication, antihypertensives, or anti-rejection medication in addition to HRT, are advised not to try unverified HRT methods.
 
-#### 2.3.1 补佳乐/克龄蒙
+#### 2.3.1 Progynova / Climen
 
 <img src="/doc_images/IMG_3765.jpeg" alt="Progynova CN" width="260" />
 
-<div style="text-align: center;">图2.2 国产补佳乐（国补） 每粒1mg,每盒21粒</div>
+<div style="text-align: center;">Figure 2.2 Chinese Progynova: 1mg per tablet, 21 tablets per box</div>
 
 <img src="/doc_images/IMG_3764.jpeg" alt="Progynoca Thai" width="260" />
 
-<div style="text-align: center;">图2.3 泰国产补佳乐（泰补）每粒2mg,每盒3板，每板28粒</div>
+<div style="text-align: center;">Figure 2.3 Thai Progynova: 2mg per tablet, 3 blister packs per box, 28 tablets per blister pack</div>
 
-<img src="/doc_images/IMG_3771.jpeg" alt="Progynova CN 2" width="260" /> 
+<img src="/doc_images/IMG_3771.jpeg" alt="Progynova CN 2" width="260" />
 
-<div style="text-align: center;">图2.4 国产克龄蒙</div>
+<div style="text-align: center;">Figure 2.4 Chinese Climen</div>
 
-<div style="text-align: center;">备注：每盒含11粒白色粒（2mg戊酸雌二醇）和10粒橙色粒（2mg戊酸雌二醇+1mg醋酸环丙孕酮）</div>
+<div style="text-align: center;">Note: each box contains 11 white tablets (2mg estradiol valerate) and 10 orange tablets (2mg estradiol valerate + 1mg cyproterone acetate)</div>
 
-&ensp;&ensp;&ensp;&ensp;戊酸雌二醇（Estradiol valerate），其片剂的商品名为补佳乐（Progynova），是雌二醇经戊酸酯化后的产物。
+&ensp;&ensp;&ensp;&ensp;Estradiol valerate, sold in tablet form under the brand name Progynova, is estradiol esterified with valeric acid.
 
-&ensp;&ensp;&ensp;&ensp;作为口服药，戊酸雌二醇的特点（相对于直接服用雌二醇）：
+&ensp;&ensp;&ensp;&ensp;As an oral medication, estradiol valerate has the following characteristics compared with taking estradiol directly:
 
-&ensp;&ensp;&ensp;&ensp;1.缓释（延长作用时间），戊酸雌二醇是一种前体药物（Prodrug），在体内被酯酶水解后缓慢释放出雌二醇。这种特性尤其适合跨性别激素治疗这种需要长期稳定药物浓度的场景。
+&ensp;&ensp;&ensp;&ensp;1. Sustained release, which prolongs its action. Estradiol valerate is a prodrug that is hydrolyzed by esterases in the body and then slowly releases estradiol. This characteristic is particularly suitable for settings such as transgender hormone therapy that require a stable medication concentration over a long period.
 
-&ensp;&ensp;&ensp;&ensp;2.**提高口服生物利用度**：天然雌二醇口服后会经历强烈的肝脏"首过效应"，导致大部分药物在发挥作用前被分解。酯化（增加戊酸基团）改变了其代谢途径，使其能更好被吸收。
+&ensp;&ensp;&ensp;&ensp;2. **Improved oral bioavailability**: orally administered natural estradiol undergoes an extensive hepatic "first-pass effect," causing most of the medication to be broken down before it can act. Esterification, which adds a valerate group, changes its metabolic pathway and allows it to be absorbed more effectively.
 
-&ensp;&ensp;&ensp;&ensp;因此，戊酸雌二醇（补佳乐）是最为常见，最被广泛使用的雌激素药物。跨性别社群内称之为"糖"，因为它的糖衣尝起来有一点甜。
+&ensp;&ensp;&ensp;&ensp;Estradiol valerate (Progynova) is therefore one of the most common and widely used estrogen medications. Within transgender communities it is nicknamed "candy" because its sugar coating tastes slightly sweet.
 
-&ensp;&ensp;&ensp;&ensp;国产补佳乐一般为1mg装，黄色糖衣；泰国补佳乐一般为2mg装，白色糖衣。成分是一样的，计算一下每mg多少钱，哪个便宜买哪个。
+&ensp;&ensp;&ensp;&ensp;Chinese Progynova usually comes in a 1mg formulation with a yellow sugar coating, while Thai Progynova usually comes in a 2mg formulation with a white sugar coating. The active ingredient is the same, so calculate the price per mg and buy whichever is cheaper.
 
-&ensp;&ensp;&ensp;&ensp;克龄蒙是雌二醇和醋酸环丙孕酮的合剂，但是，醋酸环丙孕酮1mg的量不足以抗雄（这个药主要是为顺性别女性设计的），因此，把克龄蒙当成2mg戊酸雌二醇服用就行。（23年的时候，网络平台限售补佳乐，但克龄蒙当时没有被限制，因此在社群内非常流行。）
+&ensp;&ensp;&ensp;&ensp;Climen combines estradiol with cyproterone acetate. However, its 1mg dose of cyproterone acetate is not enough for androgen suppression because the medication was designed primarily for cisgender women. It can therefore simply be taken as 2mg of estradiol valerate. (In '23, online platforms restricted sales of Progynova but did not restrict Climen at the time, so it became very popular within the community.)
 
-#### 2.3.2 诺坤复
+#### 2.3.2 Estrofem
 
-<img src="/doc_images/IMG_3770.jpeg" alt="Estrofem" width="260" /> 
+<img src="/doc_images/IMG_3770.jpeg" alt="Estrofem" width="260" />
 
-<div style="text-align: center;">图2.5 泰国产诺坤复 每粒2mg 每盒28粒</div>
+<div style="text-align: center;">Figure 2.5 Thai Estrofem: 2mg per tablet, 28 tablets per box</div>
 
-&ensp;&ensp;&ensp;&ensp;半水合雌二醇（Estradiol Hemihydrate），其片剂的商品名为诺坤复（Estrofem）,是天然雌二醇的结晶形式。
+&ensp;&ensp;&ensp;&ensp;Estradiol hemihydrate, sold in tablet form under the brand name Estrofem, is a crystalline form of natural estradiol.
 
-&ensp;&ensp;&ensp;&ensp;作为口服药，半水合雌二醇的特点（相比于酯化雌二醇，例如戊酸雌二醇）：
+&ensp;&ensp;&ensp;&ensp;As an oral medication, estradiol hemihydrate has the following characteristics compared with esterified estradiol such as estradiol valerate:
 
-&ensp;&ensp;&ensp;&ensp;1.进入体内直接发挥作用，释放速度快，人体亲和力高，起效更快。
+&ensp;&ensp;&ensp;&ensp;1. It acts directly after entering the body, is released quickly, has a high affinity for the human body, and takes effect faster.
 
-&ensp;&ensp;&ensp;&ensp;2.避免肝脏的首过效应，没有肝脏代谢负担。
+&ensp;&ensp;&ensp;&ensp;2. It avoids the liver's first-pass effect and places no metabolic burden on the liver.
 
-&ensp;&ensp;&ensp;&ensp;虽然不如补佳乐的应用广泛程度，但诺坤复仍然是一种被跨性别女性广泛使用的HRT药物。
+&ensp;&ensp;&ensp;&ensp;Although it is not used as widely as Progynova, Estrofem remains an HRT medication widely used by transgender women.
 
-&ensp;&ensp;&ensp;&ensp;二者互有利弊，想要激素水平稳定------补佳乐，想要肝脏负担小------诺坤复。
+&ensp;&ensp;&ensp;&ensp;Both have advantages and disadvantages: for stable hormone levels, use Progynova; for less burden on the liver, use Estrofem.
 
-#### 2.3.3 日雌（针剂）
+#### 2.3.3 Progynon Depot (Injection)
 
-<img src="/doc_images/Estradiol_Change.png" alt="Inject Estradiol" width="260" /> 
+<img src="/doc_images/Estradiol_Change.png" alt="Inject Estradiol" width="260" />
 
-<div style="text-align: center;">图2.6 不同剂型下肌肉注射雌二醇浓度随时间的变化图</div>
+<div style="text-align: center;">Figure 2.6 Changes in estradiol concentration over time after intramuscular injection of different formulations</div>
 
-<div style="text-align: center;">注：从上到下：苯甲酸雌二醇，戊酸雌二醇，环丙戊酸雌二醇，庚酸雌二醇</div>
+<div style="text-align: center;">Note, from top to bottom: estradiol benzoate, estradiol valerate, estradiol cypionate, and estradiol enanthate</div>
 
-<img src="/doc_images/IMG_3772.png" alt="Estradiol fuji" width="260" /> 
+<img src="/doc_images/IMG_3772.png" alt="Estradiol fuji" width="260" />
 
-<div style="text-align: center;">图2.7 富士制药日雌 每盒10支 每支1ml</div>
+<div style="text-align: center;">Figure 2.7 Fuji Pharma Progynon Depot: 10 ampoules per box, 1ml per ampoule</div>
 
-&ensp;&ensp;&ensp;&ensp;在介绍日雌之前，我们先来看图2.6。苯甲酸雌二醇，戊酸雌二醇，环丙戊酸雌二醇，庚酸雌二醇的血药浓度曲线。可以看出，酯化的基团越大，雌二醇释放越慢。跨性别女性的HRT和跨性别男性不同，对于睾酮来说，庚酸睾酮和十一酸睾酮更合适；然而跨性别女性是为了模拟顺性别女性的激素水平波动的，这种模拟最好的效果就是戊酸的剂型。苯甲酸代谢太快，庚酸代谢太慢，戊酸刚刚好。
+&ensp;&ensp;&ensp;&ensp;Before introducing Progynon Depot, look at Figure 2.6, which shows the blood-concentration curves for estradiol benzoate, estradiol valerate, estradiol cypionate, and estradiol enanthate. The larger the ester group, the more slowly estradiol is released. HRT for transgender women differs from HRT for transgender men. For testosterone, testosterone enanthate and testosterone undecanoate are more suitable. Transgender women, however, seek to simulate fluctuations in cisgender women's hormone levels, and a valerate formulation produces the best simulation. Benzoate is metabolized too quickly, enanthate too slowly, and valerate at about the right speed.
 
-&ensp;&ensp;&ensp;&ensp;如果您打算日后使用日雌，请记下来紫色这条线的趋势（戊酸雌二醇针剂），我们需要根据它的代谢曲线来合理调整我们的用药，并且及时监测激素水平（例如测六项）。
+&ensp;&ensp;&ensp;&ensp;If you intend to use Progynon Depot in the future, remember the trend of the purple line, which represents an estradiol valerate injection. We need to adjust medication rationally according to its metabolic curve and monitor hormone levels promptly, for example with a six-hormone panel.
 
-&ensp;&ensp;&ensp;&ensp;戊酸雌二醇注射剂（Progynon-Depot），最被广泛使用的是富士制药生产的剂型。前文中所描述的戊酸雌二醇的特点不再赘述，作者在后文中会分享自己的日雌使用体验，和自行注射的注意事项。
+&ensp;&ensp;&ensp;&ensp;For injectable estradiol valerate (Progynon Depot), the formulation produced by Fuji Pharma is the most widely used. The characteristics of estradiol valerate described above will not be repeated here. Later in this guide, the author shares her experience using Progynon Depot and precautions for self-injection.
 
-#### 2.3.4 爱思妥（凝胶）
+#### 2.3.4 Oestrogel (Gel)
 
-<img src="/doc_images/IMG_3767.jpeg" alt="Estradiol" width="260" /> 
+<img src="/doc_images/IMG_3767.jpeg" alt="Estradiol" width="260" />
 
-<div style="text-align: center;">图2.8 爱思妥 每支80g</div>
+<div style="text-align: center;">Figure 2.8 Oestrogel: 80g per tube</div>
 
-&ensp;&ensp;&ensp;&ensp;雌二醇凝胶，商品名爱思妥（Estradiol），是雌二醇（不是戊酸形式）的凝胶剂型。
+&ensp;&ensp;&ensp;&ensp;Estradiol gel, sold under the brand name Oestrogel, is a gel formulation of estradiol, not estradiol valerate.
 
-&ensp;&ensp;&ensp;&ensp;使用体验和注意事项会在后文描述，但提前提醒：**不要把凝胶涂抹在乳房上和睾丸皮上！！！**
+&ensp;&ensp;&ensp;&ensp;Experiences and precautions are described later, but first a warning: **DO NOT apply the gel to the breasts or scrotal skin!!!**
 
-#### 2.3.5 色普龙
+#### 2.3.5 Androcur
 
-<img src="/doc_images/IMG_3766.jpeg" alt="CPA TURKISH" width="260" /> 
+<img src="/doc_images/IMG_3766.jpeg" alt="CPA TURKISH" width="260" />
 
-<div style="text-align: center;">图2.9 土耳其产色普龙 每粒50mg 每盒50粒</div>
+<div style="text-align: center;">Figure 2.9 Turkish Androcur: 50mg per tablet, 50 tablets per box</div>
 
-<img src="/doc_images/IMG_3768.jpeg" alt="CPA TURKISH" width="260" /> 
+<img src="/doc_images/IMG_3768.jpeg" alt="CPA TURKISH" width="260" />
 
-<div style="text-align: center;">图2.10 土耳其产色普龙 每粒100mg 每盒30粒</div>
+<div style="text-align: center;">Figure 2.10 Turkish Androcur: 100mg per tablet, 30 tablets per box</div>
 
-&ensp;&ensp;&ensp;&ensp;醋酸环丙孕酮（cyproterone acetate，CPA），色普龙，商品名Androcur，是一种抗雄药物。常见的为50mg和100mg的剂型，也有10mg的剂型（但是比较难以获得）。前文中提到过，此药物是一种甾体类激素，结构类似孕激素，因此能参与HPG轴的负反馈调节，从而起到抗雄的效果。
+&ensp;&ensp;&ensp;&ensp;Cyproterone acetate (CPA), sold under the brand name Androcur, is an antiandrogen. Common formulations contain 50mg or 100mg, and a 10mg formulation also exists but is harder to obtain. As noted above, this medication is a steroid hormone with a structure similar to progestogens. It can therefore participate in negative-feedback regulation of the HPG axis and suppress androgens.
 
-&ensp;&ensp;&ensp;&ensp;使用体验和注意事项会在后文描述，但提前提醒：**不要吃一整粒50/100色，hrt的上限剂量是每日25mg,否则会严重损害肝脏。**
+&ensp;&ensp;&ensp;&ensp;Experiences and precautions are described later, but first a warning: **DO NOT take a whole 50/100 Androcur tablet. The upper dose limit for HRT is 25mg per day; otherwise, it will seriously damage the liver.**
 
-#### 2.3.6 螺内酯
+#### 2.3.6 Spironolactone
 
-<img src="/doc_images/IMG_3769.jpeg" alt="spironolactone" width="260" /> 
+<img src="/doc_images/IMG_3769.jpeg" alt="spironolactone" width="260" />
 
-<div style="text-align: center;">图2.11 民生螺内酯 每粒20mg 每盒100粒</div>
+<div style="text-align: center;">Figure 2.11 Minsheng spironolactone: 20mg per tablet, 100 tablets per box</div>
 
-&ensp;&ensp;&ensp;&ensp;螺内酯（英语：spironolactone），商品名Aldactone（安体舒通），目前有多种仿制药，是一个经典而常用的药物。螺内酯是保钾利尿剂（和氢氯噻嗪相反），最初被设计用来治疗高血压和因体液聚集而导致的水肿。后来对螺内酯的应用中发现，螺内酯有抗雄作用，原因是螺内酯能够和睾酮竞争受体，从而使睾酮无法发挥作用。
+&ensp;&ensp;&ensp;&ensp;Spironolactone, sold under the brand name Aldactone and now available in many generic forms, is a classic and commonly used medication. Spironolactone is a potassium-sparing diuretic, the opposite of hydrochlorothiazide. It was originally designed to treat hypertension and edema caused by fluid accumulation. Later use revealed that spironolactone has antiandrogenic effects because it can compete with testosterone for receptors, preventing testosterone from exerting its effects.
 
-&ensp;&ensp;&ensp;&ensp;使用体验和注意事项会在后文描述，但提前提醒：**低血压慎用，服用降压药慎用，使用期间应当避免食用高钾的食品（例如低钠盐和香蕉）。**
+&ensp;&ensp;&ensp;&ensp;Experiences and precautions are described later, but first a warning: **use caution if you have low blood pressure or take antihypertensive medication. Avoid high-potassium foods such as low-sodium salt and bananas while using it.**
 
-#### 2.3.7 其他HRT药物
+#### 2.3.7 Other HRT Medications
 
-&ensp;&ensp;&ensp;&ensp;作者写这篇文章的初衷是分享自身的经验，而非作为"百科"，因此，亲身服用过的药物才会被写下，其他的药物作者不会置喙。如果想要尝试其他HRT药物，请详细搜集资料和文献并决定HRT方案。
+&ensp;&ensp;&ensp;&ensp;The author's purpose in writing this article is to share personal experience, not to create an "encyclopedia." Only medications that she has personally taken are included, and she will not comment on others. If you wish to try other HRT medications, collect detailed information and research before deciding on a regimen.
 
-## 3.用药方案
+## 3. Medication Regimens
 
-&ensp;&ensp;&ensp;&ensp;前文中提到过，跨性别女性HRT的核心是 有效浓度的雌激素+有效的抗雄。以下是作者尝试过的，主流的HRT用药方案。首先要明确，HRT的剂量是因人而异的，每个人的身体状况都不同，只有在安全的前提下尝试和摸索，才能找出最好的HRT方案。
+&ensp;&ensp;&ensp;&ensp;As noted above, the core of HRT for transgender women is an effective estrogen concentration plus effective androgen suppression. The following are mainstream HRT regimens the author has tried. First, it is important to understand that HRT doses vary from person to person. Everyone's physical condition is different, and only safe trial and adjustment can identify the best HRT regimen.
 
-### 3.1 口服雌激素+色普龙
+### 3.1 Oral Estrogen + Androcur
 
-&ensp;&ensp;&ensp;&ensp;根据不同的文献和经验帖，口服雌激素（补佳乐/诺坤复等）的剂量在2mg-8mg均有出现；色普龙的剂量则从2mg到50mg均有出现。但是按照作者和身边朋友的经验，我建议的剂量是：先从**每日4mg补佳乐（诺坤复可以平替）+12.5mg色普龙**开始。
+&ensp;&ensp;&ensp;&ensp;Across different publications and experience-sharing posts, oral estrogen doses such as Progynova or Estrofem range from 2mg to 8mg, while Androcur doses range from 2mg to 50mg. Based on the author's experience and that of friends, I recommend starting with **4mg Progynova per day (Estrofem can be substituted) + 12.5mg Androcur**.
 
-&ensp;&ensp;&ensp;&ensp;首先要说明：色普龙的剂量长期过大会导致严重的肝脏副作用，并增加癌症的风险。一部分比较旧的经验上，色普龙的服用剂量是每日50mg,且长期服用，这是不合适的，一般来说，每日12.5mg已经足够抗雄。
+&ensp;&ensp;&ensp;&ensp;First, an important clarification: taking excessively large doses of Androcur over the long term can cause serious liver-related adverse effects and increase cancer risk. Some older experience reports recommend 50mg per day over a long period. This is inappropriate; 12.5mg per day is generally enough for androgen suppression.
 
-&ensp;&ensp;&ensp;&ensp;这是我通过长期试药得出的经验，但是，每个人的代谢水平不同，可能需要调整一个"适合自己的剂量"。所以，如果你第一次开始HRT,你可以这样做：
+&ensp;&ensp;&ensp;&ensp;This is what I learned through long-term experimentation with medication. However, metabolism differs from person to person, so you may need to adjust to a "dose that suits you." If you are starting HRT for the first time, you can do the following:
 
-&ensp;&ensp;&ensp;&ensp;第一日至第三日：4mg补+25mg色，抬高色普龙剂量的目的是快速阻止睾酮的生成。前文中提到，醋酸环丙孕酮（色普龙）是一种孕酮类似物，能够触发HPG轴的负反馈调节，快速给睾丸"刹车"。
+&ensp;&ensp;&ensp;&ensp;Days 1 to 3: 4mg Progynova + 25mg Androcur. The purpose of the higher Androcur dose is to stop testosterone production quickly. As noted above, cyproterone acetate (Androcur) is a progesterone analogue that can trigger negative feedback in the HPG axis and quickly put the brakes on the testes.
 
-&ensp;&ensp;&ensp;&ensp;第四日至第七日：4mg补+12.5mg色，在睾丸初步被抑制住，体内睾酮水平降低后，可以逐渐降低色普龙的剂量，此时体内已经进入了"雌激素主导"的环境，只需要维持剂量的色普龙就可以"刹车"。
+&ensp;&ensp;&ensp;&ensp;Days 4 to 7: 4mg Progynova + 12.5mg Androcur. Once the testes have initially been suppressed and testosterone levels in the body have fallen, the Androcur dose can gradually be reduced. The body has already entered an "estrogen-dominant" environment, so only a maintenance dose of Androcur is needed to keep the brakes on.
 
-&ensp;&ensp;&ensp;&ensp;第八日之后：可以继续维持4mg补+12.5mg色，也可以尝试减量补和色，但是，补的下限是3mg（否则雌激素水平过低，会影响雌性化第二性征发育），色的下限是6.25mg（过低的色普龙水平可能抗雄效果不足）。
+&ensp;&ensp;&ensp;&ensp;After Day 8: you may continue with 4mg Progynova + 12.5mg Androcur, or try reducing both. However, the lower limit for Progynova is 3mg, because an estrogen level that is too low will affect the development of feminine secondary sex characteristics, and the lower limit for Androcur is 6.25mg, because too little Androcur may not suppress androgens adequately.
 
-### 3.2 口服雌激素+螺内酯
+### 3.2 Oral Estrogen + Spironolactone
 
-&ensp;&ensp;&ensp;&ensp;和上边的雌激素+色普龙方案不同，螺内酯的抗雄原理是竞争睾酮的受体，不参与HPG轴的负反馈调节，睾丸的睾酮分泌功能仍然保存，只是由于受体被螺内酯"占住"了，所以睾酮不能发挥作用。螺内酯不能拿来"压制睾丸的功能"，而且，螺内酯是保钾利尿剂和降压药，有较好的降低血压和排尿的功效，而竞争雄激素受体是"副作用"。因此，螺内酯需要缓慢的加药，以让身体适应药物，降低副作用。建议的剂量是：
+&ensp;&ensp;&ensp;&ensp;Unlike the estrogen-plus-Androcur regimen above, spironolactone suppresses androgens by competing for testosterone receptors. It does not participate in negative feedback along the HPG axis. The testes retain their ability to secrete testosterone, but testosterone cannot exert its effects because spironolactone "occupies" its receptors. Spironolactone cannot be used to "suppress testicular function." It is a potassium-sparing diuretic and antihypertensive with pronounced blood-pressure-lowering and diuretic effects; competing for androgen receptors is a "side effect." Spironolactone should therefore be increased slowly to allow the body to adapt and to reduce adverse effects. The recommended dose is:
 
-&ensp;&ensp;&ensp;&ensp;慢加药阶段：4mg补的基础上，每2天增加20mg的螺，直到明显感觉"雄激素被抑制"，或者加到一个"平均有效剂量"（100mg）。
+&ensp;&ensp;&ensp;&ensp;Gradual titration stage: on a base of 4mg Progynova, increase spironolactone by 20mg every 2 days until you clearly feel that "androgens are being suppressed," or until you reach an "average effective dose" of 100mg.
 
-&ensp;&ensp;&ensp;&ensp;维持阶段：3-4mg补+50-200mg螺，螺内酯的剂量浮动范围很大，对于一些人来说，50mg足以抗雄，但对于有些人来说，可能需要添加剂量到100mg以上。螺内酯由于不能彻底抑制睾丸功能，因此抗雄的剂量需要一直维持，而不是达到稳态后减药。
+&ensp;&ensp;&ensp;&ensp;Maintenance stage: 3–4mg Progynova + 50–200mg spironolactone. The spironolactone dose varies widely. For some people, 50mg is enough for androgen suppression; others may need to increase the dose above 100mg. Because spironolactone cannot fully suppress testicular function, its antiandrogen dose must be maintained continuously rather than reduced after reaching a steady state.
 
-### 3.3 凝胶雌激素+色普龙 / 螺内酯
+### 3.3 Estrogen Gel + Androcur / Spironolactone
 
-&ensp;&ensp;&ensp;&ensp;对于此方案，色普龙和螺内酯的加减药方式是不变的。然而由于爱思妥是凝胶剂型，雌二醇是透皮吸收的，透皮的吸收程度对个体有极大的差距。有一部分人透皮吸收非常好，有些人则很差。
+&ensp;&ensp;&ensp;&ensp;For this regimen, the way Androcur and spironolactone are increased or reduced does not change. Oestrogel is a gel formulation, however, and its estradiol is absorbed through the skin. Transdermal absorption varies greatly between individuals: some people absorb it very well, while others absorb it poorly.
 
-&ensp;&ensp;&ensp;&ensp;根据我个人的经验，2尺凝胶相当于4mg补佳乐的效果。凝胶要涂抹在大腿内侧或者手臂内侧等容易吸收的地方，**绝对不允许涂抹在乳房和睾丸皮上！！！（致癌）**
+&ensp;&ensp;&ensp;&ensp;In my personal experience, 2 measures of gel have an effect equivalent to 4mg of Progynova. Apply the gel to areas that absorb it readily, such as the inner thighs or inner arms. **It must NEVER be applied to the breasts or scrotal skin!!! (Carcinogenic)**
 
-&ensp;&ensp;&ensp;&ensp;凝胶的剂量需要更多的尝试，建议从2尺开始尝试，如果不够就加量，如果足够可以缓慢的减量尝试。
+&ensp;&ensp;&ensp;&ensp;Gel dosing requires more experimentation. I recommend starting with 2 measures, increasing the amount if it is insufficient, or slowly trying to reduce it if it is enough.
 
-&ensp;&ensp;&ensp;&ensp;另外注意保存方式，在阴凉低温处保存最好，不要在阳光下暴晒。
+&ensp;&ensp;&ensp;&ensp;Also pay attention to storage. A cool, shaded place is best; do not expose it to direct sunlight.
 
-### 3.4 雌激素针剂
+### 3.4 Estradiol Injections
 
-#### 3.4.1 代谢曲线
+#### 3.4.1 Metabolic Curve
 
-&ensp;&ensp;&ensp;&ensp;激素针剂和前几种方式截然不同，这种方法的高浓度雌激素，能通过HPG轴抗雄，因此大部分时间不需要服用额外的抗雄药物。一般来说，以富士日雌的1mg,戊酸雌二醇注射剂为例：
+&ensp;&ensp;&ensp;&ensp;Hormone injections are entirely different from the preceding methods. Their high estrogen concentration can suppress androgens through the HPG axis, so no additional antiandrogen is needed most of the time. Taking Fuji Progynon Depot, a 1mg estradiol valerate injection, as an example:
 
-<img src="/doc_images/e2_curve1.png" alt="estradiol curve 1" width="260" /> 
+<img src="/doc_images/e2_curve1.png" alt="estradiol curve 1" width="260" />
 
-<div style="text-align: center;">图3.1 10mg戊酸雌二醇针剂血药浓度随时间的变化</div>
+<div style="text-align: center;">Figure 3.1 Change in blood concentration over time after a 10mg estradiol valerate injection</div>
 
-&ensp;&ensp;&ensp;&ensp;戊酸雌二醇在注射时，血药浓度会在2天之内快速达到峰值，随后缓慢的下降。
+&ensp;&ensp;&ensp;&ensp;After estradiol valerate is injected, its blood concentration quickly peaks within 2 days and then slowly declines.
 
-&ensp;&ensp;&ensp;&ensp;而日雌单药HRT,需要把雌激素的水平维持的比较高，在前面有抗雄的前提下，雌激素的水平是"够用就行"；而日雌单药HRT,不仅要够用，还要足够高，能利用HPG轴压制住睾丸。所以我在上边的图上画了一条线：
+&ensp;&ensp;&ensp;&ensp;Estrogen levels must be kept comparatively high when Progynon Depot is used as HRT monotherapy. When an antiandrogen is also used, the estrogen level only needs to be "high enough." With Progynon Depot monotherapy, it must not only be high enough for estrogen effects, but also high enough to suppress the testes through the HPG axis. I therefore drew a line on the graph above:
 
-<img src="/doc_images/Estradiolcurve.png" alt="estradiol curve 2" width="260" /> 
+<img src="/doc_images/Estradiolcurve.png" alt="estradiol curve 2" width="260" />
 
-<div style="text-align: center;">图3.2 日雌需要维持的血药浓度</div>
+<div style="text-align: center;">Figure 3.2 Blood concentration that must be maintained with Progynon Depot</div>
 
-&ensp;&ensp;&ensp;&ensp;黄色部分是单雌抗雄的最低血药浓度，大概600pmol/L,红色是浓度合适的范围，蓝色线是血药浓度跌破600pmol/L的时间点------一般在第八天。
+&ensp;&ensp;&ensp;&ensp;The yellow area is the minimum blood concentration for estrogen-only androgen suppression, approximately 600pmol/L. Red indicates an appropriate concentration range, and the blue line marks the point at which the blood concentration falls below 600pmol/L, usually on Day 8.
 
-&ensp;&ensp;&ensp;&ensp;因此，有两种解决方案：
+&ensp;&ensp;&ensp;&ensp;There are therefore two solutions:
 
-&ensp;&ensp;&ensp;&ensp;1.间隔8-9天注射，并在第7-8天补充2mg补佳乐。
+&ensp;&ensp;&ensp;&ensp;1. Inject every 8–9 days and supplement with 2mg Progynova on Days 7–8.
 
-&ensp;&ensp;&ensp;&ensp;2.间隔6-7天注射，不需要任何其他药物。
+&ensp;&ensp;&ensp;&ensp;2. Inject every 6–7 days without any other medication.
 
-&ensp;&ensp;&ensp;&ensp;另外，这里的8-9天和6-7天并不是准确的数字，只是一个平均值，作者的代谢就比这个曲线要快一些，第四天的血药浓度已经只有1200pmol/L,因此，作者在7天1针的情况下，会在第六天和第七天口服2mg补佳乐。
+&ensp;&ensp;&ensp;&ensp;The 8–9-day and 6–7-day intervals given here are not exact figures, only averages. The author's metabolism is somewhat faster than the curve: by Day 4, her blood concentration is already only 1200pmol/L. When injecting once every 7 days, she therefore takes 2mg Progynova orally on Days 6 and 7.
 
-&ensp;&ensp;&ensp;&ensp;利用日雌来进行hrt,请在有条件的情况下做性激素测试，了解你自身的代谢特性，这样才能更好的安排计划。
+&ensp;&ensp;&ensp;&ensp;If you use Progynon Depot for HRT, obtain sex-hormone testing whenever circumstances allow so that you can understand your own metabolic characteristics and plan your regimen more effectively.
 
-#### 3.4.2 日雌注射方法
+#### 3.4.2 How to Inject Progynon Depot
 
-&ensp;&ensp;&ensp;&ensp;如果有条件的话，最好到医院或者诊所进行注射。但很大一部分人出于成本或安全考虑，不得不自行注射。因此，我想把注射的经验分享给大家：
+&ensp;&ensp;&ensp;&ensp;If possible, it is best to receive injections at a hospital or clinic. A large number of people nevertheless have to self-inject because of cost or safety considerations. I therefore want to share my injection experience:
 
-&ensp;&ensp;&ensp;&ensp;要准备的工具：
+&ensp;&ensp;&ensp;&ensp;Tools to prepare:
 
-- 注射器（针头0.6mm,容量5ml）,个人测试过最好用的规格
+- A syringe with a 0.6mm needle and 5ml capacity, the specification that worked best in my personal testing
 
-- （如果怕疼）准备小注射器（针头0.5mm,容量2.5ml）,此注射器从安瓿瓶中抽液体比较困难
+- If you are afraid of pain, a smaller syringe with a 0.5mm needle and 2.5ml capacity; it is more difficult to draw liquid from an ampoule with this syringe
 
-- 无菌棉签
+- Sterile cotton swabs
 
-- 碘伏或酒精（消毒）
+- Povidone-iodine or alcohol for disinfection
 
-<img src="/doc_images/prepare-of-injection.png" alt="spironolactone" width="260" /> 
+<img src="/doc_images/prepare-of-injection.png" alt="spironolactone" width="260" />
 
-<div style="text-align: center;">图3.3 日雌注射所需的工具（这是已完成注射后拍的图）</div>
+<div style="text-align: center;">Figure 3.3 Tools needed for a Progynon Depot injection (photographed after the injection was completed)</div>
 
-&ensp;&ensp;&ensp;&ensp;Step1：找位置
+&ensp;&ensp;&ensp;&ensp;Step 1: Find the site
 
-&ensp;&ensp;&ensp;&ensp;肌肉注射的主要部位有3个：上臂的三角肌，臀部的臀中肌和大腿的股外侧肌。而最便于自行注射的就是大腿的股外侧肌，因此选择此肌肉。
+&ensp;&ensp;&ensp;&ensp;There are three main sites for intramuscular injection: the deltoid muscle in the upper arm, the gluteus medius in the buttock, and the vastus lateralis in the thigh. The vastus lateralis is the easiest site for self-injection, so that is the muscle selected here.
 
-<img src="/doc_images/anatomical-markers.png" alt="Anatomical markers" width="260" /> 
+<img src="/doc_images/anatomical-markers.png" alt="Anatomical markers" width="260" />
 
-<div style="text-align: center;">图3.4 大腿股外侧肌注射点位（X即是）</div>
+<div style="text-align: center;">Figure 3.4 Injection site in the vastus lateralis of the thigh (marked X)</div>
 
-&ensp;&ensp;&ensp;&ensp;如何找点位？我个人的经验：
+&ensp;&ensp;&ensp;&ensp;How do you locate the site? My personal method is:
 
-&ensp;&ensp;&ensp;&ensp;坐姿下脚垂直踩地，腿放平放松，用手掌从膝盖开始量，3个手掌的距离，肌肉最厚的地方就是注射点位。
+&ensp;&ensp;&ensp;&ensp;Sit with your foot flat on the floor, your lower leg vertical, and your thigh level and relaxed. Measure three palm-widths up from your knee. The thickest part of the muscle is the injection site.
 
-&ensp;&ensp;&ensp;&ensp;Step2：消毒
+&ensp;&ensp;&ensp;&ensp;Step 2: Disinfect
 
-&ensp;&ensp;&ensp;&ensp;用碘伏或者酒精涂抹待注射的部位，最好是碘伏，因为有颜色，可以标注。
+&ensp;&ensp;&ensp;&ensp;Apply povidone-iodine or alcohol to the injection site. Povidone-iodine is preferable because its color can mark the site.
 
-&ensp;&ensp;&ensp;&ensp;Step3：把药液从安瓿瓶中抽出：
+&ensp;&ensp;&ensp;&ensp;Step 3: Draw the medication out of the ampoule
 
-&ensp;&ensp;&ensp;&ensp;安瓿瓶瓶口有小点，把小点正对自己，向后掰就可以。
+&ensp;&ensp;&ensp;&ensp;There is a small dot on the neck of the ampoule. Face the dot toward yourself and snap the top backward.
 
-&ensp;&ensp;&ensp;&ensp;用注射器抽药业，最开始没什么要注意的（因为瓶比较满），剩余三分之一药液之后，倾斜安瓿瓶，把针轻轻贴在瓶壁的边缘（一定不要用力，要轻轻的，刚刚悬在那里最好，尽量避免针头被碰坏），然后缓慢的，一边加大倾斜的角度一边抽，抽到出气泡立刻停，然后轻轻推注射器排出气泡。对于初次操作者，这个时候，注射器里有0.8ml就算很棒了，即使操作熟练，抽取0.9ml就可以了，没有气泡比药液多更重要。
+&ensp;&ensp;&ensp;&ensp;When first drawing medication into the syringe, there is little to pay attention to because the ampoule is fairly full. Once only one-third of the medication remains, tilt the ampoule and rest the needle lightly near the edge of the ampoule wall. Do not use force; hold it very lightly, ideally just suspended there, and avoid damaging the needle. Then draw slowly while gradually increasing the tilt. Stop immediately when bubbles begin to appear, and gently press the plunger to expel them. For a first-time operator, getting 0.8ml into the syringe at this point is already excellent. Even with practice, drawing 0.9ml is enough. Having no bubbles is more important than having more liquid.
 
-&ensp;&ensp;&ensp;&ensp;Step4：进针。要点
+&ensp;&ensp;&ensp;&ensp;Step 4: Insert the needle. Key points:
 
-- 垂直进针
+- Insert the needle vertically
 
-- 肌肉放松
+- Keep the muscle relaxed
 
-- 可以双手，一手扶着一手推，减小紧张和手抖的影响
+- You can use both hands, with one hand stabilizing and the other pushing, to reduce the effects of nervousness and shaking
 
-- 针头扎到三分之二，停，要留一点针头在外边。
+- Insert two-thirds of the needle, then stop, leaving a small portion outside
 
-&ensp;&ensp;&ensp;&ensp;Step5：往回抽注射器，如果有血，立刻拔针，说明你扎进血管了。没有血则下一步。
+&ensp;&ensp;&ensp;&ensp;Step 5: Pull back on the plunger. If you see blood, withdraw the needle immediately; you have entered a blood vessel. If there is no blood, continue to the next step.
 
-&ensp;&ensp;&ensp;&ensp;Step6：缓慢推注射器，推快了肌肉会疼，慢一点就可以，如果手抖心慌，我有一个办法叫4-4-4呼吸法，深吸气4秒，屏住4秒，呼气4秒，然后再推注射器。
+&ensp;&ensp;&ensp;&ensp;Step 6: Press the plunger slowly. Pushing too quickly will make the muscle hurt, so go slowly. If your hands shake or you feel panicked, I use a method called 4-4-4 breathing: inhale deeply for 4 seconds, hold for 4 seconds, exhale for 4 seconds, and then continue pressing the plunger.
 
-&ensp;&ensp;&ensp;&ensp;Step7：注射完毕，一手拿棉签，一手拔针，把棉签按在针孔上，5分钟。
+&ensp;&ensp;&ensp;&ensp;Step 7: When the injection is complete, hold a cotton swab in one hand and withdraw the needle with the other. Press the swab over the puncture site for 5 minutes.
 
-&ensp;&ensp;&ensp;&ensp;注意：注射完毕后要休息一会，给腿部肌肉一点时间。
+&ensp;&ensp;&ensp;&ensp;Note: rest for a while after the injection to give the leg muscle some time.
 
-### 3.5  关于自制凝胶
+### 3.5 Homemade Gel
 
-&ensp;&ensp;&ensp;&ensp;由于经济条件的限制，有一部分跨性别者会自制凝胶使用（成本低廉）。所以，我完全站在如何降低成本的角度来建议自制凝胶的用药方案。（关于自制凝胶的教程可以在网上搜索，由于我没有制备过，只使用过，故不在此赘述。）
+&ensp;&ensp;&ensp;&ensp;Because of financial constraints, some transgender people use homemade gel because it is inexpensive. My recommendations for homemade-gel regimens are therefore entirely focused on reducing cost. Tutorials for making homemade gel can be found online. Because I have only used it and have never prepared it myself, I will not describe the process here.
 
-&ensp;&ensp;&ensp;&ensp;自制凝胶，单位体积的雌二醇含量往往是爱思妥的数倍，而我们的目的是：尽可能省钱的达到hrt效果，那么最经济的方案是：
+&ensp;&ensp;&ensp;&ensp;Homemade gel often contains several times as much estradiol per unit volume as Oestrogel. Our objective is to achieve the effects of HRT as cheaply as possible, so the most economical regimen is:
 
-&ensp;&ensp;&ensp;&ensp;假设自制凝胶是爱思妥的五倍浓度，那么用1尺，相当于7.5mg的雌二醇，2尺相当于15mg.换算下，每日使用8mg雌二醇的凝胶，这个剂量刚刚达到"高雌抗雄"的门槛。如果有色谱龙，就加6.25mg（微微推一下HPG轴，阻止睾丸的功能）；如果没有，就再加一点凝胶的用量。这种方案廉价，有效，是经济困难的跨性别的的一种选择。
+&ensp;&ensp;&ensp;&ensp;Assume that a homemade gel is five times as concentrated as Oestrogel. Using 1 measure would then be equivalent to 7.5mg estradiol, and 2 measures would be equivalent to 15mg. Converted accordingly, use gel containing 8mg estradiol per day. This dose just reaches the threshold for "high-estrogen androgen suppression." If you have Androcur, add 6.25mg to give the HPG axis a slight push and stop testicular function. If not, use a little more gel. This regimen is inexpensive and effective and is an option for transgender people with financial difficulties.
 
-### 3.6 关于含服
+### 3.6 Sublingual Administration
 
-&ensp;&ensp;&ensp;&ensp;诸如补佳乐，克龄蒙，诺坤复等口服雌二醇药物，可以尝试舌下含服。雌二醇分为经肝脏代谢吸收，和透皮吸收两种吸收模式。理论上，口服补佳乐的生物利用度只有3％，然而，含服补佳乐可以进入血液循环而不经肝脏，避免"首过效应"，生物利用度可以达到10％（理论上）。然而，不同人透皮吸收的效果不同，部分人对含服的吸收更好，也有一部分人含服的吸收效果并不好。因此，含服补佳乐可以作为尝试的选项，具体吞服还是含服因人而异。
+&ensp;&ensp;&ensp;&ensp;Oral estradiol medications such as Progynova, Climen, and Estrofem can be tried sublingually. Estradiol has two absorption pathways: absorption after hepatic metabolism and transdermal absorption. In theory, oral Progynova has a bioavailability of only 3%. Taking Progynova sublingually, however, can allow it to enter the circulation without passing through the liver, avoiding the "first-pass effect" and theoretically raising bioavailability to 10%. Transdermal absorption differs between people. Some people absorb medication better sublingually, while others do not absorb it well this way. Sublingual Progynova can therefore be tried as an option; whether swallowing or sublingual administration works better varies from person to person.
 
 
-## 4.药物相互作用
+## 4. Drug Interactions
 
-&ensp;&ensp;&ensp;&ensp;HRT所用的药物可能和很多药物产生相互作用，下面我列举了一部分常见的相互作用，请双相情感障碍患者和高血压患者尤其注意，这些相互作用非常可能影响药效，或导致不良反应。
+&ensp;&ensp;&ensp;&ensp;Medications used for HRT can interact with many other medications. Some common interactions are listed below. People with bipolar disorder and people with hypertension should pay particular attention, as these interactions are very likely to affect efficacy or cause adverse reactions.
 
-### 4.1 心理疾病常用药和HRT药物的相互作用
+### 4.1 Interactions Between Common Psychiatric Medications and HRT Medications
 
-#### 4.1.1 **（危险！！）碳酸锂和螺内酯**
+#### 4.1.1 **(DANGER!!) Lithium Carbonate and Spironolactone**
 
-&ensp;&ensp;&ensp;&ensp;碳酸锂（lithium carbonate）是一种用于双相情感障碍的药物。
+&ensp;&ensp;&ensp;&ensp;Lithium carbonate is a medication used for bipolar disorder.
 
-&ensp;&ensp;&ensp;&ensp;碳酸锂的特点是，这种药在血液里的安全范围窄。多一点点就会中毒（伤脑、伤肾），少一点点就无效（诱发躁狂或抑郁）。
+&ensp;&ensp;&ensp;&ensp;Lithium carbonate has a narrow therapeutic range in the blood. Slightly too much can cause toxicity, damaging the brain and kidneys, while slightly too little is ineffective and can precipitate mania or depression.
 
-&ensp;&ensp;&ensp;&ensp;而螺内酯是保钾利尿剂，会把体内的水和钠排出去，把钾留下来。这就造成了严重的问题：肾脏的"生存博弈"：
+&ensp;&ensp;&ensp;&ensp;Spironolactone is a potassium-sparing diuretic that removes water and sodium from the body while retaining potassium. This creates a serious problem in the kidney's "struggle for survival":
 
-&ensp;&ensp;&ensp;&ensp;锂离子（Li+）和钠离子（Na+）在化学性质上非常接近。肾脏在处理它们时，往往分不太清。螺内酯作为利尿剂，会强制让肾脏排出大量的钠和水分。而肾脏有"补偿机制"，当身体感觉到钠流失太快、水分不足时，肾脏会由于恐慌而启动"疯狂回收"模式，试图把尿液里的钠抓回来。然而不幸的是，肾脏分不清钠和锂。在拼命回收钠的同时，它会把碳酸锂也当成钠给大量重吸收回血液里。结果就是------**锂中毒**。
+&ensp;&ensp;&ensp;&ensp;Lithium ions (Li+) and sodium ions (Na+) have very similar chemical properties, and the kidneys often have difficulty distinguishing them. As a diuretic, spironolactone forces the kidneys to excrete large amounts of sodium and water. The kidneys have a "compensatory mechanism": when the body senses that sodium is being lost too quickly and water is insufficient, the kidneys panic and enter an "aggressive reabsorption" mode, attempting to reclaim sodium from the urine. Unfortunately, the kidneys cannot distinguish sodium from lithium. While frantically reabsorbing sodium, they also treat lithium from lithium carbonate as sodium and reabsorb large amounts into the bloodstream. The result is------**lithium toxicity**.
 
-&ensp;&ensp;&ensp;&ensp;因此，碳酸锂和螺内酯绝对不能同时服用！
+&ensp;&ensp;&ensp;&ensp;Lithium carbonate and spironolactone must therefore never be taken together!
 
-#### 4.1.2拉莫三嗪和戊酸雌二醇
+#### 4.1.2 Lamotrigine and Estradiol Valerate
 
-&ensp;&ensp;&ensp;&ensp;拉莫三嗪（Lamotrigen）是一种用于治疗癫痫和双相情感障碍的药物。这种药物对于双相障碍的抑郁格外有效，但是引发皮疹副作用的概率比较高。
+&ensp;&ensp;&ensp;&ensp;Lamotrigine is a medication used to treat epilepsy and bipolar disorder. It is particularly effective for depression in bipolar disorder, but it has a relatively high risk of causing a rash.
 
-&ensp;&ensp;&ensp;&ensp;拉莫三嗪通过肝脏的UGT1A4酶代谢，而戊酸雌二醇会诱导UGT1A4，增加UGT1A4的表达和活性，因此戊酸雌二醇和拉莫三嗪合用，会严重降低拉莫三嗪的血药浓度。如果使用拉莫三嗪，建议用针剂或凝胶摄入雌激素。
+&ensp;&ensp;&ensp;&ensp;Lamotrigine is metabolized by the hepatic enzyme UGT1A4, while estradiol valerate induces UGT1A4 and increases its expression and activity. Using estradiol valerate together with lamotrigine can therefore substantially lower the blood concentration of lamotrigine. If you use lamotrigine, estrogen should be administered by injection or gel.
 
-&ensp;&ensp;&ensp;&ensp;作者正在服用这两种药物，如果合用需要和医生详细沟通，查询文献和相关资料，制定具体的治疗方案。另：拉莫三嗪不可加药过快，拉莫三嗪应避免和丙戊酸盐合用。
+&ensp;&ensp;&ensp;&ensp;The author is taking both medications. If they are used together, discuss the combination in detail with a doctor, review the literature and relevant information, and create a specific treatment plan. In addition, lamotrigine must not be increased too quickly and should not be combined with valproate.
 
-#### 4.1.3利培酮和醋酸环丙孕酮
+#### 4.1.3 Risperidone and Cyproterone Acetate
 
-&ensp;&ensp;&ensp;&ensp;利培酮（Risperidone），是一种用于治疗精神分裂症和双相情感障碍的非典型抗精神病药物。
+&ensp;&ensp;&ensp;&ensp;Risperidone is an atypical antipsychotic used to treat schizophrenia and bipolar disorder.
 
-&ensp;&ensp;&ensp;&ensp;利培酮由于阻断D2受体，而多巴胺能抑制垂体分泌泌乳素，当多巴胺减少，泌乳素的分泌就会增加。（拆掉了刹车）
+&ensp;&ensp;&ensp;&ensp;Risperidone blocks D2 receptors. Dopamine inhibits pituitary prolactin secretion, so when dopamine is reduced, prolactin secretion increases. (The brake has been removed.)
 
-&ensp;&ensp;&ensp;&ensp;而醋酸环丙孕酮（色普龙）是孕激素，她会刺激垂体中的泌乳素细胞增殖。（踩上了油门）
+&ensp;&ensp;&ensp;&ensp;Cyproterone acetate (Androcur), meanwhile, is a progestogen that stimulates proliferation of prolactin-producing cells in the pituitary. (The accelerator has been pressed.)
 
-&ensp;&ensp;&ensp;&ensp;同时拆刹车和踩油门的效果是1+1 \> 2的，泌乳素在这种情况下，极有可能分泌过多，导致高泌乳素血症，增加垂体瘤风险，导致疲劳和抑郁，并导致泌乳。
+&ensp;&ensp;&ensp;&ensp;Removing the brake while pressing the accelerator produces an effect greater than 1+1 \> 2. Under these circumstances, prolactin is very likely to be secreted in excess, causing hyperprolactinemia, increasing the risk of pituitary tumors, causing fatigue and depression, and leading to lactation.
 
-&ensp;&ensp;&ensp;&ensp;因此应尽量避免色普龙和利培酮（帕利哌酮，氨磺必利，阻断D2受体的抗精神病药）共同使用。
+&ensp;&ensp;&ensp;&ensp;The concurrent use of Androcur and risperidone, or other D2-blocking antipsychotics such as paliperidone and amisulpride, should therefore be avoided whenever possible.
 
-### 4.2 高血压常用药和HRT药物的相互作用
+### 4.2 Interactions Between Common Antihypertensives and HRT Medications
 
-#### 4.2.1 **（危险！！）沙坦/普利类降压药和螺内酯**
+#### 4.2.1 **(DANGER!!) ARBs / ACE Inhibitors and Spironolactone**
 
-&ensp;&ensp;&ensp;&ensp;沙坦类降压药（血管紧张素Ⅱ受体拮抗剂，ARB），是主流的一线长效降压药，适用于轻、中、重度高血压，具有降压平稳、对心脏和肾脏保护作用强、副作用小（无干咳）的特点。
+&ensp;&ensp;&ensp;&ensp;Angiotensin II receptor blockers (ARBs) are mainstream first-line, long-acting antihypertensives suitable for mild, moderate, and severe hypertension. They provide stable blood-pressure reduction, strong protection for the heart and kidneys, and few adverse effects, without a dry cough.
 
-&ensp;&ensp;&ensp;&ensp;普利类降压药（血管紧张素转换酶抑制剂，ACEI），是一线长效降压药。这类药物不仅降压，还具有明确的肾脏保护和心脏保护作用，尤其适用于合并糖尿病、蛋白尿、心力衰竭或心肌梗死的高血压患者。
+&ensp;&ensp;&ensp;&ensp;Angiotensin-converting enzyme inhibitors (ACE inhibitors) are first-line, long-acting antihypertensives. In addition to lowering blood pressure, they clearly protect the kidneys and heart and are particularly suitable for people with hypertension together with diabetes, proteinuria, heart failure, or myocardial infarction.
 
-&ensp;&ensp;&ensp;&ensp;沙坦/普利类药物在降压的同时，都会抑制肾脏排泄钾离子的能力。
+&ensp;&ensp;&ensp;&ensp;Both ARBs and ACE inhibitors reduce the kidneys' ability to excrete potassium while lowering blood pressure.
 
-&ensp;&ensp;&ensp;&ensp;而螺内酯是保钾利尿剂，会阻止肾脏排出钾离子。
+&ensp;&ensp;&ensp;&ensp;Spironolactone is a potassium-sparing diuretic that prevents the kidneys from excreting potassium.
 
-&ensp;&ensp;&ensp;&ensp;二者叠加的效果就是会导致高血钾症------致命。高血钾会导致心率紊乱，严重可能导致心脏骤停，是非常危险的疾病。
+&ensp;&ensp;&ensp;&ensp;Combining the two can therefore cause hyperkalemia------which can be fatal. Hyperkalemia can cause abnormal heart rhythms and, in severe cases, cardiac arrest. It is a very dangerous condition.
 
-&ensp;&ensp;&ensp;&ensp;因此，绝对不能合用螺内酯和沙坦/普利类降压药。
+&ensp;&ensp;&ensp;&ensp;Spironolactone must therefore never be combined with an ARB or ACE inhibitor.
 
-#### 4.2.2 地平类降压药和螺内酯（可选合用）
+#### 4.2.2 Dihydropyridine Calcium-Channel Blockers and Spironolactone (Optional Combination)
 
-&ensp;&ensp;&ensp;&ensp;地平类药物（二氢吡啶类钙通道阻滞剂,CCB）是一种被广泛应用的降压药，具有强效扩张血管、抗心绞痛和抗动脉粥样硬化作用。
+&ensp;&ensp;&ensp;&ensp;Dihydropyridine calcium-channel blockers (CCBs) are widely used antihypertensives that strongly dilate blood vessels and have antianginal and anti-atherosclerotic effects.
 
-&ensp;&ensp;&ensp;&ensp;这类药物和螺内酯在跨性别女性的身体里，会上演一场关于"水盐平衡"的拉锯战。
+&ensp;&ensp;&ensp;&ensp;In the body of a transgender woman, these medications and spironolactone engage in a tug-of-war over "water and salt balance."
 
-&ensp;&ensp;&ensp;&ensp;地平类的工作：
-&ensp;&ensp;&ensp;&ensp;它们通过阻断钙离子进入血管平滑肌细胞，让血管"放松"并扩张，从而降低血压。但它有一个著名的副作用------外周水肿（尤其是脚踝肿胀）。这是因为血管扩张后，液体更容易从微血管渗出到组织间隙。
+&ensp;&ensp;&ensp;&ensp;What dihydropyridine CCBs do:
+&ensp;&ensp;&ensp;&ensp;They block calcium from entering vascular smooth-muscle cells, allowing blood vessels to "relax" and dilate and thereby lowering blood pressure. They have a well-known adverse effect, however: peripheral edema, especially swelling of the ankles. After blood vessels dilate, fluid leaks more readily from small vessels into the surrounding tissue.
 
-&ensp;&ensp;&ensp;&ensp;螺内酯的工作： 它是利尿剂，拼命想把体内的水分和钠赶走。
+&ensp;&ensp;&ensp;&ensp;What spironolactone does: it is a diuretic that tries hard to drive water and sodium out of the body.
 
-&ensp;&ensp;&ensp;&ensp;这样看起来，地平类药物和螺内酯是相互抵消的，他们二者合用是良好的降压方案。
+&ensp;&ensp;&ensp;&ensp;From this perspective, dihydropyridine CCBs and spironolactone counteract each other, and the combination is an effective antihypertensive regimen.
 
-&ensp;&ensp;&ensp;&ensp;但是也有一个隐患------体位性低血压。地平类撑大血管，同时螺内酯减少血容量，因此很容易造成体位性的低血压，注意不要突然起床，突然站起来，不要快速的改变体位。
+&ensp;&ensp;&ensp;&ensp;There is nevertheless a potential problem: orthostatic hypotension. Dihydropyridine CCBs widen blood vessels while spironolactone reduces blood volume, making orthostatic hypotension more likely. Do not get out of bed or stand up suddenly, and do not change position quickly.
 
-#### 4.2.3 螺内酯和其他利尿剂
+#### 4.2.3 Spironolactone and Other Diuretics
 
-&ensp;&ensp;&ensp;&ensp;其他利尿剂（例如氢氯噻嗪，呋塞米），和螺内酯合用的时候，会"联合利尿"。对于严重的全身水肿患者，这是有效的，但是对于普通人，这会造成灾难性的后果。强烈的利尿效果会导致极端的脱水，而保钾利尿剂和排钾利尿剂共同作用，会导致电解质的严重紊乱。一定不要合用！
+&ensp;&ensp;&ensp;&ensp;When other diuretics such as hydrochlorothiazide or furosemide are combined with spironolactone, they produce "combined diuresis." This can be effective for people with severe generalized edema, but it can have disastrous consequences for an ordinary person. The powerful diuretic effect can cause extreme dehydration, while the combined effects of a potassium-sparing and a potassium-wasting diuretic can cause severe electrolyte disturbances. Never combine them!
 
-### 4.3 抗生素 / 抗真菌药和HRT药物相互作用
+### 4.3 Interactions Between Antibiotics / Antifungals and HRT Medications
 
-#### 4.3.1 利福平和戊酸雌二醇
+#### 4.3.1 Rifampicin and Estradiol Valerate
 
-&ensp;&ensp;&ensp;&ensp;利福平（Rifampicin）又称立汎霉素，属于一种半合成广效性安沙霉素类抗生素，主要抑制细菌RNA的合成，有明显的杀菌作用。尤其对结核杆菌的感染有良好的治疗效果。
+&ensp;&ensp;&ensp;&ensp;Rifampicin, also known as rifampin, is a semisynthetic broad-spectrum rifamycin antibiotic. It primarily inhibits bacterial RNA synthesis and has a pronounced bactericidal effect. It is particularly effective against infections caused by Mycobacterium tuberculosis.
 
-&ensp;&ensp;&ensp;&ensp;然而，利福平是肝药酶（尤其是CYP3A4）最猛的"助燃剂"。它会让你的肝脏代谢速度提高好几倍。因此，戊酸雌二醇还没来得及发挥作用，就被肝脏当成"垃圾"给清理掉了。
+&ensp;&ensp;&ensp;&ensp;Rifampicin, however, is one of the most powerful "accelerators" of hepatic drug-metabolizing enzymes, especially CYP3A4. It can increase the liver's metabolic rate severalfold. Estradiol valerate is therefore cleared by the liver as "waste" before it has time to exert its effects.
 
-&ensp;&ensp;&ensp;&ensp;如果使用利福平，请用针剂或凝胶来摄入雌激素。
+&ensp;&ensp;&ensp;&ensp;If you use rifampicin, administer estrogen by injection or gel.
 
-#### 4.3.2酮康唑和戊酸雌二醇
+#### 4.3.2 Ketoconazole and Estradiol Valerate
 
-&ensp;&ensp;&ensp;&ensp;酮康唑（Ketoconazole），是一种广谱咪唑类抗真菌药，通过抑制真菌细胞膜麦角固醇合成来杀灭或抑制真菌。
+&ensp;&ensp;&ensp;&ensp;Ketoconazole is a broad-spectrum imidazole antifungal that kills or inhibits fungi by blocking ergosterol synthesis in fungal cell membranes.
 
-&ensp;&ensp;&ensp;&ensp;酮康唑的作用机理和利福平恰恰相反，它会死死锁住 CYP3A4酶，让肝脏处于"罢工"状态。此时雌激素无法被正常代谢，会在血液中不断堆积。这样会带来高的血栓风险，和肝损伤的风险。
+&ensp;&ensp;&ensp;&ensp;Ketoconazole acts in exactly the opposite way to rifampicin: it tightly blocks the CYP3A4 enzyme and puts the liver "on strike." Estrogen then cannot be metabolized normally and continues to accumulate in the blood. This creates a high risk of blood clots and liver injury.
 
-&ensp;&ensp;&ensp;&ensp;酮康唑的外用型影响不大，可以放心使用。如果口服酮康唑，请使用凝胶或针剂摄取雌激素。
+&ensp;&ensp;&ensp;&ensp;Topical ketoconazole has little effect and can be used without concern. If you take oral ketoconazole, use gel or injections for estrogen.
 
-### 4.4 降低肝肾代谢压力
+### 4.4 Reducing Metabolic Stress on the Liver and Kidneys
 
-&ensp;&ensp;&ensp;&ensp;HRT的药物，对肝肾的代谢压力主要来源于抗雄药物。色普龙对肝，螺内酯对肾，代谢压力都很大。因此，我们在药物选择上应该避免给同一个器官过大的代谢压力。
+&ensp;&ensp;&ensp;&ensp;The metabolic burden HRT medications place on the liver and kidneys comes mainly from antiandrogens. Androcur places a substantial burden on the liver, while spironolactone places one on the kidneys. Medication choices should therefore avoid placing an excessive metabolic burden on the same organ.
 
-&ensp;&ensp;&ensp;&ensp;对于严重疾病的用药，hrt必须给那种药让路。
+&ensp;&ensp;&ensp;&ensp;When medication is needed for a serious illness, HRT must give way to that medication.
 
-&ensp;&ensp;&ensp;&ensp;前文中我们提到，碳酸锂和螺内酯联用是危险的。那么，假设一个双相患者，她有三种主流的心境稳定剂，必须选一种：碳酸锂，丙戊酸钠（丙戊酸镁），拉莫三嗪。那么：
+&ensp;&ensp;&ensp;&ensp;As noted above, combining lithium carbonate and spironolactone is dangerous. Suppose a person with bipolar disorder must choose one of three mainstream mood stabilizers: lithium carbonate, sodium valproate (or magnesium valproate), or lamotrigine. In that case:
 
-&ensp;&ensp;&ensp;&ensp;首先根据双相的分型，典型的双相一型碳酸锂最合适，双相二型拉莫三嗪最合适，双相混合型丙戊酸盐最合适。
+&ensp;&ensp;&ensp;&ensp;First consider the bipolar subtype. Lithium carbonate is most suitable for typical bipolar I disorder, lamotrigine for bipolar II disorder, and valproate for bipolar disorder with mixed features.
 
-- 如果用碳酸锂：方案剩下：口服/凝胶雌+色，日雌
+- If using lithium carbonate, the remaining regimens are oral estrogen / gel + Androcur, or Progynon Depot.
 
-- 如果用丙戊酸盐：口服/凝胶雌+螺，日雌，口服/凝胶雌+色（色剂量要小，适当增加雌剂量）（丙戊酸对肝负担大）
+- If using valproate, the options are oral estrogen / gel + spironolactone; Progynon Depot; or oral estrogen / gel + Androcur, with a low Androcur dose and an appropriately increased estrogen dose, because valproate places a substantial burden on the liver.
 
-- 如果用拉莫三嗪：凝胶+色，凝胶+螺，日雌（拉莫三嗪代谢压力不大）
+- If using lamotrigine, the options are gel + Androcur, gel + spironolactone, or Progynon Depot, because lamotrigine does not create much metabolic burden.
 
-&ensp;&ensp;&ensp;&ensp;选择HRT方案之前，必须要看现有服用药物的说明书，注意关键词UGT1A4，CYP3A4，一旦出现，就要格外警惕药物的相互作用。
+&ensp;&ensp;&ensp;&ensp;Before choosing an HRT regimen, you must read the package inserts for medications you already take and look for the keywords UGT1A4 and CYP3A4. If either appears, be especially alert to drug interactions.
 
 
-## 5.医疗监测
+## 5. Medical Monitoring
 
-&ensp;&ensp;&ensp;&ensp;在HRT的过程中，在有条件的情况下，最好进行定期的医疗检测。这是确保安全和有效HRT的基础，能够提前预防肝肾的损伤，并且调整到最合适的HRT方案。而我们最需要做的检查只有两种：激素和生化。
+&ensp;&ensp;&ensp;&ensp;During HRT, regular medical testing is advisable whenever circumstances permit. It is fundamental to safe and effective HRT, can help prevent liver and kidney damage in advance, and can support adjustment to the most suitable regimen. The two kinds of tests we most need are hormone tests and blood-chemistry tests.
 
-### 5.1激素六项
+### 5.1 Six-Hormone Panel
 
-<img src="/doc_images/hormone_test.jpeg" alt="hormone test" width="260" /> 
+<img src="/doc_images/hormone_test.jpeg" alt="hormone test" width="260" />
 
-<div style="text-align: center;">图5.1 激素六项示意图</div>
+<div style="text-align: center;">Figure 5.1 Example of a six-hormone panel</div>
 
-&ensp;&ensp;&ensp;&ensp;大部分的医院，在测量激素时都是六项：促卵泡生成素(FSH)、促黄体生成素(LH)、雌二醇(E2)、孕酮(P)、睾酮(T)和泌乳素(PRL)。对于跨性别女性而言，关注其中的3项即可：雌二醇(E2)、睾酮(T)和泌乳素(PRL)。如果能在检查时，让医生只开三项（雌二醇，睾酮，泌乳素），能节约一些成本。
+&ensp;&ensp;&ensp;&ensp;Most hospitals measure six hormones: follicle-stimulating hormone (FSH), luteinizing hormone (LH), estradiol (E2), progesterone (P), testosterone (T), and prolactin (PRL). Transgender women only need to focus on three of them: estradiol (E2), testosterone (T), and prolactin (PRL). If a doctor can order only these three tests, estradiol, testosterone, and prolactin, it can save some money.
 
-&ensp;&ensp;&ensp;&ensp;雌二醇的范围：对于雌+抗雄方案，维持在100pg/mL（360pmol/L）以上，对于针剂，如果单雌抗雄,建议维持在150pg/mL（550pmol/L）以上，并且在谷值少量补充雌激素 / 色普龙。
+&ensp;&ensp;&ensp;&ensp;Estradiol range: for an estrogen-plus-antiandrogen regimen, maintain a level above 100pg/mL (360pmol/L). For injections used as estrogen-only androgen suppression, a level above 150pg/mL (550pmol/L) is recommended, with a small supplement of estrogen / Androcur at the trough.
 
-&ensp;&ensp;&ensp;&ensp;睾酮的范围：对于单雌抗雄和雌+色，睾酮的范围应该在70ng/dL（2.4nmol/L）以下。对于螺内酯抗雄，睾酮不会下降很多，只要别高于参考的"顺性别男性范围"就ok。
+&ensp;&ensp;&ensp;&ensp;Testosterone range: for estrogen-only androgen suppression and estrogen + Androcur, testosterone should remain below 70ng/dL (2.4nmol/L). With spironolactone for androgen suppression, testosterone will not fall as much; it is acceptable as long as it does not exceed the reference "cisgender male range."
 
-&ensp;&ensp;&ensp;&ensp;泌乳素的范围：理想的范围是低于25ng/mL（25μg/L），然而在用药中，泌乳素很可能会高于此值，只要不高于50ng/mL,就不必过于担心。如果高于这个范围，对于跨性别女性来说，很可能导致骨质疏松和泌乳。
+&ensp;&ensp;&ensp;&ensp;Prolactin range: the ideal level is below 25ng/mL (25μg/L). During medication use, however, prolactin may well rise above this value. There is no need for excessive concern as long as it does not exceed 50ng/mL. In transgender women, a level above this range may cause osteoporosis and lactation.
 
-### 5.2 生化检查
+### 5.2 Blood-Chemistry Tests
 
-&ensp;&ensp;&ensp;&ensp;生化检验指通过用生物或化学的方法对人体血液成分进行分析从而来对人进行身体检查。不同的医院，生化组套检验的项目会有差别，但大致的项目不会相差太大。例如回龙观的大生化有41项，而安定医院的生化只有26项，但是那都不重要，我们只需要关注其中的三个部分：肝功，肾功，电解质。
+&ensp;&ensp;&ensp;&ensp;Blood-chemistry testing uses biological or chemical methods to analyze components of a person's blood and assess their physical health. Test panels differ between hospitals, but their general contents are similar. For example, the comprehensive chemistry panel at Huilongguan Hospital contains 41 items, while the chemistry panel at Anding Hospital contains only 26. That difference is not important; we need to focus on only three areas: liver function, kidney function, and electrolytes.
 
-#### 5.2.1 肝功能
+#### 5.2.1 Liver Function
 
-<img src="/doc_images/liver_test.jpeg" alt="liver test" width="260" /> 
+<img src="/doc_images/liver_test.jpeg" alt="liver test" width="260" />
 
-<div style="text-align: center;">图5.2肝功能示意图</div>
+<div style="text-align: center;">Figure 5.2 Example liver-function results</div>
 
-&ensp;&ensp;&ensp;&ensp;对于肝功能，关注2项：
+&ensp;&ensp;&ensp;&ensp;For liver function, focus on two measurements:
 
-- 丙氨酸氨基转移酶（ALT,又称谷丙转氨酶）；
+- Alanine aminotransferase (ALT), also called glutamic-pyruvic transaminase
 
-- 天冬氨酸氨基转移酶（AST,又称谷草转氨酶）。
+- Aspartate aminotransferase (AST), also called glutamic-oxaloacetic transaminase
 
-&ensp;&ensp;&ensp;&ensp;这两个转氨酶，低了没事，如果高出正常范围需要格外注意肝脏损伤的风险，如果用色普龙HRT,请停掉并且换方案。
+&ensp;&ensp;&ensp;&ensp;Low levels of these two transaminases are not a problem. If either exceeds the normal range, pay particular attention to the risk of liver injury. If you use Androcur for HRT, stop it and change regimens.
 
-#### 5.2.2 肾功能
+#### 5.2.2 Kidney Function
 
-<img src="/doc_images/kidney_test.jpeg" alt="kidney test" width="260" /> 
+<img src="/doc_images/kidney_test.jpeg" alt="kidney test" width="260" />
 
-<div style="text-align: center;">图5.3肾功能示意图</div>
+<div style="text-align: center;">Figure 5.3 Example kidney-function results</div>
 
-&ensp;&ensp;&ensp;&ensp;对于肾功能，主要关注1项：肌酐。只要超出正常范围，就要格外关注。如果使用螺内酯HRT,请立即停药并尝试其他方案。
+&ensp;&ensp;&ensp;&ensp;For kidney function, focus mainly on one measurement: creatinine. Any level above the normal range requires particular attention. If you use spironolactone for HRT, stop it immediately and try another regimen.
 
-&ensp;&ensp;&ensp;&ensp;另外：雌激素会降低尿酸（只是把高于正常值的降下来），能降低中风的发病风险。这张图是我断糖两个月测的，因此尿酸很高。
+&ensp;&ensp;&ensp;&ensp;In addition, estrogen lowers uric acid, but only when it is above the normal range, and can reduce the risk of stroke. This image shows my results after two months without sugar, so my uric acid level was very high.
 
-#### 5.2.3 电解质
+#### 5.2.3 Electrolytes
 
-<img src="/doc_images/electrolyte_test.jpeg" alt="electrolyte test" width="260" /> 
+<img src="/doc_images/electrolyte_test.jpeg" alt="electrolyte test" width="260" />
 
-<div style="text-align: center;">图5.4电解质示意图</div>
+<div style="text-align: center;">Figure 5.4 Example electrolyte results</div>
 
-&ensp;&ensp;&ensp;&ensp;关于电解质，同样只需要重点关注1项：钾。高血钾极其危险，一旦发生，立即停用螺内酯。另外，HRT初期摄入雌二醇可能会导致一过性的水钠潴留，但是绝大多数都会自行缓解。
+&ensp;&ensp;&ensp;&ensp;For electrolytes, likewise, only one measurement needs particular attention: potassium. Hyperkalemia is extremely dangerous. If it occurs, stop spironolactone immediately. Also, taking estradiol early in HRT may cause transient water and sodium retention, but in the vast majority of cases it resolves on its own.
 
-## 6.结语
+## 6. Conclusion
 
-&ensp;&ensp;&ensp;&ensp;感谢您阅读本文，如果本文能给你帮助，哪怕只是一点微小的帮助，作者也会因此感到快乐和荣幸。
+&ensp;&ensp;&ensp;&ensp;Thank you for reading this article. If it helps you, even in the smallest way, the author will feel happy and honored.
 
-&ensp;&ensp;&ensp;&ensp;请谨记，无论何时，安全和科学都是第一位的，我们了解身体的运转机制，监测身体的数据，是为了能安全地、长久地走在这条充满鲜花和荆棘的路上。
+&ensp;&ensp;&ensp;&ensp;Please remember that safety and scientific understanding must always come first. We learn how the body works and monitor its data so that we can travel safely and for a long time along this road filled with flowers and thorns.
 
-&ensp;&ensp;&ensp;&ensp;对于跨性别者而言，我们生来需要面对比顺性别者更多的艰难和挑战，有些人可能遭遇歧视和虐待，忍受贫穷和饥饿，这注定是一条充满困难的道路，所以我想在文章的最后，分享给本文的读者一段话，来源于大仲马的《基督山伯爵》：
+&ensp;&ensp;&ensp;&ensp;Transgender people are born facing more difficulties and challenges than cisgender people. Some may encounter discrimination and abuse or endure poverty and hunger. This is inevitably a difficult road. At the end of the article, I therefore want to share with readers a passage from Alexandre Dumas's *The Count of Monte Cristo*:
 
 &ensp;&ensp;&ensp;&ensp;"Vivez donc et soyez heureux, enfants chéris de mon cœur, et n\'oubliez jamais que, jusqu\'au jour où Dieu daignera dévoiler l\'avenir à l\'homme, toute la sagesse humaine sera dans ces deux mots : Attendre et espérer !"
 
-&ensp;&ensp;&ensp;&ensp;"所以，活下去并获得幸福吧，我心爱的孩子们。永远不要忘记：在上帝愿意向人类揭示未来之前，人类全部的智慧都包含在这两个词中：**等待与希望**。"
+&ensp;&ensp;&ensp;&ensp;"Live, then, and be happy, beloved children of my heart, and never forget that until the day when God deigns to reveal the future to humankind, all human wisdom is contained in these two words: **Wait and hope**."

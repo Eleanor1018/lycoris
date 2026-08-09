@@ -74,7 +74,7 @@ export default function AdminUsers() {
             setResult(res.data)
             setError(null)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '加载用户列表失败'))
+            setError(getErrorMessage(e, 'Could not load the user list.'))
         } finally {
             setLoading(false)
         }
@@ -86,24 +86,24 @@ export default function AdminUsers() {
 
     const resetPassword = async (user: AdminUser) => {
         if (user.deleted) {
-            setError('已删除用户不能重置密码')
+            setError('A deleted user cannot have their password reset.')
             return
         }
         try {
             await axios.post(`/api/admin/users/${user.id}/reset-password`, null, { withCredentials: true })
             setError(null)
-            alert(`已将用户 ${user.username} 重置为默认密码`)
+            alert(`${user.username}'s password has been reset to the default password.`)
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '重置密码失败'))
+            setError(getErrorMessage(e, 'Could not reset the password.'))
         }
     }
 
     const deleteUser = async (user: AdminUser) => {
         if (user.deleted) {
-            setError('该用户已是删除状态')
+            setError('This user is already deleted.')
             return
         }
-        const ok = window.confirm(`确定删除用户 ${user.username} 吗？`)
+        const ok = window.confirm(`Delete user ${user.username}?`)
         if (!ok) return
         try {
             await axios.delete(`/api/admin/users/${user.id}`, { withCredentials: true })
@@ -113,16 +113,16 @@ export default function AdminUsers() {
                 void loadUsers()
             }
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '删除用户失败'))
+            setError(getErrorMessage(e, 'Could not delete the user.'))
         }
     }
 
     const restoreUser = async (user: AdminUser) => {
         if (!user.deleted) {
-            setError('该用户无需恢复')
+            setError('This user does not need to be restored.')
             return
         }
-        const ok = window.confirm(`确定恢复用户 ${user.username} 吗？`)
+        const ok = window.confirm(`Restore user ${user.username}?`)
         if (!ok) return
         try {
             await axios.post(`/api/admin/users/${user.id}/restore`, null, { withCredentials: true })
@@ -132,7 +132,7 @@ export default function AdminUsers() {
                 void loadUsers()
             }
         } catch (e: unknown) {
-            setError(getErrorMessage(e, '恢复用户失败'))
+            setError(getErrorMessage(e, 'Could not restore the user.'))
         }
     }
 
@@ -145,10 +145,10 @@ export default function AdminUsers() {
         <Box sx={{ px: { xs: 2, md: 4 }, py: { xs: 3, md: 4 }, overflowX: 'hidden' }}>
             <Stack spacing={2} sx={{ minWidth: 0 }}>
                 <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                    管理后台 · 用户管理
+                    Admin · User management
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    支持查询用户、删除用户、恢复用户、重置默认密码。
+                    Search, delete, restore, and reset passwords for user accounts.
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -156,13 +156,13 @@ export default function AdminUsers() {
                 <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                     <TextField
                         size="small"
-                        label="搜索用户名/昵称/邮箱"
+                        label="Search username, display name, or email"
                         value={qInput}
                         onChange={(e) => setQInput(e.target.value)}
                         fullWidth
                     />
                     <Button variant="contained" onClick={onSearch} sx={adminContainedButtonSx}>
-                        查询
+                        Search
                     </Button>
                 </Stack>
 
@@ -175,9 +175,9 @@ export default function AdminUsers() {
                         <Paper sx={{ p: 2, bgcolor: '#fff3f3', border: '1px solid #f5c2c2' }}>
                             <Typography color="error">{String(error)}</Typography>
                         </Paper>
-                        {String(error).includes('二级密码') ? (
+                        {/secondary (passcode|password)/i.test(String(error)) ? (
                             <Button variant="contained" onClick={() => navigate('/admin')} sx={adminContainedButtonSx}>
-                                去管理入口验证二级密码
+                                Verify the secondary passcode
                             </Button>
                         ) : null}
                     </Stack>
@@ -185,7 +185,7 @@ export default function AdminUsers() {
                     <Stack spacing={2}>
                         {result.items.length === 0 ? (
                             <Paper sx={{ p: 2 }}>
-                                <Typography color="text.secondary">没有找到用户</Typography>
+                                <Typography color="text.secondary">No users found.</Typography>
                             </Paper>
                         ) : (
                             result.items.map((user) => (
@@ -196,16 +196,16 @@ export default function AdminUsers() {
                                                 {user.username}
                                             </Typography>
                                             <Chip size="small" label={user.role || 'USER'} />
-                                            {user.deleted ? <Chip size="small" color="warning" label="已删除" /> : null}
+                                            {user.deleted ? <Chip size="small" color="warning" label="Deleted" /> : null}
                                         </Stack>
                                         <Typography variant="body2" color="text.secondary">
-                                            昵称：{user.nickname || '（空）'}
+                                            Display name: {user.nickname || '(empty)'}
                                         </Typography>
                                         <Typography variant="body2" color="text.secondary">
-                                            邮箱：{user.email || '（空）'}
+                                            Email: {user.email || '(empty)'}
                                         </Typography>
                                         <Typography variant="caption" color="text.secondary">
-                                            ID：{user.id} · PublicID：{user.publicId || '（空）'}
+                                            ID: {user.id} · Public ID: {user.publicId || '(empty)'}
                                         </Typography>
                                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                                             <Button
@@ -214,7 +214,7 @@ export default function AdminUsers() {
                                                 disabled={Boolean(user.deleted)}
                                                 sx={adminOutlinedButtonSx}
                                             >
-                                                重置默认密码
+                                                Reset to default password
                                             </Button>
                                             <Button
                                                 variant="text"
@@ -222,7 +222,7 @@ export default function AdminUsers() {
                                                 onClick={() => void deleteUser(user)}
                                                 disabled={Boolean(user.deleted)}
                                             >
-                                                删除用户
+                                                Delete user
                                             </Button>
                                             <Button
                                                 variant="text"
@@ -230,7 +230,7 @@ export default function AdminUsers() {
                                                 onClick={() => void restoreUser(user)}
                                                 disabled={!user.deleted}
                                             >
-                                                恢复用户
+                                                Restore user
                                             </Button>
                                         </Stack>
                                     </Stack>

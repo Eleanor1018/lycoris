@@ -37,7 +37,7 @@ class AdminSecondFactorToggleTest {
         ResponseEntity<?> response = controller.pendingList(new MockHttpSession());
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isEqualTo("需要二级密码");
+        assertThat(response.getBody()).isEqualTo("Secondary password verification required");
         verify(markerService, never()).listPendingReview();
     }
 
@@ -79,7 +79,7 @@ class AdminSecondFactorToggleTest {
         ResponseEntity<?> response = controller.listUsers(0, 10, null, mock(HttpSession.class));
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.FORBIDDEN);
-        assertThat(response.getBody()).isEqualTo("需要二级密码");
+        assertThat(response.getBody()).isEqualTo("Secondary password verification required");
         verify(userService, never()).searchForAdmin(any(), any());
     }
 }

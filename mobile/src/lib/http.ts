@@ -63,7 +63,7 @@ export const requestJson = async <T>(
       'name' in error &&
       (error as {name?: unknown}).name === 'AbortError'
     ) {
-      throw new ApiError(408, `请求超时（>${timeoutMs}ms）`);
+      throw new ApiError(408, `Request timed out (>${timeoutMs} ms)`);
     }
     throw error;
   }

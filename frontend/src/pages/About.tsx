@@ -95,7 +95,7 @@ export default function About() {
             .catch((e) => {
                 if (!alive) return
                 setErr(String(e?.message ?? e))
-                setContent('# 文档加载失败')
+                setContent('# Could not load this page')
                 setTocItems([])
             })
 
@@ -137,7 +137,7 @@ export default function About() {
                         }}
                     >
                         <ListItemText
-                            primary="关于夏水仙"
+                            primary="About Lycoris"
                             primaryTypographyProps={{ fontSize: 16, fontWeight: 700, lineHeight: 1.55 }}
                         />
                         {aboutOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
@@ -154,7 +154,7 @@ export default function About() {
                                 py: 0.5,
                             }}
                         >
-                            <List dense disablePadding aria-label="关于页目录">
+                            <List dense disablePadding aria-label="About page table of contents">
                                 {tocItems.map((item) => (
                                     <ListItemButton
                                         key={item.id}
@@ -239,7 +239,7 @@ export default function About() {
                             variant="body2"
                             sx={{ mt: 0.75, color: 'var(--ly-color-muted)' }}
                         >
-                            关于目录
+                            Contents
                         </Typography>
                     </Box>
                     <Box sx={{ height: 'calc(100% - 78px)', overflowY: 'auto', py: 0.75 }}>
@@ -274,7 +274,7 @@ export default function About() {
             {isMobile && (
                 <IconButton
                     onClick={() => setMobileOpen(true)}
-                    aria-label="打开关于页目录"
+                    aria-label="Open About page table of contents"
                     sx={{
                         position: 'fixed',
                         right: 16,

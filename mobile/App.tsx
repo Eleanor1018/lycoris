@@ -110,19 +110,19 @@ const navigationTheme = {
 const tabRoutes: AppRoute[] = [
   {
     key: 'maps',
-    title: '地图',
+    title: 'Map',
     focusedIcon: 'map',
     unfocusedIcon: 'map-outline',
   },
   {
     key: 'docs',
-    title: '文档',
+    title: 'Guides',
     focusedIcon: 'file-document',
     unfocusedIcon: 'file-document-outline',
   },
   {
     key: 'me',
-    title: '我的',
+    title: 'Me',
     focusedIcon: 'account',
     unfocusedIcon: 'account-outline',
   },

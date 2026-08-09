@@ -25,7 +25,7 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
                     overflow: 'hidden',
                     '&:hover': { bgcolor: 'transparent', opacity: 0.92 },
                 }}
-                aria-label="打开个人中心"
+                aria-label="Open profile"
             >
                 <Avatar src={resolvedAvatarUrl} sx={{ width: 54, height: 54, bgcolor: 'transparent' }}>
                     <PersonOutlineIcon sx={{ color: 'var(--ly-color-ink)' }} />
@@ -54,7 +54,7 @@ export default function AuthButtons({ isLoggedIn, avatarUrl }: AuthButtonsProps)
                 '&:hover': { bgcolor: '#c8afff' },
             }}
         >
-            登录/注册
+            Log in / Sign up
         </Button>
     )
 }

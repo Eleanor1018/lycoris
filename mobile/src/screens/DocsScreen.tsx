@@ -37,7 +37,7 @@ type TocItem = {
 const DOCS: DocEntry[] = [
   {
     slug: 'nora-hrt-guide',
-    title: '雪雁的HRT指南',
+    title: "Nora's HRT Guide (MTF)",
     markdown: noraHrtGuideMarkdownRaw,
   },
 ];
@@ -100,7 +100,8 @@ const normalizeMarkdown = (input: string) =>
         return '';
       }
 
-      const alt = attrs.match(/\balt\s*=\s*['"]([^'"]*)['"]/i)?.[1]?.trim() ?? '';
+      const alt =
+        attrs.match(/\balt\s*=\s*['"]([^'"]*)['"]/i)?.[1]?.trim() ?? '';
       return `\n![${alt}](${src})\n`;
     })
     .replace(/<div[^>]*>(.*?)<\/div>/gi, (_full, body: string) => {
@@ -138,7 +139,9 @@ const extractNodeText = (node?: ASTNode): string => {
     return content;
   }
 
-  return `${content}${node.children.map(child => extractNodeText(child)).join('')}`;
+  return `${content}${node.children
+    .map(child => extractNodeText(child))
+    .join('')}`;
 };
 
 export function DocsScreen() {
@@ -250,19 +253,20 @@ export function DocsScreen() {
           level === 1
             ? styles.mdH1
             : level === 2
-              ? styles.mdH2
-              : level === 3
-                ? styles.mdH3
-                : level === 4
-                  ? styles.mdH4
-                  : styles.mdH5;
+            ? styles.mdH2
+            : level === 3
+            ? styles.mdH3
+            : level === 4
+            ? styles.mdH4
+            : styles.mdH5;
 
         return (
           <View
             key={node.key}
             onLayout={event => {
               headingOffsetsRef.current[headingId] = event.nativeEvent.layout.y;
-            }}>
+            }}
+          >
             <Text style={headingStyle}>{children}</Text>
           </View>
         );
@@ -289,10 +293,17 @@ export function DocsScreen() {
         if (svgXml) {
           return (
             <View key={node.key} style={styles.imageWrap}>
-              <View style={[styles.svgCard, {width: imageWidth, height: imageHeight}]}>
+              <View
+                style={[
+                  styles.svgCard,
+                  {width: imageWidth, height: imageHeight},
+                ]}
+              >
                 <SvgXml xml={svgXml} width="100%" height="100%" />
               </View>
-              {altText ? <Text style={styles.imageCaption}>{altText}</Text> : null}
+              {altText ? (
+                <Text style={styles.imageCaption}>{altText}</Text>
+              ) : null}
             </View>
           );
         }
@@ -303,10 +314,15 @@ export function DocsScreen() {
           <View key={node.key} style={styles.imageWrap}>
             <Image
               source={source}
-              style={[styles.markdownImage, {width: imageWidth, height: imageHeight}]}
+              style={[
+                styles.markdownImage,
+                {width: imageWidth, height: imageHeight},
+              ]}
               resizeMode="contain"
             />
-            {altText ? <Text style={styles.imageCaption}>{altText}</Text> : null}
+            {altText ? (
+              <Text style={styles.imageCaption}>{altText}</Text>
+            ) : null}
           </View>
         );
       },
@@ -316,10 +332,10 @@ export function DocsScreen() {
   const drawerContent = (
     <View style={styles.drawerInner}>
       <View style={styles.drawerHeader}>
-        <Text style={styles.drawerTitle}>阅读目录</Text>
+        <Text style={styles.drawerTitle}>Reading menu</Text>
       </View>
 
-      <Text style={styles.drawerSectionTitle}>文档</Text>
+      <Text style={styles.drawerSectionTitle}>Guides</Text>
       <View style={styles.drawerCard}>
         {DOCS.map(doc => (
           <Pressable
@@ -330,41 +346,51 @@ export function DocsScreen() {
             style={[
               styles.drawerItem,
               activeDoc.slug === doc.slug ? styles.drawerItemActive : null,
-            ]}>
+            ]}
+          >
             <Text
               style={[
                 styles.drawerItemTitle,
-                activeDoc.slug === doc.slug ? styles.drawerItemTitleActive : null,
-              ]}>
+                activeDoc.slug === doc.slug
+                  ? styles.drawerItemTitleActive
+                  : null,
+              ]}
+            >
               {doc.title}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={[styles.drawerSectionTitle, styles.tocHeading]}>当前文章</Text>
+      <Text style={[styles.drawerSectionTitle, styles.tocHeading]}>
+        On this page
+      </Text>
       <ScrollView
         style={styles.tocScroll}
         contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.tocContent}
-        showsVerticalScrollIndicator={false}>
+        showsVerticalScrollIndicator={false}
+      >
         {tocItems.length === 0 ? (
-          <Text style={styles.tocEmpty}>当前文档没有可用目录</Text>
+          <Text style={styles.tocEmpty}>
+            No sections are available for this guide.
+          </Text>
         ) : (
           tocItems.map(item => (
             <Pressable
               key={item.id}
               onPress={() => onSelectToc(item.id)}
               accessibilityRole="button"
-              accessibilityLabel={`跳转到${item.text}`}
+              accessibilityLabel={`Jump to ${item.text}`}
               style={[
                 styles.tocItem,
                 item.level === 2
                   ? styles.tocLevel2
                   : item.level === 3
-                    ? styles.tocLevel3
-                    : styles.tocLevel4,
-              ]}>
+                  ? styles.tocLevel3
+                  : styles.tocLevel4,
+              ]}
+            >
               <Text style={styles.tocText} numberOfLines={2}>
                 {item.text}
               </Text>
@@ -378,19 +404,18 @@ export function DocsScreen() {
   return (
     <View style={styles.page}>
       <PageBackground />
-      <View
-        style={[
-          styles.layout,
-          {paddingTop: Math.max(14, insets.top + 6)},
-        ]}>
-        {isWideLayout ? <View style={styles.desktopDrawer}>{drawerContent}</View> : null}
+      <View style={[styles.layout, {paddingTop: Math.max(14, insets.top + 6)}]}>
+        {isWideLayout ? (
+          <View style={styles.desktopDrawer}>{drawerContent}</View>
+        ) : null}
 
         <View style={styles.contentArea}>
           <View style={styles.readerChrome}>
             <Text
               accessibilityRole="header"
               numberOfLines={1}
-              style={styles.readerTitle}>
+              style={styles.readerTitle}
+            >
               {activeDoc.title}
             </Text>
             {!isWideLayout ? (
@@ -400,7 +425,7 @@ export function DocsScreen() {
                 mode="contained"
                 containerColor={colors.primarySoft}
                 iconColor={colors.primary}
-                accessibilityLabel="打开阅读目录"
+                accessibilityLabel="Open reading menu"
                 onPress={() => setDrawerOpen(true)}
                 style={styles.menuButton}
               />
@@ -411,12 +436,14 @@ export function DocsScreen() {
             style={styles.scroll}
             contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.scrollContent}
-            showsVerticalScrollIndicator={false}>
+            showsVerticalScrollIndicator={false}
+          >
             <View
               style={[
                 styles.markdownCard,
                 !isWideLayout ? styles.markdownCardMobile : null,
-              ]}>
+              ]}
+            >
               <Text style={styles.docManualTitle}>{displayTitle}</Text>
               <View style={styles.titleRule} />
               <Markdown
@@ -425,7 +452,8 @@ export function DocsScreen() {
                 onLinkPress={url => {
                   openUrl(url).catch(() => {});
                   return false;
-                }}>
+                }}
+              >
                 {markdown}
               </Markdown>
             </View>
@@ -438,7 +466,8 @@ export function DocsScreen() {
           transparent
           animationType="fade"
           visible={drawerOpen}
-          onRequestClose={() => setDrawerOpen(false)}>
+          onRequestClose={() => setDrawerOpen(false)}
+        >
           <View style={styles.modalRoot}>
             <View
               style={[
@@ -447,13 +476,14 @@ export function DocsScreen() {
                   paddingTop: Math.max(0, insets.top - 8),
                   paddingBottom: Math.max(0, insets.bottom - 8),
                 },
-              ]}>
+              ]}
+            >
               {drawerContent}
             </View>
             <Pressable
               style={styles.modalBackdrop}
               accessibilityRole="button"
-              accessibilityLabel="关闭阅读目录"
+              accessibilityLabel="Close reading menu"
               onPress={() => setDrawerOpen(false)}
             />
           </View>

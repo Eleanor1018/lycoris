@@ -12,7 +12,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MaxUploadSizeExceededException.class)
     public ResponseEntity<ApiResponse<Void>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
         return ResponseEntity.status(413)
-                .body(ApiResponse.error(413, "上传文件过大，请选择 5MB 以内的图片"));
+                .body(ApiResponse.error(413, "File too large. Please choose an image under 5 MB."));
     }
 }
 
