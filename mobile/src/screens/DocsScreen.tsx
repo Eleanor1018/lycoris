@@ -345,6 +345,7 @@ export function DocsScreen() {
       <Text style={[styles.drawerSectionTitle, styles.tocHeading]}>当前文章</Text>
       <ScrollView
         style={styles.tocScroll}
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.tocContent}
         showsVerticalScrollIndicator={false}>
         {tocItems.length === 0 ? (
@@ -408,6 +409,7 @@ export function DocsScreen() {
           <ScrollView
             ref={scrollRef}
             style={styles.scroll}
+            contentInsetAdjustmentBehavior="automatic"
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}>
             <View

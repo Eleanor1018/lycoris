@@ -598,6 +598,7 @@ export function MeScreen({
 
         <ScrollView
           style={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.aboutContent}
           showsVerticalScrollIndicator={false}
         >
@@ -640,6 +641,7 @@ export function MeScreen({
 
         <ScrollView
           style={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.listContent}
           showsVerticalScrollIndicator={false}
         >
@@ -809,6 +811,7 @@ export function MeScreen({
 
         <ScrollView
           style={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.formScrollContent}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
@@ -942,6 +945,7 @@ export function MeScreen({
         />
         <ScrollView
           style={styles.scroll}
+          contentInsetAdjustmentBehavior="automatic"
           contentContainerStyle={styles.formScrollContent}
           keyboardDismissMode="on-drag"
           keyboardShouldPersistTaps="handled"
@@ -1038,6 +1042,7 @@ export function MeScreen({
       <PageBackground />
       <ScrollView
         style={styles.scroll}
+        contentInsetAdjustmentBehavior="automatic"
         contentContainerStyle={styles.rootScrollContent}
         showsVerticalScrollIndicator={false}
         keyboardDismissMode="on-drag"

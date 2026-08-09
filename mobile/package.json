@@ -12,8 +12,8 @@
   "dependencies": {
     "@react-native-async-storage/async-storage": "^2.2.0",
     "@react-native/new-app-screen": "0.83.1",
-    "@react-navigation/bottom-tabs": "^7.13.0",
-    "@react-navigation/native": "^7.1.28",
+    "@react-navigation/bottom-tabs": "7.16.2",
+    "@react-navigation/native": "7.2.5",
     "@react-navigation/native-stack": "^7.12.0",
     "react": "19.2.0",
     "react-native": "0.83.1",
@@ -23,7 +23,7 @@
     "react-native-pager-view": "^8.0.0",
     "react-native-paper": "^5.15.0",
     "react-native-safe-area-context": "^5.5.2",
-    "react-native-screens": "^4.23.0",
+    "react-native-screens": "4.25.2",
     "react-native-svg": "^15.15.3",
     "react-native-tab-view": "^4.2.2",
     "react-native-vector-icons": "^10.3.0",
@@ -50,6 +50,9 @@
     "prettier": "2.8.8",
     "react-test-renderer": "19.2.0",
     "typescript": "^5.8.3"
+  },
+  "overrides": {
+    "@react-navigation/elements": "2.9.19"
   },
   "engines": {
     "node": ">=20"

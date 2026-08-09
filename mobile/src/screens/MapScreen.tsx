@@ -19,6 +19,7 @@ import {
 } from 'react-native';
 import {WebView, type WebViewMessageEvent} from 'react-native-webview';
 import {Icon} from 'react-native-paper';
+import {SafeAreaView as ScreensSafeAreaView} from 'react-native-screens/experimental';
 import {useSafeAreaInsets} from 'react-native-safe-area-context';
 import {useAuth} from '../auth/AuthProvider';
 import {
@@ -734,7 +735,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const [showAddModeHint, setShowAddModeHint] = useState(false);
 
   const topOffset = insets.top + 12;
-  const bottomOffset = Math.max(14, insets.bottom + 10);
+  const bottomOffset =
+    Platform.OS === 'ios' ? 10 : Math.max(14, insets.bottom + 10);
 
   const showNotice = useCallback((text: string) => {
     setNotice(text);
@@ -2273,6 +2275,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         ) : null}
       </View>
 
+      <ScreensSafeAreaView
+        edges={{bottom: Platform.OS === 'ios'}}
+        pointerEvents="box-none"
+        style={styles.mapBottomOverlay}>
       <View style={[styles.bottomLeftStack, {bottom: bottomOffset}]}> 
         {nearbyOnly ? (
           <Pressable style={styles.exitNearbyBtn} onPress={clearNearbyFilter}>
@@ -2423,6 +2429,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           </View>
         </View>
       ) : null}
+      </ScreensSafeAreaView>
 
       {loading ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
@@ -3048,6 +3055,9 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.background,
     overflow: 'hidden',
+  },
+  mapBottomOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   webLoadingOverlay: {
     ...StyleSheet.absoluteFillObject,

@@ -1,5 +1,5 @@
 import React from 'react';
-import { StatusBar, StyleSheet, View } from 'react-native';
+import { Platform, StatusBar, StyleSheet, View } from 'react-native';
 import {
   DefaultTheme as NavigationDefaultTheme,
   NavigationContainer,
@@ -7,6 +7,10 @@ import {
   useIsFocused,
 } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {
+  createNativeBottomTabNavigator,
+  type NativeBottomTabIcon,
+} from '@react-navigation/bottom-tabs/unstable';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   SafeAreaProvider,
@@ -124,6 +128,24 @@ const tabRoutes: AppRoute[] = [
   },
 ];
 
+const nativeTabIcons: Record<
+  keyof RootTabParamList,
+  { focused: NativeBottomTabIcon; unfocused: NativeBottomTabIcon }
+> = {
+  maps: {
+    focused: { type: 'sfSymbol', name: 'map.fill' },
+    unfocused: { type: 'sfSymbol', name: 'map' },
+  },
+  docs: {
+    focused: { type: 'sfSymbol', name: 'doc.text.fill' },
+    unfocused: { type: 'sfSymbol', name: 'doc.text' },
+  },
+  me: {
+    focused: { type: 'sfSymbol', name: 'person.fill' },
+    unfocused: { type: 'sfSymbol', name: 'person' },
+  },
+};
+
 const MePanelRouteMap: Record<
   Exclude<MePanel, 'root'>,
   keyof MeStackParamList
@@ -135,7 +157,8 @@ const MePanelRouteMap: Record<
   favorites: 'MeFavorites',
 };
 
-const Tab = createBottomTabNavigator<RootTabParamList>();
+const CustomTab = createBottomTabNavigator<RootTabParamList>();
+const NativeTab = createNativeBottomTabNavigator<RootTabParamList>();
 const MapsStack = createNativeStackNavigator<MapsStackParamList>();
 const DocsStack = createNativeStackNavigator<DocsStackParamList>();
 const MeStack = createNativeStackNavigator<MeStackParamList>();
@@ -305,11 +328,11 @@ function MeStackNavigator() {
   );
 }
 
-function AppTabs() {
+function CustomAppTabs() {
   const insets = useSafeAreaInsets();
 
   return (
-    <Tab.Navigator
+    <CustomTab.Navigator
       initialRouteName="maps"
       screenOptions={({ route }) => {
         const tab =
@@ -353,11 +376,50 @@ function AppTabs() {
         };
       }}
     >
-      <Tab.Screen name="maps" component={MapsStackNavigator} />
-      <Tab.Screen name="docs" component={DocsStackNavigator} />
-      <Tab.Screen name="me" component={MeStackNavigator} />
-    </Tab.Navigator>
+      <CustomTab.Screen name="maps" component={MapsStackNavigator} />
+      <CustomTab.Screen name="docs" component={DocsStackNavigator} />
+      <CustomTab.Screen name="me" component={MeStackNavigator} />
+    </CustomTab.Navigator>
   );
+}
+
+function NativeIosAppTabs() {
+  return (
+    <NativeTab.Navigator
+      initialRouteName="maps"
+      screenOptions={({ route }) => {
+        const tab =
+          tabRoutes.find(item => item.key === route.name) ?? tabRoutes[0];
+        const icons = nativeTabIcons[route.name];
+
+        return {
+          headerShown: false,
+          title: tab.title,
+          tabBarLabel: tab.title,
+          tabBarIcon: ({ focused }) =>
+            focused ? icons.focused : icons.unfocused,
+          tabBarActiveTintColor: colors.primary,
+          tabBarLabelStyle: styles.nativeTabLabel,
+          tabBarStyle: {
+            backgroundColor: 'rgba(255, 255, 255, 0.72)',
+            shadowColor: colors.shadow,
+          },
+          tabBarBlurEffect: 'systemUltraThinMaterial',
+          tabBarControllerMode: 'tabBar',
+          tabBarMinimizeBehavior: 'none',
+          overrideScrollViewContentInsetAdjustmentBehavior: true,
+        };
+      }}
+    >
+      <NativeTab.Screen name="maps" component={MapsStackNavigator} />
+      <NativeTab.Screen name="docs" component={DocsStackNavigator} />
+      <NativeTab.Screen name="me" component={MeStackNavigator} />
+    </NativeTab.Navigator>
+  );
+}
+
+function AppTabs() {
+  return Platform.OS === 'ios' ? <NativeIosAppTabs /> : <CustomAppTabs />;
 }
 
 function AppShell() {
@@ -423,6 +485,10 @@ const styles = StyleSheet.create({
   },
   tabItemLabelInactive: {
     color: colors.textMuted,
+    fontWeight: '600',
+  },
+  nativeTabLabel: {
+    fontSize: 11,
     fontWeight: '600',
   },
 });
