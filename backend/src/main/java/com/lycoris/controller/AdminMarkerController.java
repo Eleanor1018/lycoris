@@ -27,6 +27,7 @@ public class AdminMarkerController {
     private final MapMarkerService markerService;
     private final MarkerImageProposalRepository imageProposalRepo;
     private final MarkerEditProposalRepository editProposalRepo;
+    private final boolean adminSecondFactorEnabled;
     private static final long SECOND_FACTOR_TTL_MS = 30 * 60 * 1000L;
     @Value("${app.upload-dir}")
     private String uploadDir;
@@ -34,11 +35,13 @@ public class AdminMarkerController {
     public AdminMarkerController(
             MapMarkerService markerService,
             MarkerImageProposalRepository imageProposalRepo,
-            MarkerEditProposalRepository editProposalRepo
+            MarkerEditProposalRepository editProposalRepo,
+            @Value("${admin.second-factor-enabled:true}") boolean adminSecondFactorEnabled
     ) {
         this.markerService = markerService;
         this.imageProposalRepo = imageProposalRepo;
         this.editProposalRepo = editProposalRepo;
+        this.adminSecondFactorEnabled = adminSecondFactorEnabled;
     }
 
     @GetMapping("/pending")
@@ -302,6 +305,9 @@ public class AdminMarkerController {
     }
 
     private ResponseEntity<?> requireSecondFactor(HttpSession session) {
+        if (!adminSecondFactorEnabled) {
+            return null;
+        }
         Object ok = session.getAttribute("adminSecondVerified");
         Object at = session.getAttribute("adminSecondVerifiedAt");
         if (!(ok instanceof Boolean) || !((Boolean) ok)) {

@@ -7,7 +7,7 @@
 - 文档：目前编写了**雪雁的HRT指南**；旨在尽量用最简洁的语言、最容易理解的方式，把行之有效的HRT方案和踩过的坑分享给大家
 - 关于：介绍夏水仙的项目理念、背景故事与联系方式，让来到这里的人知道这盏小灯为何被点亮
 
-目前有**网页端**和**Android手机端**可供使用。
+目前有**网页端**和基于 **React Native** 的**移动端**可供使用。
 
 ## 地图的内置功能
 - 标记：可以在地图上标注无障碍卫生间，友好医疗机构，母婴室等点位信息，包含名称 图片 开放时间等。
@@ -35,7 +35,7 @@
 
 - frontend： React(Typescript)
 - backend: Spring-Boot(Java)
-- mobile: React-Native(Typescript), Android(Kotlin), IOS(Swift)
+- mobile: React Native（TypeScript，包含 Android / iOS 原生桥接）
 - SQL: PostgreSQL, PostGIS
 
 ## 开源协议

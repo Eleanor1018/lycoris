@@ -48,7 +48,7 @@ export default function AdminEntry() {
                     管理后台入口
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
-                    在这里先完成二级密码验证，再进入审核、全量点位、用户管理页面。
+                    如果二级验证已开启，请先在这里验证；临时停用时，管理员账号可直接进入后台页面。
                 </Typography>
                 <AdminNav />
                 <Divider />
@@ -70,6 +70,9 @@ export default function AdminEntry() {
                         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
                             <Button variant="contained" onClick={() => void handleVerify()} disabled={loading} sx={{ ...adminContainedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
                                 {loading ? '验证中...' : '验证并进入审核中心'}
+                            </Button>
+                            <Button variant="outlined" onClick={() => navigate('/admin/review')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
+                                直接去审核中心
                             </Button>
                             <Button variant="outlined" onClick={() => navigate('/admin/all')} sx={{ ...adminOutlinedButtonSx, width: { xs: '100%', sm: 'auto' } }}>
                                 直接去全量点位
