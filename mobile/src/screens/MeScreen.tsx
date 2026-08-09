@@ -1,28 +1,33 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
   Keyboard,
+  KeyboardAvoidingView,
   Linking,
   Modal,
+  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
+  useWindowDimensions,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import {Icon} from 'react-native-paper';
-import {ApiError, requestJson} from '../lib/http';
+import { Icon } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ApiError, requestJson } from '../lib/http';
 import {
   appendUploadImageToFormData,
   pickUploadImage,
   type LocalUploadImage,
 } from '../lib/imageUpload';
-import {colors} from '../theme/colors';
-import {useAuth} from '../auth/AuthProvider';
-import {PageBackground} from '../components/PageBackground';
+import { colors } from '../theme/colors';
+import { useAuth } from '../auth/AuthProvider';
+import { PageBackground } from '../components/PageBackground';
+import { radii, shadows, sizes, spacing, typography } from '../theme/tokens';
 import aboutMarkdownRaw from '../docs/about.md';
 
 export type MePanel =
@@ -90,10 +95,19 @@ const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
   return rows;
 };
 
-function AboutEntryCard({onPress}: {onPress: () => void}) {
+function AboutEntryCard({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={styles.menuEntryCard}>
-      <View style={styles.menuEntryIconWrap}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel="关于夏水仙"
+      accessibilityHint="打开项目介绍"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.menuEntryCard,
+        pressed && styles.pressablePressed,
+      ]}
+    >
+      <View style={[styles.menuEntryIconWrap, styles.menuEntryIconBlush]}>
         <Icon source="information-outline" size={22} color={colors.primary} />
       </View>
       <View style={styles.menuEntryTextWrap}>
@@ -107,15 +121,33 @@ function AboutEntryCard({onPress}: {onPress: () => void}) {
 function MarkerListEntryCard({
   title,
   icon,
+  tone,
   onPress,
 }: {
   title: string;
   icon: string;
+  tone: 'lilac' | 'blush';
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} style={styles.menuEntryCard}>
-      <View style={styles.menuEntryIconWrap}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint="打开点位列表"
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.menuEntryCard,
+        pressed && styles.pressablePressed,
+      ]}
+    >
+      <View
+        style={[
+          styles.menuEntryIconWrap,
+          tone === 'blush'
+            ? styles.menuEntryIconBlush
+            : styles.menuEntryIconLilac,
+        ]}
+      >
         <Icon source={icon} size={22} color={colors.primary} />
       </View>
       <View style={styles.menuEntryTextWrap}>
@@ -123,6 +155,46 @@ function MarkerListEntryCard({
       </View>
       <Icon source="chevron-right" size={20} color={colors.textSecondary} />
     </Pressable>
+  );
+}
+
+function PanelHeader({
+  title,
+  subtitle,
+  eyebrow,
+  onBack,
+}: {
+  title: string;
+  subtitle: string;
+  eyebrow: string;
+  onBack: () => void;
+}) {
+  return (
+    <View style={styles.hero}>
+      <View style={styles.heroTopRow}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="返回"
+          accessibilityHint="返回我的页面"
+          hitSlop={4}
+          onPress={onBack}
+          style={({ pressed }) => [
+            styles.backRow,
+            pressed && styles.pressablePressed,
+          ]}
+        >
+          <Icon source="arrow-left" size={20} color={colors.primary} />
+        </Pressable>
+        <View style={styles.brandPill}>
+          <View style={styles.brandDot} />
+          <Text style={styles.brandPillText}>{eyebrow}</Text>
+        </View>
+      </View>
+      <Text accessibilityRole="header" style={styles.title}>
+        {title}
+      </Text>
+      <Text style={styles.subtitle}>{subtitle}</Text>
+    </View>
   );
 }
 
@@ -144,7 +216,16 @@ export function MeScreen({
   onNavigatePanel,
   onBack,
 }: MeScreenProps) {
-  const {loading, user, isLoggedIn, login, register, logout, refresh} = useAuth();
+  const { loading, user, isLoggedIn, login, register, logout, refresh } =
+    useAuth();
+  const insets = useSafeAreaInsets();
+  const { width } = useWindowDimensions();
+  const compactLayout = width < 360;
+  const pageInsetsStyle = {
+    paddingTop: Math.max(insets.top + spacing.sm, spacing.lg),
+    paddingBottom: Math.max(insets.bottom, spacing.xs),
+    paddingHorizontal: compactLayout ? spacing.sm : spacing.md,
+  };
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [registerForm, setRegisterForm] = useState({
@@ -169,9 +250,8 @@ export function MeScreen({
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
-  const [avatarDraftFile, setAvatarDraftFile] = useState<LocalUploadImage | null>(
-    null,
-  );
+  const [avatarDraftFile, setAvatarDraftFile] =
+    useState<LocalUploadImage | null>(null);
   const [avatarPicking, setAvatarPicking] = useState(false);
   const [avatarHint, setAvatarHint] = useState('');
   const [avatarError, setAvatarError] = useState('');
@@ -219,7 +299,10 @@ export function MeScreen({
 
   const createdSlice = useMemo(
     () =>
-      createdRows.slice(createdPage * rowsPerPage, (createdPage + 1) * rowsPerPage),
+      createdRows.slice(
+        createdPage * rowsPerPage,
+        (createdPage + 1) * rowsPerPage,
+      ),
     [createdPage, createdRows],
   );
   const favoriteSlice = useMemo(
@@ -316,7 +399,12 @@ export function MeScreen({
       website: registerForm.website,
     };
 
-    if (!payload.username || !payload.nickname || !payload.email || !payload.password) {
+    if (
+      !payload.username ||
+      !payload.nickname ||
+      !payload.email ||
+      !payload.password
+    ) {
       setRegisterError('请完整填写注册信息');
       return;
     }
@@ -380,7 +468,7 @@ export function MeScreen({
     if (profileSaving || avatarPicking) return;
     setAvatarPicking(true);
     setAvatarError('');
-    const result = await pickUploadImage({mode: 'avatar'});
+    const result = await pickUploadImage({ mode: 'avatar' });
     setAvatarPicking(false);
 
     if (result.cancelled) return;
@@ -454,7 +542,7 @@ export function MeScreen({
           newPassword: passwordForm.newPassword,
         }),
       });
-      setPasswordForm({oldPassword: '', newPassword: '', confirm: ''});
+      setPasswordForm({ oldPassword: '', newPassword: '', confirm: '' });
       setPasswordSuccess('修改成功');
       setTimeout(() => {
         setPasswordSuccess('');
@@ -485,36 +573,56 @@ export function MeScreen({
 
   if (loading) {
     return (
-      <View style={styles.loadingWrap}>
+      <View
+        style={[
+          styles.loadingWrap,
+          {
+            paddingTop: Math.max(insets.top, spacing.md),
+            paddingBottom: Math.max(insets.bottom, spacing.md),
+          },
+        ]}
+      >
         <PageBackground />
-        <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>正在读取登录状态...</Text>
+        <View style={styles.loadingCard}>
+          <ActivityIndicator
+            accessibilityLabel="正在读取登录状态"
+            color={colors.primary}
+          />
+          <Text accessibilityLiveRegion="polite" style={styles.loadingText}>
+            正在读取登录状态...
+          </Text>
+        </View>
       </View>
     );
   }
 
   if (panel === 'about') {
     return (
-      <View style={styles.page}>
+      <View style={[styles.page, pageInsetsStyle]}>
         <PageBackground />
-        <View style={styles.aboutTopBar}>
-          <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
-            <Icon source="arrow-left" size={18} color={colors.primary} />
-          </Pressable>
-        </View>
+        <PanelHeader
+          title="关于夏水仙"
+          subtitle="关于这张互助地图，也关于我们怎样彼此照亮。"
+          eyebrow="LYCORIS · ABOUT"
+          onBack={() => goPanel('root')}
+        />
 
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.aboutContent}
-          showsVerticalScrollIndicator={false}>
-          <Markdown
-            style={aboutMarkdownStyles}
-            onLinkPress={url => {
-              Linking.openURL(url).catch(() => {});
-              return false;
-            }}>
-            {aboutMarkdown}
-          </Markdown>
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.readingCard}>
+            <Markdown
+              style={aboutMarkdownStyles}
+              onLinkPress={url => {
+                Linking.openURL(url).catch(() => {});
+                return false;
+              }}
+            >
+              {aboutMarkdown}
+            </Markdown>
+          </View>
         </ScrollView>
       </View>
     );
@@ -530,283 +638,499 @@ export function MeScreen({
     const emptyText = isCreatedPanel ? '暂无创建点位' : '暂无收藏点位';
     const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
     const rangeStart = rows.length === 0 ? 0 : page * rowsPerPage + 1;
-    const rangeEnd = rows.length === 0 ? 0 : Math.min((page + 1) * rowsPerPage, rows.length);
+    const rangeEnd =
+      rows.length === 0 ? 0 : Math.min((page + 1) * rowsPerPage, rows.length);
 
     return (
-      <View style={styles.page}>
+      <View style={[styles.page, pageInsetsStyle]}>
         <PageBackground />
-        <View style={styles.aboutTopBar}>
-          <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
-            <Icon source="arrow-left" size={18} color={colors.primary} />
-          </Pressable>
-        </View>
-        <Text style={styles.listPageTitle}>{title}</Text>
-
-        <View style={styles.card}>
-          <View style={styles.markerListHeaderRow}>
-            <Text style={[styles.markerListHeaderText, styles.markerTitleCol]}>名称</Text>
-            <Text style={[styles.markerListHeaderText, styles.markerTypeCol]}>类型</Text>
-            <Text style={[styles.markerListHeaderText, styles.markerDateCol]}>更新</Text>
-          </View>
-
-          {markerListLoading ? (
-            <View style={styles.markerListLoadingWrap}>
-              <ActivityIndicator color={colors.primary} />
-              <Text style={styles.menuEntrySubtitle}>正在加载...</Text>
-            </View>
-          ) : slice.length === 0 ? (
-            <Text style={styles.markerListEmptyText}>{emptyText}</Text>
-          ) : (
-            slice.map(row => (
-              <Pressable
-                key={`${panel}-${row.id}`}
-                onPress={() => openMarkerOnMap(row)}
-                style={styles.markerListRow}>
-                <Text style={[styles.markerListCellText, styles.markerTitleCol]} numberOfLines={3}>
-                  {row.title}
-                </Text>
-                <Text style={[styles.markerListCellText, styles.markerTypeCol]} numberOfLines={1}>
-                  {row.category}
-                </Text>
-                <Text style={[styles.markerListCellText, styles.markerDateCol]} numberOfLines={1}>
-                  {row.updatedAt}
-                </Text>
-              </Pressable>
-            ))
-          )}
-
-          <View style={styles.markerPagerRow}>
-            <Text style={styles.markerPagerText}>
-              {rangeStart}-{rangeEnd} of {rows.length}
-            </Text>
-            <View style={styles.markerPagerActions}>
-              <Pressable
-                style={[
-                  styles.markerPagerBtn,
-                  page <= 0 && styles.markerPagerBtnDisabled,
-                ]}
-                disabled={page <= 0}
-                onPress={() => setPage(prev => Math.max(0, prev - 1))}>
-                <Icon source="chevron-left" size={20} color={colors.primary} />
-              </Pressable>
-              <Pressable
-                style={[
-                  styles.markerPagerBtn,
-                  page >= pageCount - 1 && styles.markerPagerBtnDisabled,
-                ]}
-                disabled={page >= pageCount - 1}
-                onPress={() =>
-                  setPage(prev => Math.min(Math.max(0, pageCount - 1), prev + 1))
-                }>
-                <Icon source="chevron-right" size={20} color={colors.primary} />
-              </Pressable>
-            </View>
-          </View>
-
-          {markerListError ? <Text style={styles.errorText}>{markerListError}</Text> : null}
-
-          <Pressable
-            style={styles.markerReloadBtn}
-            disabled={markerListLoading}
-            onPress={() => {
-              loadMarkerLists().catch(() => {});
-            }}>
-            <Text style={styles.markerReloadBtnText}>
-              {markerListLoading ? '刷新中...' : '刷新列表'}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
-    );
-  }
-
-  if (panel === 'register') {
-    return (
-      <View style={styles.page}>
-        <PageBackground />
-        <View style={styles.hero}>
-          <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
-            <Icon source="arrow-left" size={18} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.title}>注册</Text>
-          <Text style={styles.subtitle}>创建账号后可同步收藏与个人资料</Text>
-        </View>
+        <PanelHeader
+          title={title}
+          subtitle={
+            isCreatedPanel
+              ? '你放进地图里的互助线索。'
+              : '留在身边、随时可以再找到的地点。'
+          }
+          eyebrow={isCreatedPanel ? 'LYCORIS · CREATED' : 'LYCORIS · SAVED'}
+          onBack={() => goPanel('root')}
+        />
 
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.formScrollContent}
-          keyboardShouldPersistTaps="handled">
+          contentContainerStyle={styles.listContent}
+          showsVerticalScrollIndicator={false}
+        >
           <View style={styles.card}>
-            <Text style={styles.label}>用户名</Text>
-            <TextInput
-              autoCapitalize="none"
-              value={registerForm.username}
-              onChangeText={value =>
-                setRegisterForm(prev => ({...prev, username: value}))
-              }
-              style={styles.input}
-              placeholder="请输入用户名"
-              placeholderTextColor="#8a7fa6"
-            />
+            <View style={styles.markerListSummaryRow}>
+              <View>
+                <Text style={styles.sectionEyebrow}>POINTS</Text>
+                <Text style={styles.markerListSummaryTitle}>
+                  共 {rows.length} 个点位
+                </Text>
+              </View>
+              <View style={styles.markerListCountPill}>
+                <Text style={styles.markerListCountText}>
+                  {rangeStart}–{rangeEnd}
+                </Text>
+              </View>
+            </View>
 
-            <Text style={styles.label}>昵称</Text>
-            <TextInput
-              value={registerForm.nickname}
-              onChangeText={value =>
-                setRegisterForm(prev => ({...prev, nickname: value}))
-              }
-              style={styles.input}
-              placeholder="请输入昵称"
-              placeholderTextColor="#8a7fa6"
-            />
+            {markerListLoading ? (
+              <View style={styles.markerListLoadingWrap}>
+                <ActivityIndicator
+                  accessibilityLabel="正在加载点位列表"
+                  color={colors.primary}
+                />
+                <Text
+                  accessibilityLiveRegion="polite"
+                  style={styles.menuEntrySubtitle}
+                >
+                  正在加载...
+                </Text>
+              </View>
+            ) : slice.length === 0 ? (
+              <View style={styles.markerListEmptyWrap}>
+                <View style={styles.emptyIconWrap}>
+                  <Icon
+                    source="map-marker-outline"
+                    size={26}
+                    color={colors.primary}
+                  />
+                </View>
+                <Text style={styles.markerListEmptyText}>{emptyText}</Text>
+              </View>
+            ) : (
+              slice.map(row => (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${row.title}，${row.category}，更新于 ${row.updatedAt}`}
+                  accessibilityHint="在地图中打开这个点位"
+                  key={`${panel}-${row.id}`}
+                  onPress={() => openMarkerOnMap(row)}
+                  style={({ pressed }) => [
+                    styles.markerListRow,
+                    pressed && styles.markerListRowPressed,
+                  ]}
+                >
+                  <View style={styles.markerListRowContent}>
+                    <Text style={styles.markerListCellText} numberOfLines={2}>
+                      {row.title}
+                    </Text>
+                    <View style={styles.markerMetaRow}>
+                      <View style={styles.markerCategoryPill}>
+                        <Text
+                          style={styles.markerCategoryText}
+                          numberOfLines={1}
+                        >
+                          {row.category}
+                        </Text>
+                      </View>
+                      <Text style={styles.markerDateText}>{row.updatedAt}</Text>
+                    </View>
+                  </View>
+                  <Icon
+                    source="chevron-right"
+                    size={21}
+                    color={colors.textSecondary}
+                  />
+                </Pressable>
+              ))
+            )}
 
-            <Text style={styles.label}>邮箱</Text>
-            <TextInput
-              autoCapitalize="none"
-              keyboardType="email-address"
-              value={registerForm.email}
-              onChangeText={value =>
-                setRegisterForm(prev => ({...prev, email: value}))
-              }
-              style={styles.input}
-              placeholder="请输入邮箱"
-              placeholderTextColor="#8a7fa6"
-            />
+            <View style={styles.markerPagerRow}>
+              <Text style={styles.markerPagerText}>
+                第 {Math.min(page + 1, pageCount)} / {pageCount} 页
+              </Text>
+              <View style={styles.markerPagerActions}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="上一页"
+                  accessibilityState={{ disabled: page <= 0 }}
+                  style={({ pressed }) => [
+                    styles.markerPagerBtn,
+                    page <= 0 && styles.markerPagerBtnDisabled,
+                    pressed && page > 0 && styles.pressablePressed,
+                  ]}
+                  disabled={page <= 0}
+                  onPress={() => setPage(prev => Math.max(0, prev - 1))}
+                >
+                  <Icon
+                    source="chevron-left"
+                    size={22}
+                    color={colors.primary}
+                  />
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="下一页"
+                  accessibilityState={{ disabled: page >= pageCount - 1 }}
+                  style={({ pressed }) => [
+                    styles.markerPagerBtn,
+                    page >= pageCount - 1 && styles.markerPagerBtnDisabled,
+                    pressed && page < pageCount - 1 && styles.pressablePressed,
+                  ]}
+                  disabled={page >= pageCount - 1}
+                  onPress={() =>
+                    setPage(prev =>
+                      Math.min(Math.max(0, pageCount - 1), prev + 1),
+                    )
+                  }
+                >
+                  <Icon
+                    source="chevron-right"
+                    size={22}
+                    color={colors.primary}
+                  />
+                </Pressable>
+              </View>
+            </View>
 
-            <Text style={styles.label}>密码</Text>
-            <TextInput
-              autoCapitalize="none"
-              secureTextEntry
-              value={registerForm.password}
-              onChangeText={value =>
-                setRegisterForm(prev => ({...prev, password: value}))
-              }
-              style={styles.input}
-              placeholder="请输入密码"
-              placeholderTextColor="#8a7fa6"
-            />
-
-            <Text style={styles.label}>再次输入密码</Text>
-            <TextInput
-              autoCapitalize="none"
-              secureTextEntry
-              value={password2}
-              onChangeText={setPassword2}
-              style={styles.input}
-              placeholder="请再次输入密码"
-              placeholderTextColor="#8a7fa6"
-            />
-
-            {registerError ? (
-              <Text style={styles.errorText}>{registerError}</Text>
+            {markerListError ? (
+              <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                {markerListError}
+              </Text>
             ) : null}
 
-            <Pressable onPress={doRegister} style={styles.loginBtn} disabled={busy}>
-              <Text style={styles.loginBtnText}>{busy ? '注册中...' : '注册'}</Text>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="刷新点位列表"
+              accessibilityState={{
+                disabled: markerListLoading,
+                busy: markerListLoading,
+              }}
+              style={({ pressed }) => [
+                styles.markerReloadBtn,
+                markerListLoading && styles.disabledControl,
+                pressed && !markerListLoading && styles.pressablePressed,
+              ]}
+              disabled={markerListLoading}
+              onPress={() => {
+                loadMarkerLists().catch(() => {});
+              }}
+            >
+              <Icon source="refresh" size={18} color={colors.primary} />
+              <Text style={styles.markerReloadBtnText}>
+                {markerListLoading ? '刷新中...' : '刷新列表'}
+              </Text>
             </Pressable>
-
-            <View style={styles.formLinkRow}>
-              <Text style={styles.formLinkHint}>已经有账号？</Text>
-              <Pressable
-                onPress={() => {
-                  setError('');
-                  goPanel('root');
-                }}>
-                <Text style={styles.formLinkText}>去登录</Text>
-              </Pressable>
-            </View>
           </View>
         </ScrollView>
       </View>
     );
   }
 
+  if (panel === 'register') {
+    return (
+      <KeyboardAvoidingView
+        style={[styles.page, pageInsetsStyle]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      >
+        <PageBackground />
+        <PanelHeader
+          title="创建你的账号"
+          subtitle="登录之后，收藏、资料和你留下的互助线索会陪你走得更远。"
+          eyebrow="LYCORIS · JOIN"
+          onBack={() => goPanel('root')}
+        />
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.formScrollContent}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <Text style={styles.sectionEyebrow}>NEW ACCOUNT</Text>
+            <Text style={styles.formTitle}>把你的名字留在这里</Text>
+            <Text style={styles.label}>用户名</Text>
+            <TextInput
+              accessibilityLabel="用户名"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={registerForm.username}
+              onChangeText={value =>
+                setRegisterForm(prev => ({ ...prev, username: value }))
+              }
+              style={styles.input}
+              placeholder="请输入用户名"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>昵称</Text>
+            <TextInput
+              accessibilityLabel="昵称"
+              value={registerForm.nickname}
+              onChangeText={value =>
+                setRegisterForm(prev => ({ ...prev, nickname: value }))
+              }
+              style={styles.input}
+              placeholder="请输入昵称"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>邮箱</Text>
+            <TextInput
+              accessibilityLabel="邮箱"
+              autoCapitalize="none"
+              autoCorrect={false}
+              keyboardType="email-address"
+              value={registerForm.email}
+              onChangeText={value =>
+                setRegisterForm(prev => ({ ...prev, email: value }))
+              }
+              style={styles.input}
+              placeholder="请输入邮箱"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>密码</Text>
+            <TextInput
+              accessibilityLabel="密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={registerForm.password}
+              onChangeText={value =>
+                setRegisterForm(prev => ({ ...prev, password: value }))
+              }
+              style={styles.input}
+              placeholder="请输入密码"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>再次输入密码</Text>
+            <TextInput
+              accessibilityLabel="再次输入密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={password2}
+              onChangeText={setPassword2}
+              style={styles.input}
+              placeholder="请再次输入密码"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            {registerError ? (
+              <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                {registerError}
+              </Text>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={busy ? '正在注册' : '注册'}
+              accessibilityState={{ disabled: busy, busy }}
+              onPress={doRegister}
+              style={({ pressed }) => [
+                styles.loginBtn,
+                busy && styles.disabledControl,
+                pressed && !busy && styles.pressablePressed,
+              ]}
+              disabled={busy}
+            >
+              <Text style={styles.loginBtnText}>
+                {busy ? '注册中...' : '注册'}
+              </Text>
+            </Pressable>
+
+            <View style={styles.formLinkRow}>
+              <Text style={styles.formLinkHint}>已经有账号？</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="去登录"
+                hitSlop={8}
+                style={styles.formLinkPressable}
+                onPress={() => {
+                  setError('');
+                  goPanel('root');
+                }}
+              >
+                <Text style={styles.formLinkText}>去登录</Text>
+              </Pressable>
+            </View>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
+  }
+
   if (panel === 'password') {
     return (
-      <View style={styles.page}>
+      <KeyboardAvoidingView
+        style={[styles.page, pageInsetsStyle]}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+      >
         <PageBackground />
-        <View style={styles.hero}>
-          <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
-            <Icon source="arrow-left" size={18} color={colors.primary} />
-          </Pressable>
-          <Text style={styles.title}>修改密码</Text>
-          <Text style={styles.subtitle}>用于保护你的账号安全</Text>
-        </View>
-        <View style={styles.card}>
-          <Text style={styles.label}>原密码</Text>
-          <TextInput
-            autoCapitalize="none"
-            secureTextEntry
-            value={passwordForm.oldPassword}
-            onChangeText={value =>
-              setPasswordForm(prev => ({...prev, oldPassword: value}))
-            }
-            style={styles.input}
-            placeholder="请输入原密码"
-            placeholderTextColor="#8a7fa6"
-          />
+        <PanelHeader
+          title="更新你的密码"
+          subtitle="定期换一把钥匙，让你的账号继续安全、安稳。"
+          eyebrow="LYCORIS · SECURITY"
+          onBack={() => goPanel('root')}
+        />
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.formScrollContent}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.card}>
+            <Text style={styles.sectionEyebrow}>PASSWORD</Text>
+            <Text style={styles.formTitle}>确认是你，再设置新密码</Text>
 
-          <Text style={styles.label}>新密码</Text>
-          <TextInput
-            autoCapitalize="none"
-            secureTextEntry
-            value={passwordForm.newPassword}
-            onChangeText={value =>
-              setPasswordForm(prev => ({...prev, newPassword: value}))
-            }
-            style={styles.input}
-            placeholder="请输入新密码"
-            placeholderTextColor="#8a7fa6"
-          />
+            <Text style={styles.label}>原密码</Text>
+            <TextInput
+              accessibilityLabel="原密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={passwordForm.oldPassword}
+              onChangeText={value =>
+                setPasswordForm(prev => ({ ...prev, oldPassword: value }))
+              }
+              style={styles.input}
+              placeholder="请输入原密码"
+              placeholderTextColor={colors.textMuted}
+            />
 
-          <Text style={styles.label}>确认新密码</Text>
-          <TextInput
-            autoCapitalize="none"
-            secureTextEntry
-            value={passwordForm.confirm}
-            onChangeText={value =>
-              setPasswordForm(prev => ({...prev, confirm: value}))
-            }
-            style={styles.input}
-            placeholder="请再次输入新密码"
-            placeholderTextColor="#8a7fa6"
-          />
+            <Text style={styles.label}>新密码</Text>
+            <TextInput
+              accessibilityLabel="新密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={passwordForm.newPassword}
+              onChangeText={value =>
+                setPasswordForm(prev => ({ ...prev, newPassword: value }))
+              }
+              style={styles.input}
+              placeholder="请输入新密码"
+              placeholderTextColor={colors.textMuted}
+            />
 
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
-          {passwordSuccess ? (
-            <Text style={styles.successText}>{passwordSuccess}</Text>
-          ) : null}
+            <Text style={styles.label}>确认新密码</Text>
+            <TextInput
+              accessibilityLabel="确认新密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={passwordForm.confirm}
+              onChangeText={value =>
+                setPasswordForm(prev => ({ ...prev, confirm: value }))
+              }
+              style={styles.input}
+              placeholder="请再次输入新密码"
+              placeholderTextColor={colors.textMuted}
+            />
 
-          <Pressable onPress={doChangePassword} style={styles.loginBtn} disabled={passwordBusy}>
-            <Text style={styles.loginBtnText}>
-              {passwordBusy ? '保存中...' : '保存'}
-            </Text>
-          </Pressable>
-        </View>
-      </View>
+            {passwordError ? (
+              <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                {passwordError}
+              </Text>
+            ) : null}
+            {passwordSuccess ? (
+              <Text accessibilityLiveRegion="polite" style={styles.successText}>
+                {passwordSuccess}
+              </Text>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={passwordBusy ? '正在保存密码' : '保存新密码'}
+              accessibilityState={{
+                disabled: passwordBusy,
+                busy: passwordBusy,
+              }}
+              onPress={doChangePassword}
+              style={({ pressed }) => [
+                styles.loginBtn,
+                passwordBusy && styles.disabledControl,
+                pressed && !passwordBusy && styles.pressablePressed,
+              ]}
+              disabled={passwordBusy}
+            >
+              <Text style={styles.loginBtnText}>
+                {passwordBusy ? '保存中...' : '保存新密码'}
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
   return (
-    <View style={styles.page}>
+    <KeyboardAvoidingView
+      style={[styles.page, pageInsetsStyle]}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+    >
       <PageBackground />
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.rootScrollContent}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
+        keyboardDismissMode="on-drag"
+        keyboardShouldPersistTaps="handled"
+      >
+        <View style={styles.rootIntro}>
+          <View style={styles.brandPill}>
+            <View style={styles.brandDot} />
+            <Text style={styles.brandPillText}>LYCORIS · ME</Text>
+          </View>
+          <Text accessibilityRole="header" style={styles.rootTitle}>
+            {isLoggedIn && user ? '欢迎回来' : '把你的足迹带回家'}
+          </Text>
+          <Text style={styles.rootSubtitle}>
+            {isLoggedIn && user
+              ? '你的资料、收藏和互助线索，都安稳地收在这里。'
+              : '登录后同步收藏、个人资料和你留在地图上的每一束光。'}
+          </Text>
+        </View>
+
         {isLoggedIn && user ? (
           <>
-            <View style={[styles.profileMainCard, styles.rootPrimaryCardSpacing]}>
-              <Pressable style={styles.profileEditFab} onPress={openProfileEdit}>
-                <Icon source="pencil" size={18} color={colors.primary} />
+            <View
+              style={[styles.profileMainCard, styles.rootPrimaryCardSpacing]}
+            >
+              <View pointerEvents="none" style={styles.profileAccentOrb} />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="编辑个人资料"
+                accessibilityHint="修改昵称、代词、签名和头像"
+                style={({ pressed }) => [
+                  styles.profileEditFab,
+                  pressed && styles.pressablePressed,
+                ]}
+                onPress={openProfileEdit}
+              >
+                <Icon
+                  source="pencil-outline"
+                  size={20}
+                  color={colors.primary}
+                />
               </Pressable>
 
               {user.avatarUrl ? (
-                <Image source={{uri: user.avatarUrl}} style={styles.profileAvatarLarge} />
+                <Image
+                  accessibilityLabel={`${nickname} 的头像`}
+                  source={{ uri: user.avatarUrl }}
+                  style={styles.profileAvatarLarge}
+                />
               ) : (
-                <View style={styles.profileAvatarFallbackLarge}>
-                  <Icon source="account-outline" size={44} color={colors.primary} />
+                <View
+                  accessibilityLabel="默认个人头像"
+                  style={styles.profileAvatarFallbackLarge}
+                >
+                  <Icon
+                    source="account-outline"
+                    size={44}
+                    color={colors.primary}
+                  />
                 </View>
               )}
 
@@ -815,86 +1139,161 @@ export function MeScreen({
                 @{user.username}
                 {user.pronouns ? ` · ${user.pronouns}` : ''}
               </Text>
-              <Text style={styles.profileSignature}>
-                {user.signature || 'Attendre et espérer.'}
-              </Text>
-
-              <Pressable
-                style={styles.profileOutlineBtn}
-                onPress={() => {
-                  setPasswordError('');
-                  setPasswordSuccess('');
-                  goPanel('password');
-                }}>
-                <Text style={styles.profileOutlineBtnText}>修改密码</Text>
-              </Pressable>
-
-              <Pressable
-                style={styles.profileLogoutBtn}
-                onPress={doLogout}
-                disabled={busy}>
-                <Text style={styles.profileLogoutBtnText}>
-                  {busy ? '处理中...' : '退出登录'}
+              <View style={styles.profileSignatureBubble}>
+                <Icon source="format-quote-open" size={18} color={colors.pin} />
+                <Text style={styles.profileSignature}>
+                  {user.signature || 'Attendre et espérer.'}
                 </Text>
-              </Pressable>
+              </View>
+
+              <View
+                style={[
+                  styles.profileActionRow,
+                  compactLayout && styles.profileActionRowCompact,
+                ]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="修改密码"
+                  style={({ pressed }) => [
+                    styles.profileOutlineBtn,
+                    pressed && styles.pressablePressed,
+                  ]}
+                  onPress={() => {
+                    setPasswordError('');
+                    setPasswordSuccess('');
+                    goPanel('password');
+                  }}
+                >
+                  <Icon
+                    source="lock-outline"
+                    size={18}
+                    color={colors.primary}
+                  />
+                  <Text style={styles.profileOutlineBtnText}>修改密码</Text>
+                </Pressable>
+
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={busy ? '正在退出登录' : '退出登录'}
+                  accessibilityState={{ disabled: busy, busy }}
+                  style={({ pressed }) => [
+                    styles.profileLogoutBtn,
+                    busy && styles.disabledControl,
+                    pressed && !busy && styles.pressablePressed,
+                  ]}
+                  onPress={doLogout}
+                  disabled={busy}
+                >
+                  <Icon source="logout" size={18} color={colors.primary} />
+                  <Text style={styles.profileLogoutBtnText}>
+                    {busy ? '处理中...' : '退出登录'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
 
+            <Text style={styles.sectionLabel}>我的地图</Text>
             <MarkerListEntryCard
               title="我创建的点位"
               icon="map-marker-plus-outline"
+              tone="lilac"
               onPress={() => goPanel('created')}
             />
             <MarkerListEntryCard
               title="我收藏的点位"
               icon="star-outline"
+              tone="blush"
               onPress={() => goPanel('favorites')}
             />
           </>
         ) : (
-          <>
-            <View style={[styles.card, styles.rootPrimaryCardSpacing]}>
-              <Text style={styles.title}>登录</Text>
-              <Text style={styles.label}>用户名</Text>
-              <TextInput
-                autoCapitalize="none"
-                value={username}
-                onChangeText={setUsername}
-                style={styles.input}
-                placeholder="请输入用户名"
-                placeholderTextColor="#8a7fa6"
+          <View
+            style={[
+              styles.card,
+              styles.authCard,
+              styles.rootPrimaryCardSpacing,
+            ]}
+          >
+            <View style={styles.authIconWrap}>
+              <Icon
+                source="account-heart-outline"
+                size={28}
+                color={colors.primary}
               />
-
-              <Text style={styles.label}>密码</Text>
-              <TextInput
-                autoCapitalize="none"
-                secureTextEntry
-                value={password}
-                onChangeText={setPassword}
-                style={styles.input}
-                placeholder="请输入密码"
-                placeholderTextColor="#8a7fa6"
-              />
-
-              {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-              <Pressable onPress={doLogin} style={styles.loginBtn} disabled={busy}>
-                <Text style={styles.loginBtnText}>{busy ? '登录中...' : '登录'}</Text>
-              </Pressable>
-
-              <View style={styles.formLinkRow}>
-                <Text style={styles.formLinkHint}>没有账号？</Text>
-                <Pressable
-                  onPress={() => {
-                    setRegisterError('');
-                    goPanel('register');
-                  }}>
-                  <Text style={styles.formLinkText}>去注册</Text>
-                </Pressable>
-              </View>
             </View>
-          </>
+            <Text style={styles.sectionEyebrow}>WELCOME BACK</Text>
+            <Text style={styles.formTitle}>登录 Lycoris</Text>
+            <Text style={styles.authDescription}>
+              继续收藏地点，也继续被这座城市温柔接住。
+            </Text>
+            <Text style={styles.label}>用户名</Text>
+            <TextInput
+              accessibilityLabel="用户名"
+              autoCapitalize="none"
+              autoCorrect={false}
+              value={username}
+              onChangeText={setUsername}
+              style={styles.input}
+              placeholder="请输入用户名"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>密码</Text>
+            <TextInput
+              accessibilityLabel="密码"
+              autoCapitalize="none"
+              autoCorrect={false}
+              secureTextEntry
+              value={password}
+              onChangeText={setPassword}
+              style={styles.input}
+              placeholder="请输入密码"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            {error ? (
+              <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                {error}
+              </Text>
+            ) : null}
+
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={busy ? '正在登录' : '登录'}
+              accessibilityState={{ disabled: busy, busy }}
+              onPress={doLogin}
+              style={({ pressed }) => [
+                styles.loginBtn,
+                busy && styles.disabledControl,
+                pressed && !busy && styles.pressablePressed,
+              ]}
+              disabled={busy}
+            >
+              <Text style={styles.loginBtnText}>
+                {busy ? '登录中...' : '登录'}
+              </Text>
+            </Pressable>
+
+            <View style={styles.formLinkRow}>
+              <Text style={styles.formLinkHint}>没有账号？</Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="去注册"
+                hitSlop={8}
+                style={styles.formLinkPressable}
+                onPress={() => {
+                  setRegisterError('');
+                  goPanel('register');
+                }}
+              >
+                <Text style={styles.formLinkText}>去注册</Text>
+              </Pressable>
+            </View>
+          </View>
         )}
 
+        <Text style={styles.sectionLabel}>了解 Lycoris</Text>
         <AboutEntryCard onPress={() => goPanel('about')} />
       </ScrollView>
 
@@ -904,143 +1303,245 @@ export function MeScreen({
         animationType="fade"
         onRequestClose={() => {
           if (!profileSaving) setProfileEditOpen(false);
-        }}>
-        <View style={styles.modalCenterWrap}>
+        }}
+      >
+        <KeyboardAvoidingView
+          style={styles.modalCenterWrap}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={Platform.OS === 'ios' ? insets.top : 0}
+        >
           <Pressable
+            accessible={false}
             style={styles.modalOverlay}
             onPress={() => {
               if (!profileSaving) setProfileEditOpen(false);
             }}
           />
-          <View style={styles.editCard}>
-            <Text style={styles.editTitle}>编辑资料</Text>
-
-            <Text style={styles.label}>昵称</Text>
-            <TextInput
-              value={profileDraft.nickname}
-              onChangeText={value =>
-                setProfileDraft(prev => ({...prev, nickname: value}))
-              }
-              style={styles.input}
-              placeholder="请输入昵称"
-              placeholderTextColor="#8a7fa6"
-            />
-
-            <Text style={styles.label}>代词</Text>
-            <TextInput
-              value={profileDraft.pronouns}
-              onChangeText={value =>
-                setProfileDraft(prev => ({...prev, pronouns: value}))
-              }
-              style={styles.input}
-              placeholder="例如 she/her"
-              placeholderTextColor="#8a7fa6"
-            />
-
-            <Text style={styles.label}>签名</Text>
-            <TextInput
-              value={profileDraft.signature}
-              onChangeText={value =>
-                setProfileDraft(prev => ({...prev, signature: value}))
-              }
-              style={[styles.input, styles.editSignatureInput]}
-              placeholder="写点你想说的话"
-              placeholderTextColor="#8a7fa6"
-              multiline
-              textAlignVertical="top"
-            />
-
-            <Text style={styles.label}>头像（可选）</Text>
-            <View style={styles.uploadRow}>
-              <Pressable
-                style={styles.uploadPickBtn}
-                onPress={pickAvatarImage}
-                disabled={profileSaving || avatarPicking}>
-                <Text style={styles.uploadPickBtnText}>
-                  {avatarPicking ? '处理中...' : '选择图片'}
-                </Text>
-              </Pressable>
-              {avatarDraftFile ? (
+          <ScrollView
+            style={styles.modalScroll}
+            contentContainerStyle={styles.modalScrollContent}
+            keyboardDismissMode="on-drag"
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <View accessibilityViewIsModal style={styles.editCard}>
+              <View style={styles.editTitleRow}>
+                <View style={styles.editTitleTextWrap}>
+                  <Text style={styles.sectionEyebrow}>YOUR PROFILE</Text>
+                  <Text accessibilityRole="header" style={styles.editTitle}>
+                    编辑资料
+                  </Text>
+                </View>
                 <Pressable
-                  style={styles.uploadClearBtn}
-                  onPress={() => {
-                    setAvatarDraftFile(null);
-                    setAvatarHint('');
-                    setAvatarError('');
-                  }}
-                  disabled={profileSaving || avatarPicking}>
-                  <Text style={styles.uploadClearBtnText}>清除</Text>
+                  accessibilityRole="button"
+                  accessibilityLabel="关闭编辑资料"
+                  accessibilityState={{ disabled: profileSaving }}
+                  disabled={profileSaving}
+                  onPress={() => setProfileEditOpen(false)}
+                  style={({ pressed }) => [
+                    styles.modalCloseBtn,
+                    profileSaving && styles.disabledControl,
+                    pressed && !profileSaving && styles.pressablePressed,
+                  ]}
+                >
+                  <Icon source="close" size={20} color={colors.primary} />
                 </Pressable>
+              </View>
+
+              <Text style={styles.label}>昵称</Text>
+              <TextInput
+                accessibilityLabel="昵称"
+                value={profileDraft.nickname}
+                onChangeText={value =>
+                  setProfileDraft(prev => ({ ...prev, nickname: value }))
+                }
+                style={styles.input}
+                placeholder="请输入昵称"
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <Text style={styles.label}>代词</Text>
+              <TextInput
+                accessibilityLabel="代词"
+                value={profileDraft.pronouns}
+                onChangeText={value =>
+                  setProfileDraft(prev => ({ ...prev, pronouns: value }))
+                }
+                style={styles.input}
+                placeholder="例如 she/her"
+                placeholderTextColor={colors.textMuted}
+              />
+
+              <Text style={styles.label}>签名</Text>
+              <TextInput
+                accessibilityLabel="签名"
+                value={profileDraft.signature}
+                onChangeText={value =>
+                  setProfileDraft(prev => ({ ...prev, signature: value }))
+                }
+                style={[styles.input, styles.editSignatureInput]}
+                placeholder="写点你想说的话"
+                placeholderTextColor={colors.textMuted}
+                multiline
+                textAlignVertical="top"
+              />
+
+              <Text style={styles.label}>头像（可选）</Text>
+              <View style={styles.uploadRow}>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    avatarPicking ? '正在处理图片' : '选择头像图片'
+                  }
+                  accessibilityState={{
+                    disabled: profileSaving || avatarPicking,
+                    busy: avatarPicking,
+                  }}
+                  style={({ pressed }) => [
+                    styles.uploadPickBtn,
+                    (profileSaving || avatarPicking) && styles.disabledControl,
+                    pressed &&
+                      !profileSaving &&
+                      !avatarPicking &&
+                      styles.pressablePressed,
+                  ]}
+                  onPress={pickAvatarImage}
+                  disabled={profileSaving || avatarPicking}
+                >
+                  <Icon source="image-plus" size={18} color={colors.primary} />
+                  <Text style={styles.uploadPickBtnText}>
+                    {avatarPicking ? '处理中...' : '选择图片'}
+                  </Text>
+                </Pressable>
+                {avatarDraftFile ? (
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="清除已选择的头像图片"
+                    accessibilityState={{
+                      disabled: profileSaving || avatarPicking,
+                    }}
+                    style={({ pressed }) => [
+                      styles.uploadClearBtn,
+                      (profileSaving || avatarPicking) &&
+                        styles.disabledControl,
+                      pressed &&
+                        !profileSaving &&
+                        !avatarPicking &&
+                        styles.pressablePressed,
+                    ]}
+                    onPress={() => {
+                      setAvatarDraftFile(null);
+                      setAvatarHint('');
+                      setAvatarError('');
+                    }}
+                    disabled={profileSaving || avatarPicking}
+                  >
+                    <Text style={styles.uploadClearBtnText}>清除</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+
+              {avatarHint ? (
+                <Text style={styles.uploadHintText}>{avatarHint}</Text>
               ) : null}
-            </View>
-
-            {avatarHint ? <Text style={styles.uploadHintText}>{avatarHint}</Text> : null}
-            {avatarError ? <Text style={styles.errorText}>{avatarError}</Text> : null}
-            {avatarDraftFile ? (
-              <Text style={styles.uploadPickedText}>已选择：{avatarDraftFile.name}</Text>
-            ) : null}
-
-            {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
-
-            <View style={styles.editActionRow}>
-              <Pressable
-                style={styles.editCancelBtn}
-                disabled={profileSaving}
-                onPress={() => setProfileEditOpen(false)}>
-                <Text style={styles.editCancelBtnText}>取消</Text>
-              </Pressable>
-              <Pressable
-                style={styles.editSaveBtn}
-                disabled={profileSaving || avatarPicking}
-                onPress={saveProfileEdit}>
-                <Text style={styles.editSaveBtnText}>
-                  {profileSaving ? '保存中...' : '保存'}
+              {avatarError ? (
+                <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                  {avatarError}
                 </Text>
-              </Pressable>
+              ) : null}
+              {avatarDraftFile ? (
+                <Text style={styles.uploadPickedText}>
+                  已选择：{avatarDraftFile.name}
+                </Text>
+              ) : null}
+
+              {profileError ? (
+                <Text accessibilityLiveRegion="polite" style={styles.errorText}>
+                  {profileError}
+                </Text>
+              ) : null}
+
+              <View
+                style={[
+                  styles.editActionRow,
+                  compactLayout && styles.editActionRowCompact,
+                ]}
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="取消编辑资料"
+                  accessibilityState={{ disabled: profileSaving }}
+                  style={({ pressed }) => [
+                    styles.editCancelBtn,
+                    profileSaving && styles.disabledControl,
+                    pressed && !profileSaving && styles.pressablePressed,
+                  ]}
+                  disabled={profileSaving}
+                  onPress={() => setProfileEditOpen(false)}
+                >
+                  <Text style={styles.editCancelBtnText}>取消</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={
+                    profileSaving ? '正在保存个人资料' : '保存个人资料'
+                  }
+                  accessibilityState={{
+                    disabled: profileSaving || avatarPicking,
+                    busy: profileSaving,
+                  }}
+                  style={({ pressed }) => [
+                    styles.editSaveBtn,
+                    (profileSaving || avatarPicking) && styles.disabledControl,
+                    pressed &&
+                      !profileSaving &&
+                      !avatarPicking &&
+                      styles.pressablePressed,
+                  ]}
+                  disabled={profileSaving || avatarPicking}
+                  onPress={saveProfileEdit}
+                >
+                  <Text style={styles.editSaveBtnText}>
+                    {profileSaving ? '保存中...' : '保存'}
+                  </Text>
+                </Pressable>
+              </View>
             </View>
-          </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const aboutMarkdownStyles = StyleSheet.create({
   body: {
     color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 24,
+    ...typography.body,
   },
   paragraph: {
     marginTop: 0,
-    marginBottom: 14,
+    marginBottom: spacing.md,
     color: colors.textPrimary,
-    fontSize: 15,
-    lineHeight: 24,
+    ...typography.body,
   },
   heading1: {
-    fontSize: 26,
-    lineHeight: 34,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginTop: 2,
-    marginBottom: 14,
+    ...typography.display,
+    color: colors.primary,
+    marginTop: spacing.xxs,
+    marginBottom: spacing.lg,
   },
   heading2: {
-    fontSize: 20,
-    lineHeight: 28,
-    fontWeight: '800',
-    color: colors.textPrimary,
-    marginTop: 18,
-    marginBottom: 10,
+    ...typography.title,
+    color: colors.primary,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
   heading3: {
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: '700',
+    ...typography.subtitle,
     color: colors.textPrimary,
-    marginTop: 14,
-    marginBottom: 8,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xs,
   },
   strong: {
     fontWeight: '700',
@@ -1053,6 +1554,7 @@ const aboutMarkdownStyles = StyleSheet.create({
   link: {
     color: colors.primary,
     textDecorationLine: 'underline',
+    textDecorationColor: colors.pin,
   },
   bullet_list: {
     marginBottom: 12,
@@ -1064,27 +1566,31 @@ const aboutMarkdownStyles = StyleSheet.create({
     marginBottom: 6,
   },
   blockquote: {
-    borderLeftWidth: 0,
-    paddingLeft: 0,
-    marginBottom: 14,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.pin,
+    borderRadius: radii.input,
+    backgroundColor: colors.blushSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginBottom: spacing.md,
   },
   code_inline: {
-    backgroundColor: 'transparent',
-    color: colors.textPrimary,
-    paddingHorizontal: 0,
-    paddingVertical: 0,
+    backgroundColor: colors.primarySoft,
+    color: colors.primary,
+    paddingHorizontal: spacing.xxs,
+    paddingVertical: 2,
   },
   code_block: {
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    padding: 0,
-    marginBottom: 14,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.input,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
   },
   fence: {
-    backgroundColor: 'transparent',
-    borderRadius: 0,
-    padding: 0,
-    marginBottom: 14,
+    backgroundColor: colors.surfaceMuted,
+    borderRadius: radii.input,
+    padding: spacing.sm,
+    marginBottom: spacing.md,
   },
 });
 
@@ -1092,8 +1598,6 @@ const styles = StyleSheet.create({
   page: {
     flex: 1,
     backgroundColor: colors.background,
-    paddingTop: 54,
-    paddingHorizontal: 16,
     position: 'relative',
     overflow: 'hidden',
   },
@@ -1102,273 +1606,335 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     backgroundColor: colors.background,
-    gap: 8,
     position: 'relative',
     overflow: 'hidden',
   },
+  loadingCard: {
+    minWidth: 216,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderRadius: radii.floating,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    ...shadows.floating,
+  },
   loadingText: {
     color: colors.textSecondary,
+    ...typography.bodySmall,
   },
   scroll: {
     flex: 1,
   },
   formScrollContent: {
-    paddingBottom: 24,
+    width: '100%',
+    maxWidth: sizes.contentMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.lg,
   },
   rootScrollContent: {
-    paddingBottom: 24,
+    width: '100%',
+    maxWidth: sizes.contentMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.lg,
   },
-  accountScrollContent: {
-    flexGrow: 1,
-    paddingBottom: 24,
-  },
-  accountBackRowWrap: {
-    marginBottom: 10,
-  },
-  aboutTopBar: {
-    marginBottom: 10,
-    alignItems: 'flex-start',
-  },
-  listPageTitle: {
-    marginBottom: 10,
-    color: colors.textPrimary,
-    fontSize: 22,
-    fontWeight: '700',
+  listContent: {
+    width: '100%',
+    maxWidth: sizes.contentMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.lg,
   },
   hero: {
-    marginBottom: 12,
-    borderRadius: 16,
-    padding: 14,
-    backgroundColor: colors.surface,
+    width: '100%',
+    maxWidth: sizes.contentMaxWidth,
+    alignSelf: 'center',
+    marginBottom: spacing.md,
+    borderRadius: 28,
+    padding: spacing.lg,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
     borderWidth: 1,
     borderColor: colors.border,
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 1,
-    shadowRadius: 28,
-    elevation: 3,
+    ...shadows.card,
+  },
+  heroTopRow: {
+    minHeight: sizes.touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
+    ...typography.display,
+    color: colors.primary,
   },
   subtitle: {
-    marginTop: 6,
-    lineHeight: 18,
-    fontSize: 13,
+    marginTop: spacing.xs,
     color: colors.textSecondary,
+    ...typography.bodySmall,
   },
   backRow: {
-    flexDirection: 'row',
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
     alignItems: 'center',
-    alignSelf: 'flex-start',
-    borderRadius: 999,
-    backgroundColor: colors.primarySoft,
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    backgroundColor: colors.lilac,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    marginBottom: 10,
-    gap: 4,
   },
-  backText: {
+  brandPill: {
+    minHeight: 36,
+    maxWidth: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.84)',
+    paddingHorizontal: spacing.sm,
+  },
+  brandDot: {
+    width: 9,
+    height: 9,
+    borderRadius: 5,
+    backgroundColor: colors.pin,
+  },
+  brandPillText: {
     color: colors.primary,
-    fontSize: 13,
-    fontWeight: '600',
-    lineHeight: 16,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   menuEntryCard: {
-    borderRadius: 16,
+    minHeight: 72,
+    borderRadius: radii.floating,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
-    paddingVertical: 12,
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 1,
-    shadowRadius: 28,
-    elevation: 3,
-    marginBottom: 12,
-  },
-  accountEntryCard: {
-    minHeight: 96,
-    paddingVertical: 16,
+    gap: spacing.sm,
+    ...shadows.card,
+    marginBottom: spacing.sm,
   },
   menuEntryIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: sizes.touchTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
   },
-  entryAvatarFallbackLogged: {
-    borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
+  menuEntryIconLilac: {
+    backgroundColor: colors.lilac,
   },
-  entryAvatarGuest: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#b5b5b5',
-  },
-  entryAvatarImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+  menuEntryIconBlush: {
+    backgroundColor: colors.blush,
   },
   menuEntryTextWrap: {
     flex: 1,
-    paddingLeft: 16,
   },
   menuEntryTitle: {
     color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
+    ...typography.subtitle,
   },
   menuEntrySubtitle: {
-    marginTop: 2,
+    marginTop: spacing.xxs,
     color: colors.textSecondary,
-    fontSize: 12,
-    lineHeight: 16,
+    ...typography.bodySmall,
   },
   card: {
-    borderRadius: 16,
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: 14,
-    gap: 8,
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 1,
-    shadowRadius: 28,
-    elevation: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    padding: spacing.lg,
+    gap: spacing.xs,
+    ...shadows.card,
   },
   rootPrimaryCardSpacing: {
-    marginBottom: 14,
-  },
-  markerListHeaderRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    paddingBottom: 8,
-    marginBottom: 2,
-    gap: 8,
-  },
-  markerListHeaderText: {
-    color: colors.textSecondary,
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  markerTitleCol: {
-    flex: 1,
-  },
-  markerTypeCol: {
-    flex: 1,
-  },
-  markerDateCol: {
-    flex: 1,
-    textAlign: 'left',
+    marginBottom: spacing.lg,
   },
   markerListLoadingWrap: {
-    minHeight: 120,
+    minHeight: 180,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    gap: spacing.sm,
   },
   markerListRow: {
+    minHeight: 72,
     flexDirection: 'row',
-    alignItems: 'flex-start',
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    paddingVertical: 10,
-    gap: 8,
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderRadius: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surfaceMuted,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  markerListRowPressed: {
+    backgroundColor: colors.primarySoft,
+    transform: [{ scale: 0.99 }],
+  },
+  markerListRowContent: {
+    flex: 1,
   },
   markerListCellText: {
     color: colors.textPrimary,
-    fontSize: 14,
-    lineHeight: 20,
+    ...typography.subtitle,
+  },
+  markerMetaRow: {
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  markerCategoryPill: {
+    minHeight: 26,
+    maxWidth: '70%',
+    justifyContent: 'center',
+    borderRadius: radii.pill,
+    backgroundColor: colors.lilac,
+    paddingHorizontal: spacing.sm,
+  },
+  markerCategoryText: {
+    color: colors.primary,
+    fontSize: 11,
+    lineHeight: 15,
+    fontWeight: '700',
+  },
+  markerDateText: {
+    color: colors.textSecondary,
+    ...typography.bodySmall,
+  },
+  markerListEmptyWrap: {
+    minHeight: 190,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  emptyIconWrap: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.blush,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   markerListEmptyText: {
     color: colors.textSecondary,
-    fontSize: 14,
+    ...typography.body,
     textAlign: 'center',
-    paddingVertical: 26,
   },
   markerPagerRow: {
-    marginTop: 6,
+    marginTop: spacing.md,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   markerPagerText: {
-    color: colors.textPrimary,
-    fontSize: 14,
+    color: colors.textSecondary,
+    ...typography.bodySmall,
   },
   markerPagerActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: spacing.xs,
   },
   markerPagerBtn: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: sizes.touchTarget / 2,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.lilac,
   },
   markerPagerBtnDisabled: {
     opacity: 0.42,
   },
   markerReloadBtn: {
-    marginTop: 8,
+    marginTop: spacing.sm,
     alignSelf: 'flex-start',
-    minHeight: 34,
-    borderRadius: 999,
+    minHeight: sizes.touchTarget,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: colors.blush,
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
   },
   markerReloadBtnText: {
     color: colors.primary,
-    fontSize: 13,
+    ...typography.bodySmall,
     fontWeight: '700',
   },
-  profileMainCard: {
-    flexGrow: 1,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    minHeight: 600,
-    paddingHorizontal: 20,
-    paddingVertical: 24,
+  markerListSummaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
+  },
+  markerListSummaryTitle: {
+    marginTop: spacing.xxs,
+    color: colors.primary,
+    ...typography.title,
+  },
+  markerListCountPill: {
+    minHeight: 36,
+    minWidth: 64,
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 1,
-    shadowRadius: 28,
-    elevation: 3,
+    borderRadius: radii.pill,
+    backgroundColor: colors.blush,
+    paddingHorizontal: spacing.sm,
+  },
+  markerListCountText: {
+    color: colors.primary,
+    ...typography.label,
+  },
+  profileMainCard: {
+    width: '100%',
+    position: 'relative',
+    overflow: 'hidden',
+    borderRadius: 28,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.lg,
+    alignItems: 'center',
+    ...shadows.floating,
+  },
+  profileAccentOrb: {
+    position: 'absolute',
+    top: -112,
+    right: -76,
+    width: 220,
+    height: 220,
+    borderRadius: 110,
+    backgroundColor: 'rgba(252, 221, 236, 0.76)',
   },
   profileEditFab: {
     position: 'absolute',
@@ -1377,329 +1943,401 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(116, 73, 136, 0.10)',
+    backgroundColor: colors.lilac,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(116, 73, 136, 0.16)',
+    borderColor: colors.border,
   },
   profileAvatarLarge: {
-    width: 144,
-    height: 144,
-    borderRadius: 72,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     borderWidth: 4,
-    borderColor: '#f2e6f7',
+    borderColor: colors.blush,
     backgroundColor: colors.surface,
-    shadowColor: 'rgba(116, 73, 136, 0.18)',
-    shadowOffset: {width: 0, height: 8},
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 18,
     elevation: 3,
   },
   profileAvatarFallbackLarge: {
-    width: 144,
-    height: 144,
-    borderRadius: 72,
+    width: 112,
+    height: 112,
+    borderRadius: 56,
     borderWidth: 4,
-    borderColor: '#f2e6f7',
-    backgroundColor: colors.primarySoft,
+    borderColor: colors.blush,
+    backgroundColor: colors.lilac,
     alignItems: 'center',
     justifyContent: 'center',
   },
   profileName: {
-    marginTop: 20,
-    color: colors.textPrimary,
-    fontSize: 28,
-    fontWeight: '800',
-    lineHeight: 36,
+    marginTop: spacing.lg,
+    color: colors.primary,
+    ...typography.display,
     textAlign: 'center',
   },
   profileMeta: {
-    marginTop: 4,
+    marginTop: spacing.xxs,
     color: colors.textSecondary,
-    fontSize: 16,
+    ...typography.bodySmall,
     textAlign: 'center',
+  },
+  profileSignatureBubble: {
+    width: '100%',
+    maxWidth: 420,
+    marginTop: spacing.lg,
+    marginBottom: spacing.lg,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.xs,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.blushSoft,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   profileSignature: {
-    marginTop: 28,
-    marginBottom: 28,
+    flex: 1,
     color: colors.textSecondary,
-    fontSize: 16,
-    textAlign: 'center',
+    ...typography.bodySmall,
+  },
+  profileActionRow: {
+    width: '100%',
+    maxWidth: 420,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.sm,
+  },
+  profileActionRowCompact: {
+    flexDirection: 'column',
   },
   profileOutlineBtn: {
-    minWidth: 168,
-    minHeight: 56,
-    borderRadius: 999,
+    flex: 1,
+    minHeight: 48,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: '#d7c0e5',
+    borderColor: colors.borderStrong,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.lilac,
   },
   profileOutlineBtnText: {
-    color: '#744988',
-    fontSize: 18,
+    color: colors.primary,
+    ...typography.bodySmall,
     fontWeight: '700',
-    lineHeight: 22,
   },
   profileLogoutBtn: {
-    marginTop: 18,
-    minWidth: 168,
-    minHeight: 56,
-    borderRadius: 999,
+    flex: 1,
+    minHeight: 48,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 28,
-    backgroundColor: '#e07a7a',
-    shadowColor: 'rgba(182, 90, 90, 0.28)',
-    shadowOffset: {width: 0, height: 6},
-    shadowOpacity: 1,
-    shadowRadius: 14,
-    elevation: 3,
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.blush,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   profileLogoutBtnText: {
-    color: '#fff',
-    fontSize: 18,
+    color: colors.primary,
+    ...typography.bodySmall,
     fontWeight: '700',
-    lineHeight: 22,
-  },
-  profileHead: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 10,
-    marginBottom: 4,
-  },
-  profileAvatarImage: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  profileAvatarFallback: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
-  },
-  profileHeadTextWrap: {
-    flex: 1,
-  },
-  profileHeadTitle: {
-    fontSize: 17,
-    lineHeight: 22,
-    fontWeight: '700',
-    color: colors.textPrimary,
-  },
-  profileHeadSubtitle: {
-    marginTop: 1,
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSecondary,
   },
   label: {
-    marginTop: 2,
-    fontSize: 13,
-    color: colors.textSecondary,
-  },
-  value: {
-    fontSize: 15,
-    color: colors.textPrimary,
-    lineHeight: 20,
+    marginTop: spacing.sm,
+    color: colors.primary,
+    ...typography.label,
   },
   input: {
-    borderRadius: 14,
+    minHeight: 48,
+    borderRadius: radii.pill,
     borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    borderColor: colors.borderStrong,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     color: colors.textPrimary,
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    backgroundColor: 'rgba(255, 255, 255, 0.82)',
+    ...typography.body,
   },
   errorText: {
     color: colors.danger,
-    marginTop: 2,
+    marginTop: spacing.xs,
+    ...typography.bodySmall,
   },
   successText: {
-    color: '#3d8e4e',
-    marginTop: 2,
+    color: colors.success,
+    marginTop: spacing.xs,
+    ...typography.bodySmall,
   },
   loginBtn: {
-    marginTop: 8,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
-    minHeight: 36,
-    paddingVertical: 8,
+    marginTop: spacing.md,
+    borderRadius: radii.pill,
+    backgroundColor: colors.lilac,
+    minHeight: 50,
+    paddingHorizontal: spacing.lg,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   loginBtnText: {
-    color: '#fff',
-    fontWeight: '600',
-    fontSize: 15,
+    color: colors.primary,
+    ...typography.body,
+    fontWeight: '800',
   },
   formLinkRow: {
-    marginTop: 6,
+    minHeight: sizes.touchTarget,
+    marginTop: spacing.xs,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    justifyContent: 'center',
+    gap: spacing.xxs,
   },
   formLinkHint: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.bodySmall,
+  },
+  formLinkPressable: {
+    minHeight: sizes.touchTarget,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.xxs,
   },
   formLinkText: {
     color: colors.primary,
-    fontSize: 13,
+    ...typography.bodySmall,
     fontWeight: '700',
+    textDecorationLine: 'underline',
+    textDecorationColor: colors.pin,
   },
   modalCenterWrap: {
     flex: 1,
-    justifyContent: 'center',
-    paddingHorizontal: 20,
+    position: 'relative',
   },
   modalOverlay: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(20, 14, 24, 0.32)',
+    backgroundColor: colors.scrim,
+  },
+  modalScroll: {
+    flex: 1,
+  },
+  modalScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xl,
   },
   editCard: {
-    borderRadius: 16,
+    width: '100%',
+    maxWidth: 520,
+    alignSelf: 'center',
+    borderRadius: 28,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
-    padding: 14,
-    shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 1,
-    shadowRadius: 28,
-    elevation: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    padding: spacing.lg,
+    ...shadows.dialog,
   },
-  editTitle: {
-    color: colors.textPrimary,
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 8,
-  },
-  editSignatureInput: {
-    minHeight: 86,
-    maxHeight: 120,
-    paddingTop: 10,
-    paddingBottom: 10,
-  },
-  uploadRow: {
-    marginTop: 4,
+  editTitleRow: {
+    minHeight: sizes.touchTarget,
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
-  uploadPickBtn: {
-    minHeight: 34,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.42)',
+  editTitleTextWrap: {
+    flex: 1,
+  },
+  editTitle: {
+    color: colors.primary,
+    ...typography.title,
+  },
+  modalCloseBtn: {
+    width: sizes.touchTarget,
+    height: sizes.touchTarget,
+    borderRadius: sizes.touchTarget / 2,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    backgroundColor: colors.blush,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  editSignatureInput: {
+    minHeight: 96,
+    maxHeight: 144,
+    borderRadius: 20,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.sm,
+  },
+  uploadRow: {
+    marginTop: spacing.xs,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  uploadPickBtn: {
+    minHeight: sizes.touchTarget,
+    flexDirection: 'row',
+    gap: spacing.xs,
+    borderRadius: radii.pill,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: spacing.md,
+    backgroundColor: colors.lilac,
   },
   uploadPickBtnText: {
     color: colors.primary,
-    fontSize: 13,
+    ...typography.bodySmall,
     fontWeight: '700',
   },
   uploadClearBtn: {
-    minHeight: 34,
-    borderRadius: 999,
+    minHeight: sizes.touchTarget,
+    borderRadius: radii.pill,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 12,
+    paddingHorizontal: spacing.md,
     borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.24)',
+    borderColor: colors.borderStrong,
+    backgroundColor: colors.surface,
   },
   uploadClearBtnText: {
     color: colors.textSecondary,
-    fontSize: 13,
+    ...typography.bodySmall,
     fontWeight: '600',
   },
   uploadHintText: {
-    color: '#3c8b4f',
-    fontSize: 12,
-    marginTop: 4,
+    color: colors.success,
+    ...typography.bodySmall,
+    marginTop: spacing.xs,
   },
   uploadPickedText: {
     color: colors.textSecondary,
-    fontSize: 12,
-    marginTop: 2,
+    ...typography.bodySmall,
+    marginTop: spacing.xxs,
   },
   editActionRow: {
-    marginTop: 10,
+    marginTop: spacing.lg,
     flexDirection: 'row',
     justifyContent: 'flex-end',
-    gap: 8,
+    gap: spacing.sm,
+  },
+  editActionRowCompact: {
+    flexDirection: 'column-reverse',
   },
   editCancelBtn: {
-    minHeight: 36,
-    borderRadius: 999,
+    minWidth: 112,
+    minHeight: 48,
+    borderRadius: radii.pill,
     borderWidth: 1,
     borderColor: colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
+    backgroundColor: colors.surface,
   },
   editCancelBtnText: {
     color: colors.primary,
     fontWeight: '700',
   },
   editSaveBtn: {
-    minHeight: 36,
-    borderRadius: 999,
-    backgroundColor: colors.primary,
+    minWidth: 112,
+    minHeight: 48,
+    borderRadius: radii.pill,
+    backgroundColor: colors.lilac,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   editSaveBtnText: {
-    color: '#fff',
+    color: colors.primary,
     fontWeight: '700',
   },
-  row: {
-    marginTop: 12,
-    flexDirection: 'row',
-    gap: 10,
+  rootIntro: {
+    marginBottom: spacing.lg,
+    paddingHorizontal: spacing.xxs,
   },
-  actionBtn: {
-    flex: 1,
-    borderRadius: 999,
+  rootTitle: {
+    marginTop: spacing.md,
+    color: colors.primary,
+    ...typography.display,
+  },
+  rootSubtitle: {
+    marginTop: spacing.xs,
+    maxWidth: 520,
+    color: colors.textSecondary,
+    ...typography.body,
+  },
+  sectionLabel: {
+    marginBottom: spacing.xs,
+    paddingHorizontal: spacing.xxs,
+    color: colors.primary,
+    ...typography.label,
+  },
+  sectionEyebrow: {
+    color: colors.textSecondary,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
+    letterSpacing: 1.1,
+  },
+  formTitle: {
+    marginBottom: spacing.xs,
+    color: colors.primary,
+    ...typography.title,
+  },
+  authCard: {
+    position: 'relative',
+    paddingTop: spacing.xl,
+  },
+  authIconWrap: {
+    width: 56,
+    height: 56,
+    marginBottom: spacing.sm,
+    borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 36,
-    paddingVertical: 8,
+    backgroundColor: colors.blush,
     borderWidth: 1,
-  },
-  refreshBtn: {
     borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
   },
-  refreshText: {
-    color: colors.primary,
-    fontWeight: '600',
+  authDescription: {
+    marginBottom: spacing.xs,
+    color: colors.textSecondary,
+    ...typography.bodySmall,
   },
-  logoutBtn: {
+  readingCard: {
+    width: '100%',
+    borderRadius: 28,
+    borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.primarySoft,
+    backgroundColor: 'rgba(255, 255, 255, 0.90)',
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.lg,
+    ...shadows.card,
   },
-  logoutText: {
-    color: colors.primary,
-    fontWeight: '600',
+  pressablePressed: {
+    opacity: 0.78,
+    transform: [{ scale: 0.985 }],
+  },
+  disabledControl: {
+    opacity: 0.46,
   },
   aboutContent: {
-    paddingBottom: 24,
+    width: '100%',
+    maxWidth: sizes.contentMaxWidth,
+    alignSelf: 'center',
+    paddingBottom: spacing.lg,
   },
 });

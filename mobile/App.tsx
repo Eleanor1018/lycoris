@@ -1,27 +1,24 @@
 import React from 'react';
-import {StatusBar, StyleSheet} from 'react-native';
+import { StatusBar, StyleSheet, View } from 'react-native';
 import {
+  DefaultTheme as NavigationDefaultTheme,
   NavigationContainer,
   type NavigatorScreenParams,
   useIsFocused,
 } from '@react-navigation/native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import {
-  Icon,
-  MD3LightTheme,
-  PaperProvider,
-  Text,
-} from 'react-native-paper';
-import {AuthProvider} from './src/auth/AuthProvider';
-import {DocsScreen} from './src/screens/DocsScreen';
-import {MapScreen} from './src/screens/MapScreen';
-import {MeScreen, type MePanel} from './src/screens/MeScreen';
-import {colors} from './src/theme/colors';
+import { Icon, MD3LightTheme, PaperProvider, Text } from 'react-native-paper';
+import { AuthProvider } from './src/auth/AuthProvider';
+import { DocsScreen } from './src/screens/DocsScreen';
+import { MapScreen } from './src/screens/MapScreen';
+import { MeScreen, type MePanel } from './src/screens/MeScreen';
+import { colors } from './src/theme/colors';
+import { radii, shadows, sizes, typography } from './src/theme/tokens';
 
 type AppRoute = {
   key: keyof RootTabParamList;
@@ -65,15 +62,44 @@ type RootTabParamList = {
 
 const materialTheme = {
   ...MD3LightTheme,
+  roundness: radii.card,
   colors: {
     ...MD3LightTheme.colors,
     primary: colors.primary,
+    onPrimary: colors.onPrimary,
+    primaryContainer: colors.lilac,
+    onPrimaryContainer: colors.primary,
     secondary: colors.secondary,
-    background: colors.background,
-    surface: colors.surface,
-    secondaryContainer: colors.navIndicator,
+    onSecondary: colors.primary,
+    secondaryContainer: colors.blush,
     onSecondaryContainer: colors.primary,
+    tertiary: colors.pin,
+    onTertiary: colors.primary,
+    tertiaryContainer: colors.pinSoft,
+    onTertiaryContainer: colors.primary,
+    background: colors.background,
+    onBackground: colors.textPrimary,
+    surface: colors.surface,
+    onSurface: colors.textPrimary,
+    surfaceVariant: colors.surfaceMuted,
+    onSurfaceVariant: colors.textSecondary,
+    outline: colors.borderStrong,
     outlineVariant: colors.border,
+    error: colors.danger,
+    backdrop: colors.scrim,
+  },
+};
+
+const navigationTheme = {
+  ...NavigationDefaultTheme,
+  colors: {
+    ...NavigationDefaultTheme.colors,
+    primary: colors.primary,
+    background: colors.background,
+    card: colors.surface,
+    text: colors.textPrimary,
+    border: colors.border,
+    notification: colors.pin,
   },
 };
 
@@ -123,7 +149,7 @@ const stackScreenOptions = {
 function MapsHomeRoute({
   route,
 }: {
-  route: {params?: {focusRequest?: MapFocusRequest | null}};
+  route: { params?: { focusRequest?: MapFocusRequest | null } };
 }) {
   const isFocused = useIsFocused();
   return (
@@ -140,7 +166,7 @@ function MapsStackNavigator() {
       <MapsStack.Screen
         name="MapsHome"
         component={MapsHomeRoute}
-        initialParams={{focusRequest: null}}
+        initialParams={{ focusRequest: null }}
       />
     </MapsStack.Navigator>
   );
@@ -247,31 +273,31 @@ function MeStackNavigator() {
       <MeStack.Screen name="MeRoot" component={MeRootRoute} />
       <MeStack.Screen
         name="MeAbout"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="about" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeRegister"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="register" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MePassword"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="password" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeCreated"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="created" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeFavorites"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="favorites" navigation={navigation} />
         )}
       />
@@ -285,41 +311,50 @@ function AppTabs() {
   return (
     <Tab.Navigator
       initialRouteName="maps"
-      screenOptions={({route}) => {
-        const tab = tabRoutes.find(item => item.key === route.name) ?? tabRoutes[0];
+      screenOptions={({ route }) => {
+        const tab =
+          tabRoutes.find(item => item.key === route.name) ?? tabRoutes[0];
         return {
           headerShown: false,
           // eslint-disable-next-line react/no-unstable-nested-components
-          tabBarIcon: ({focused, color, size}) => (
-            <Icon
-              source={focused ? tab.focusedIcon : tab.unfocusedIcon}
-              size={size}
-              color={color}
-            />
+          tabBarIcon: ({ focused, color }) => (
+            <View
+              style={[styles.tabIconPill, focused && styles.tabIconPillActive]}
+            >
+              <Icon
+                source={focused ? tab.focusedIcon : tab.unfocusedIcon}
+                size={21}
+                color={color}
+              />
+            </View>
           ),
           // eslint-disable-next-line react/no-unstable-nested-components
-          tabBarLabel: ({focused, color}) => (
+          tabBarLabel: ({ focused, color }) => (
             <Text
               style={[
                 styles.tabItemLabel,
-                focused ? styles.tabItemLabelActive : styles.tabItemLabelInactive,
-                {color},
-              ]}>
+                focused
+                  ? styles.tabItemLabelActive
+                  : styles.tabItemLabelInactive,
+                { color },
+              ]}
+            >
               {tab.title}
             </Text>
           ),
           tabBarActiveTintColor: colors.primary,
-          tabBarInactiveTintColor: 'rgba(30, 27, 34, 0.72)',
+          tabBarInactiveTintColor: colors.textMuted,
+          tabBarItemStyle: styles.tabItem,
           tabBarStyle: [
             styles.tabBar,
             {
-              paddingBottom: Math.max(2, insets.bottom),
-              minHeight: 64 + Math.max(0, insets.bottom - 4),
+              marginBottom: Math.max(10, insets.bottom),
             },
           ],
-          tabBarHideOnKeyboard: false,
+          tabBarHideOnKeyboard: true,
         };
-      }}>
+      }}
+    >
       <Tab.Screen name="maps" component={MapsStackNavigator} />
       <Tab.Screen name="docs" component={DocsStackNavigator} />
       <Tab.Screen name="me" component={MeStackNavigator} />
@@ -334,7 +369,7 @@ function AppShell() {
         barStyle="dark-content"
         backgroundColor={materialTheme.colors.background}
       />
-      <NavigationContainer>
+      <NavigationContainer theme={navigationTheme}>
         <AppTabs />
       </NavigationContainer>
     </>
@@ -355,25 +390,44 @@ export default function App() {
 
 const styles = StyleSheet.create({
   tabBar: {
+    height: sizes.floatingNavigationHeight,
+    marginHorizontal: 14,
+    marginTop: 8,
+    paddingTop: 6,
+    paddingBottom: 6,
+    borderWidth: 1,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(122, 75, 143, 0.14)',
+    borderColor: colors.border,
     backgroundColor: colors.navSurface,
-    paddingTop: 4,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    borderRadius: radii.floating,
+    ...shadows.floating,
+  },
+  tabItem: {
+    minHeight: sizes.touchTarget,
+    borderRadius: radii.floating,
+    paddingVertical: 2,
+  },
+  tabIconPill: {
+    width: 48,
+    height: 30,
+    borderRadius: radii.pill,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabIconPillActive: {
+    backgroundColor: colors.navIndicator,
   },
   tabItemLabel: {
-    fontSize: 12,
-    lineHeight: 16,
+    ...typography.label,
     includeFontPadding: false,
     textAlign: 'center',
   },
   tabItemLabelActive: {
     color: colors.primary,
-    fontWeight: '700',
+    fontWeight: '800',
   },
   tabItemLabelInactive: {
-    color: 'rgba(30, 27, 34, 0.72)',
-    fontWeight: '500',
+    color: colors.textMuted,
+    fontWeight: '600',
   },
 });

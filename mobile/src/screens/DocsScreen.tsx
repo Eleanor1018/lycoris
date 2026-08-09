@@ -314,11 +314,15 @@ export function DocsScreen() {
     };
   }, [imageWidth]);
 
-  const mobileFabStyle = useMemo(() => [styles.menuFab, {bottom: insets.bottom + 16}], [insets.bottom]);
-
   const drawerContent = (
     <View style={styles.drawerInner}>
-      <Text style={styles.drawerTitle}>目录</Text>
+      <View style={styles.drawerHeader}>
+        <View style={styles.drawerMark} />
+        <View style={styles.drawerHeaderText}>
+          <Text style={styles.drawerEyebrow}>LYCORIS LIBRARY</Text>
+          <Text style={styles.drawerTitle}>阅读目录</Text>
+        </View>
+      </View>
 
       <Text style={styles.drawerSectionTitle}>文档</Text>
       <View style={styles.drawerCard}>
@@ -326,6 +330,8 @@ export function DocsScreen() {
           <Pressable
             key={doc.slug}
             onPress={() => onSelectDoc(doc.slug)}
+            accessibilityRole="button"
+            accessibilityState={{selected: activeDoc.slug === doc.slug}}
             style={[
               styles.drawerItem,
               activeDoc.slug === doc.slug ? styles.drawerItemActive : null,
@@ -356,6 +362,8 @@ export function DocsScreen() {
             <Pressable
               key={item.id}
               onPress={() => onSelectToc(item.id)}
+              accessibilityRole="button"
+              accessibilityLabel={`跳转到${item.text}`}
               style={[
                 styles.tocItem,
                 item.level === 2
@@ -377,17 +385,48 @@ export function DocsScreen() {
   return (
     <View style={styles.page}>
       <PageBackground />
-      <View style={styles.layout}>
+      <View
+        style={[
+          styles.layout,
+          {paddingTop: Math.max(14, insets.top + 6)},
+        ]}>
         {isWideLayout ? <View style={styles.desktopDrawer}>{drawerContent}</View> : null}
 
         <View style={styles.contentArea}>
+          <View style={styles.readerChrome}>
+            <View style={styles.readerBrandMark}>
+              <View style={styles.readerBrandDot} />
+            </View>
+            <View style={styles.readerBrandCopy}>
+              <Text style={styles.readerBrand}>Lycoris</Text>
+              <Text style={styles.readerSubtitle}>互助资料库 · 离线可读</Text>
+            </View>
+            {!isWideLayout ? (
+              <IconButton
+                icon="format-list-bulleted"
+                size={22}
+                mode="contained"
+                containerColor={colors.primarySoft}
+                iconColor={colors.primary}
+                accessibilityLabel="打开阅读目录"
+                onPress={() => setDrawerOpen(true)}
+                style={styles.menuButton}
+              />
+            ) : null}
+          </View>
           <ScrollView
             ref={scrollRef}
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             showsVerticalScrollIndicator={false}>
-            <View style={styles.markdownCard}>
+            <View
+              style={[
+                styles.markdownCard,
+                !isWideLayout ? styles.markdownCardMobile : null,
+              ]}>
+              <Text style={styles.docEyebrow}>NORA'S FIELD GUIDE</Text>
               <Text style={styles.docManualTitle}>{displayTitle}</Text>
+              <View style={styles.titleRule} />
               <Markdown
                 style={markdownStyles}
                 rules={markdownRules}
@@ -403,26 +442,28 @@ export function DocsScreen() {
       </View>
 
       {!isWideLayout ? (
-        <IconButton
-          icon="menu"
-          size={22}
-          mode="contained"
-          containerColor="#7a4b8f"
-          iconColor="#ffffff"
-          onPress={() => setDrawerOpen(true)}
-          style={mobileFabStyle}
-        />
-      ) : null}
-
-      {!isWideLayout ? (
         <Modal
           transparent
           animationType="fade"
           visible={drawerOpen}
           onRequestClose={() => setDrawerOpen(false)}>
           <View style={styles.modalRoot}>
-            <View style={styles.mobileDrawer}>{drawerContent}</View>
-            <Pressable style={styles.modalBackdrop} onPress={() => setDrawerOpen(false)} />
+            <View
+              style={[
+                styles.mobileDrawer,
+                {
+                  paddingTop: Math.max(0, insets.top - 8),
+                  paddingBottom: Math.max(0, insets.bottom - 8),
+                },
+              ]}>
+              {drawerContent}
+            </View>
+            <Pressable
+              style={styles.modalBackdrop}
+              accessibilityRole="button"
+              accessibilityLabel="关闭阅读目录"
+              onPress={() => setDrawerOpen(false)}
+            />
           </View>
         </Modal>
       ) : null}
@@ -478,15 +519,15 @@ const markdownStyles = StyleSheet.create({
     paddingVertical: 2,
   },
   code_block: {
-    backgroundColor: 'rgba(122, 75, 143, 0.08)',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: 'rgba(208, 188, 255, 0.22)',
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 14,
   },
   fence: {
-    backgroundColor: 'rgba(122, 75, 143, 0.08)',
-    borderRadius: 10,
-    padding: 12,
+    backgroundColor: 'rgba(208, 188, 255, 0.22)',
+    borderRadius: 14,
+    padding: 14,
     marginBottom: 14,
   },
 });
@@ -501,25 +542,53 @@ const styles = StyleSheet.create({
   layout: {
     flex: 1,
     flexDirection: 'row',
-    paddingTop: 16,
+    paddingHorizontal: 12,
+    paddingBottom: 8,
+    gap: 12,
   },
   desktopDrawer: {
     width: DRAWER_WIDTH,
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 28,
+    overflow: 'hidden',
+    backgroundColor: 'rgba(255,255,255,0.86)',
   },
   drawerInner: {
     flex: 1,
-    paddingHorizontal: 12,
-    paddingTop: 14,
-    paddingBottom: 16,
+    paddingHorizontal: 16,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  drawerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  drawerMark: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#fcddec',
+    borderWidth: 7,
+    borderColor: 'rgba(236, 167, 206, 0.45)',
+    marginRight: 11,
+  },
+  drawerHeaderText: {
+    flex: 1,
+  },
+  drawerEyebrow: {
+    color: colors.textSecondary,
+    fontSize: 9,
+    lineHeight: 12,
+    fontWeight: '800',
+    letterSpacing: 1.4,
   },
   drawerTitle: {
-    fontSize: 16,
+    fontSize: 19,
+    lineHeight: 24,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginBottom: 12,
   },
   drawerSectionTitle: {
     fontSize: 13,
@@ -529,19 +598,21 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   drawerCard: {
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.8)',
     padding: 6,
   },
   drawerItem: {
-    borderRadius: 10,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
   },
   drawerItemActive: {
-    backgroundColor: colors.primarySoft,
+    backgroundColor: '#d0bcff',
   },
   drawerItemTitle: {
     fontSize: 14,
@@ -549,7 +620,7 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
   },
   drawerItemTitleActive: {
-    color: colors.primary,
+    color: '#5a3850',
     fontWeight: '700',
   },
   drawerItemSubtitle: {
@@ -563,10 +634,10 @@ const styles = StyleSheet.create({
   },
   tocScroll: {
     flex: 1,
-    borderRadius: 14,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: 'rgba(255,255,255,0.72)',
   },
   tocContent: {
     padding: 6,
@@ -578,8 +649,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
   },
   tocItem: {
-    borderRadius: 10,
-    paddingVertical: 7,
+    minHeight: 40,
+    justifyContent: 'center',
+    borderRadius: 13,
+    paddingVertical: 8,
     paddingRight: 8,
     marginBottom: 2,
   },
@@ -601,28 +674,117 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
   },
+  readerChrome: {
+    minHeight: 62,
+    marginBottom: 10,
+    paddingLeft: 10,
+    paddingRight: 6,
+    borderRadius: 31,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    shadowColor: colors.shadow,
+    shadowOffset: {width: 0, height: 8},
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    elevation: 3,
+  },
+  readerBrandMark: {
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#fcddec',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  readerBrandDot: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#eca7ce',
+  },
+  readerBrandCopy: {
+    flex: 1,
+    marginLeft: 11,
+  },
+  readerBrand: {
+    color: colors.textPrimary,
+    fontSize: 18,
+    lineHeight: 22,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  readerSubtitle: {
+    marginTop: 1,
+    color: colors.textSecondary,
+    fontSize: 11,
+    lineHeight: 15,
+  },
+  menuButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    margin: 0,
+  },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    paddingTop: 14,
-    paddingHorizontal: 16,
-    paddingBottom: 24,
+    paddingTop: 2,
+    paddingHorizontal: 0,
+    paddingBottom: 20,
   },
   markdownCard: {
+    width: '100%',
+    maxWidth: 820,
+    alignSelf: 'center',
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 28,
+    paddingHorizontal: 20,
+    paddingTop: 26,
+    paddingBottom: 34,
+    shadowColor: colors.shadow,
+    shadowOffset: {width: 0, height: 10},
+    shadowOpacity: 0.14,
+    shadowRadius: 24,
+    elevation: 2,
+  },
+  markdownCardMobile: {
     backgroundColor: 'transparent',
     borderWidth: 0,
-    paddingHorizontal: 0,
-    paddingTop: 0,
-    paddingBottom: 0,
+    borderRadius: 0,
+    paddingHorizontal: 5,
+    paddingTop: 18,
+    paddingBottom: 28,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  docEyebrow: {
+    color: colors.primary,
+    fontSize: 10,
+    lineHeight: 14,
+    fontWeight: '800',
+    letterSpacing: 1.6,
   },
   docManualTitle: {
-    fontSize: 30,
-    lineHeight: 38,
+    fontSize: 29,
+    lineHeight: 36,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 2,
-    marginBottom: 14,
+    marginTop: 8,
+    marginBottom: 16,
+    letterSpacing: -0.5,
+  },
+  titleRule: {
+    width: 52,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#d0bcff',
+    marginBottom: 22,
   },
   mdH1: {
     fontSize: 30,
@@ -699,22 +861,14 @@ const styles = StyleSheet.create({
   mobileDrawer: {
     width: DRAWER_WIDTH,
     maxWidth: '82%',
-    borderRightWidth: 1,
-    borderRightColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  menuFab: {
-    position: 'absolute',
-    right: 16,
-    zIndex: 1300,
-    width: 46,
-    height: 46,
-    borderRadius: 23,
-    margin: 0,
-    shadowColor: 'rgba(122, 75, 143, 0.8)',
-    shadowOffset: {width: 0, height: 10},
-    shadowOpacity: 0.34,
-    shadowRadius: 24,
-    elevation: 8,
+    marginTop: 8,
+    marginBottom: 8,
+    borderTopRightRadius: 28,
+    borderBottomRightRadius: 28,
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderColor: colors.border,
+    backgroundColor: '#faf5ff',
+    overflow: 'hidden',
   },
 });

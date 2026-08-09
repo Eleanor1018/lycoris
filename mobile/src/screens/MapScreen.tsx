@@ -38,7 +38,7 @@ import {colors} from '../theme/colors';
 import type {MapMarker, MarkerCategory} from '../types/marker';
 
 type OwnerFilter = 'all' | 'mine' | 'fav';
-type NearbyCategory = 'accessible_toilet' | 'friendly_clinic';
+type NearbyCategory = 'accessible_toilet' | 'friendly_clinic' | 'baby_room';
 type TileProvider = 'osm' | 'tf_atlas' | 'tianditu_vec';
 type NearbyResult = MapMarker & {distanceMeters: number};
 type MapFocusRequest = {
@@ -83,6 +83,7 @@ type WebMapMessage =
   | {type: 'leafletLoadFailed'; message?: string};
 
 type DraftMarker = {
+  clientRequestId: string;
   lat: number;
   lng: number;
   category: MarkerCategory;
@@ -139,6 +140,13 @@ const categoryLabel: Record<MarkerCategory, string> = {
 const nearbyCategoryLabel: Record<NearbyCategory, string> = {
   accessible_toilet: '无障碍卫生间',
   friendly_clinic: '友好医疗机构',
+  baby_room: '母婴室',
+};
+
+const nearbyCategoryIcon: Record<NearbyCategory, string> = {
+  accessible_toilet: 'human-male-female',
+  friendly_clinic: 'hospital-box-outline',
+  baby_room: 'baby-carriage',
 };
 
 const categoryColor: Record<MarkerCategory, string> = {
@@ -147,6 +155,9 @@ const categoryColor: Record<MarkerCategory, string> = {
   baby_room: '#fb8c00',
   self_definition: '#f0bf2f',
 };
+
+const createClientRequestId = () =>
+  `rn-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
 
 const hasThunderforestKey = THUNDERFOREST_API_KEY.length > 0;
 const hasTiandituKey = TIANDITU_API_KEY.length > 0;
@@ -376,9 +387,9 @@ const buildLeafletHtml = (provider: TileProvider, initView: LatLngZoom) => {
   <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" />
   <style>
-    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #f6f2fb; }
+    html, body, #map { margin: 0; padding: 0; width: 100%; height: 100%; background: #f6f6f6; }
     .leaflet-control-zoom { display: none !important; }
-    .leaflet-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+    .leaflet-container { font-family: Roboto, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
   </style>
 </head>
 <body>
@@ -441,8 +452,8 @@ const buildLeafletHtml = (provider: TileProvider, initView: LatLngZoom) => {
         var safeAvatarUrl = hasAvatar ? escapeAttr(avatarUrl.trim()) : '';
         var fallbackSvg =
           '<circle cx="20" cy="20" r="14.7" fill="#fff" />' +
-          '<circle cx="20" cy="15.2" r="4.1" fill="none" stroke="#7a4b8f" stroke-width="1.8" />' +
-          '<path d="M13.3 25c1.6-2.8 4-4.1 6.7-4.1 2.7 0 5.1 1.3 6.7 4.1" fill="none" stroke="#7a4b8f" stroke-width="1.8" stroke-linecap="round" />';
+          '<circle cx="20" cy="15.2" r="4.1" fill="none" stroke="#5a3850" stroke-width="1.8" />' +
+          '<path d="M13.3 25c1.6-2.8 4-4.1 6.7-4.1 2.7 0 5.1 1.3 6.7 4.1" fill="none" stroke="#5a3850" stroke-width="1.8" stroke-linecap="round" />';
         var avatarLayer = hasAvatar
           ? fallbackSvg +
             '<image href="' +
@@ -455,19 +466,19 @@ const buildLeafletHtml = (provider: TileProvider, initView: LatLngZoom) => {
         return L.divIcon({
           className: '',
           html:
-            '<svg width="56" height="56" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="filter: drop-shadow(0 8px 14px rgba(122,75,143,0.34));">' +
+            '<svg width="56" height="56" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" style="filter: drop-shadow(0 8px 14px rgba(90,56,80,0.28));">' +
               '<defs>' +
                 '<clipPath id="ly-user-avatar-clip">' +
                   '<circle cx="20" cy="20" r="15.6" />' +
                 '</clipPath>' +
               '</defs>' +
-              '<circle cx="20" cy="20" r="16.8" fill="none" stroke="#7a4b8f" stroke-width="1.2" opacity="0.42">' +
+              '<circle cx="20" cy="20" r="16.8" fill="none" stroke="#5a3850" stroke-width="1.2" opacity="0.42">' +
                 '<animate attributeName="r" values="16.8;20.8;16.8" dur="1.9s" repeatCount="indefinite" />' +
                 '<animate attributeName="opacity" values="0.42;0;0.42" dur="1.9s" repeatCount="indefinite" />' +
               '</circle>' +
               avatarLayer +
-              '<circle cx="20" cy="20" r="15.6" fill="none" stroke="#7a4b8f" stroke-width="2" />' +
-              '<circle cx="20" cy="37.2" r="2.2" fill="#7a4b8f" opacity="0.88" />' +
+              '<circle cx="20" cy="20" r="15.6" fill="none" stroke="#5a3850" stroke-width="2" />' +
+              '<circle cx="20" cy="37.2" r="2.2" fill="#5a3850" opacity="0.88" />' +
             '</svg>',
           iconSize: [56, 56],
           iconAnchor: [28, 28],
@@ -650,6 +661,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const handledFocusRequestRef = useRef<number | null>(null);
   const pendingFocusMarkerIdRef = useRef<number | null>(null);
   const addModeHintBootstrappedRef = useRef(false);
+  const savingDraftRef = useRef(false);
 
   const [loading, setLoading] = useState(true);
   const [mapReady, setMapReady] = useState(false);
@@ -1455,6 +1467,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const openDraftAt = useCallback(
     (lat: number, lng: number) => {
       openDraftMenu({
+        clientRequestId: createClientRequestId(),
         lat,
         lng,
         category: 'accessible_toilet',
@@ -1484,6 +1497,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       const start = splitHHMM(marker.openTimeStart);
       const end = splitHHMM(marker.openTimeEnd);
       openDraftMenu({
+        clientRequestId: '',
         lat: marker.lat,
         lng: marker.lng,
         category: marker.category,
@@ -1829,7 +1843,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   );
 
   const saveDraft = useCallback(async () => {
-    if (!draft) return;
+    if (!draft || savingDraftRef.current) return;
     if (!isLoggedIn) {
       showNotice('请先登录后再标点。');
       resetDraftState();
@@ -1874,6 +1888,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       return;
     }
 
+    savingDraftRef.current = true;
     setSavingDraft(true);
     try {
       let payload = editingId
@@ -1891,6 +1906,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         : await requestJson<unknown>('/api/markers', {
             method: 'POST',
             body: JSON.stringify({
+              clientRequestId: draft.clientRequestId,
               lat: draft.lat,
               lng: draft.lng,
               category: draft.category,
@@ -1908,27 +1924,44 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         throw new Error('保存成功，但返回数据格式异常。');
       }
 
+      let imageUploadError = '';
       if (draftImageFile) {
-        const form = new FormData();
-        appendUploadImageToFormData(form, 'file', draftImageFile);
-        payload = await requestJson<unknown>(`/api/markers/${created.id}/image`, {
-          method: 'POST',
-          body: form,
-          timeoutMs: 20000,
-        });
-        const withImage = normalizeSingleMarker(payload);
-        if (withImage) created = withImage;
+        try {
+          const form = new FormData();
+          appendUploadImageToFormData(form, 'file', draftImageFile);
+          payload = await requestJson<unknown>(`/api/markers/${created.id}/image`, {
+            method: 'POST',
+            body: form,
+            timeoutMs: 30000,
+          });
+          const withImage = normalizeSingleMarker(payload);
+          if (withImage) created = withImage;
+        } catch (e) {
+          imageUploadError =
+            e instanceof Error && e.message ? e.message : '图片上传失败';
+        }
       }
 
       setMarkers(prev => [created, ...prev.filter(marker => marker.id !== created.id)]);
       setSelectedMarkerId(created.id);
       resetDraftState();
-      showNotice('已提交管理员审核，将在审核通过后显示。');
+      if (imageUploadError) {
+        showNotice(
+          `点位已保存，但图片上传失败（${imageUploadError}）。可稍后编辑点位补传。`,
+        );
+      } else {
+        showNotice(
+          editingId
+            ? '点位修改已保存。'
+            : '已提交管理员审核，将在审核通过后显示。',
+        );
+      }
       injectJs(`window.__rnSetView(${created.lat}, ${created.lng}, 15);`);
     } catch (e) {
       const message = e instanceof Error ? e.message : '保存失败';
       showNotice(message);
     } finally {
+      savingDraftRef.current = false;
       setSavingDraft(false);
     }
   }, [
@@ -2100,17 +2133,31 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       <Pressable
         style={[styles.addFab, addMode && styles.addFabActive, {top: topOffset}]}
         onPress={handleAddButtonPress}
+        accessibilityRole="button"
+        accessibilityState={{selected: addMode}}
+        accessibilityLabel={addMode ? '退出添加点位模式' : '添加新点位'}
       >
         <Icon
           source={addMode ? 'map-marker-check-outline' : 'map-marker-plus-outline'}
           size={21}
-          color={addMode ? '#3b2a14' : '#fff'}
+          color={addMode ? '#3b2a14' : colors.primary}
         />
       </Pressable>
+
+      {!legendOpen ? (
+        <View pointerEvents="none" style={[styles.mapBrandWrap, {top: topOffset}]}>
+          <View style={styles.mapBrandPill}>
+            <View style={styles.mapBrandDot} />
+            <Text style={styles.mapBrandText}>Lycoris</Text>
+          </View>
+        </View>
+      ) : null}
       {showAddModeHint ? (
         <Pressable
           style={[styles.addModeHintBubble, {top: topOffset + 56}]}
           onPress={() => setShowAddModeHint(false)}
+          accessibilityRole="button"
+          accessibilityLabel="关闭添加点位提示"
         >
           <View style={styles.addModeHintArrow} />
           <Text style={styles.addModeHintText}>
@@ -2130,6 +2177,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         <Pressable
           style={[styles.legendToggle, legendOpen && styles.legendToggleOpen]}
           onPress={() => setLegendOpen(v => !v)}
+          accessibilityRole="button"
+          accessibilityState={{expanded: legendOpen}}
+          accessibilityLabel={legendOpen ? '收起点位筛选' : '展开点位筛选'}
         >
           <Text style={styles.legendToggleText}>筛选点位 {legendOpen ? '▲' : '▼'}</Text>
         </Pressable>
@@ -2142,12 +2192,14 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 <Pressable
                   style={styles.legendQuickBtn}
                   onPress={() => setAllCategoriesVisible(true)}
+                  accessibilityRole="button"
                 >
                   <Text style={styles.legendQuickBtnText}>全选</Text>
                 </Pressable>
                 <Pressable
                   style={styles.legendQuickBtn}
                   onPress={() => setAllCategoriesVisible(false)}
+                  accessibilityRole="button"
                 >
                   <Text style={styles.legendQuickBtnText}>全不选</Text>
                 </Pressable>
@@ -2170,6 +2222,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     ]}
                     disabled={disabled}
                     onPress={() => setOwnerFilter(key)}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: active, disabled}}
                   >
                     <Text
                       style={[
@@ -2189,6 +2243,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 key={`category-${key}`}
                 style={styles.categoryRow}
                 onPress={() => toggleCategory(key)}
+                accessibilityRole="checkbox"
+                accessibilityState={{checked: visibleCats[key]}}
+                accessibilityLabel={categoryLabel[key]}
               >
                 <View style={styles.categoryLeft}>
                   <View
@@ -2224,8 +2281,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <Text style={styles.exitNearbyText}>退出附近筛选</Text>
           </Pressable>
         ) : null}
-        <Pressable style={styles.circleFab} onPress={recenterToUserLocation}>
-          <Icon source="crosshairs-gps" size={21} color="#fff" />
+        <Pressable
+          style={styles.circleFab}
+          onPress={recenterToUserLocation}
+          accessibilityRole="button"
+          accessibilityLabel="回到我的位置">
+          <Icon source="crosshairs-gps" size={21} color={colors.primary} />
         </Pressable>
       </View>
 
@@ -2234,38 +2295,35 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           styles.nearbyFab,
           {
             bottom: bottomOffset,
-            backgroundColor:
-              nearbyCategory === 'friendly_clinic'
-                ? categoryColor.friendly_clinic
-                : categoryColor.accessible_toilet,
+            backgroundColor: categoryColor[nearbyCategory],
+            shadowColor: categoryColor[nearbyCategory],
           },
         ]}
         disabled={nearbyLoading}
         onPress={searchNearby}
+        accessibilityRole="button"
+        accessibilityState={{disabled: nearbyLoading, busy: nearbyLoading}}
+        accessibilityLabel={`查找附近${nearbyCategoryLabel[nearbyCategory]}`}
       >
         <Icon
-          source={
-            nearbyCategory === 'friendly_clinic'
-              ? 'hospital-box-outline'
-              : 'human-male-female'
-          }
+          source={nearbyCategoryIcon[nearbyCategory]}
           size={18}
-          color="#fff"
+          color={colors.textPrimary}
         />
         <Text style={styles.nearbyFabText}>
           {nearbyLoading
             ? '查询中...'
-            : nearbyCategory === 'friendly_clinic'
-              ? '附近友好医疗机构'
-              : '附近无障碍卫生间'}
+            : `附近${nearbyCategoryLabel[nearbyCategory]}`}
         </Text>
       </Pressable>
 
       <Pressable
         style={[styles.circleFab, styles.settingsFab, {bottom: bottomOffset}]}
         onPress={() => setSettingsOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel="打开地图设置"
       >
-        <Icon source="cog-outline" size={21} color="#fff" />
+        <Icon source="tune-variant" size={21} color={colors.primary} />
       </Pressable>
 
       {selectedMarker ? (
@@ -2328,6 +2386,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               <Pressable
                 style={styles.markerActionBtn}
                 onPress={() => openEditDraft(selectedMarker)}
+                accessibilityRole="button"
+                accessibilityLabel={`编辑${selectedMarker.title}`}
               >
                 <Icon source="pencil-outline" size={18} color={colors.primary} />
                 <Text style={styles.markerActionText}>编辑</Text>
@@ -2336,6 +2396,13 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <Pressable
               style={styles.markerActionBtn}
               onPress={() => toggleFavorite(selectedMarker.id)}
+              accessibilityRole="button"
+              accessibilityState={{selected: favoriteIds.has(selectedMarker.id)}}
+              accessibilityLabel={
+                favoriteIds.has(selectedMarker.id)
+                  ? `取消收藏${selectedMarker.title}`
+                  : `收藏${selectedMarker.title}`
+              }
             >
               <Icon
                 source={favoriteIds.has(selectedMarker.id) ? 'star' : 'star-outline'}
@@ -2349,6 +2416,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <Pressable
               style={styles.markerActionBtn}
               onPress={() => openWebMap(selectedMarker)}
+              accessibilityRole="link"
+              accessibilityLabel={`在网页中查看${selectedMarker.title}`}
             >
               <Icon source="open-in-new" size={18} color={colors.primary} />
               <Text style={styles.markerActionText}>网页查看</Text>
@@ -2390,8 +2459,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 </Text>
               </View>
               <Pressable
+                style={styles.closeButton}
                 onPress={closeDraft}
                 disabled={savingDraft || deletingMarker || draftImageBusy}
+                accessibilityRole="button"
+                accessibilityLabel="关闭点位编辑"
               >
                 <Icon source="close" size={20} color={colors.textSecondary} />
               </Pressable>
@@ -2410,6 +2482,13 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 onPress={() => {
                   setCategorySelectOpen(v => !v);
                 }}
+                disabled={savingDraft || deletingMarker || draftImageBusy}
+                accessibilityRole="button"
+                accessibilityState={{
+                  expanded: categorySelectOpen,
+                  disabled: savingDraft || deletingMarker || draftImageBusy,
+                }}
+                accessibilityLabel="选择点位类别"
               >
                 <View style={styles.selectTriggerLeft}>
                   <View
@@ -2444,6 +2523,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                           setDraft(prev => (prev ? {...prev, category: key} : prev));
                           setCategorySelectOpen(false);
                         }}
+                        disabled={savingDraft || deletingMarker || draftImageBusy}
+                        accessibilityRole="button"
+                        accessibilityState={{selected: active}}
                       >
                         <View style={styles.selectTriggerLeft}>
                           <View
@@ -2480,6 +2562,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 placeholder="例如：地铁站A口无障碍卫生间"
                 placeholderTextColor="#9b8cab"
                 maxLength={80}
+                accessibilityLabel="点位标题"
+                editable={!savingDraft && !deletingMarker && !draftImageBusy}
               />
 
               <Text style={styles.sheetSectionTitle}>描述</Text>
@@ -2494,6 +2578,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 multiline
                 textAlignVertical="top"
                 maxLength={800}
+                accessibilityLabel="点位描述"
+                editable={!savingDraft && !deletingMarker && !draftImageBusy}
               />
 
               <Text style={styles.sheetSectionTitle}>图片（可选）</Text>
@@ -2501,7 +2587,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 <Pressable
                   style={styles.uploadPickBtn}
                   onPress={pickDraftImage}
-                  disabled={savingDraft || draftImageBusy}>
+                  disabled={savingDraft || draftImageBusy}
+                  accessibilityRole="button"
+                  accessibilityLabel="选择点位图片">
                   <Text style={styles.uploadPickBtnText}>
                     {draftImageBusy ? '处理中...' : '选择图片'}
                   </Text>
@@ -2514,7 +2602,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                       setDraftImageHint('');
                       setDraftImageError('');
                     }}
-                    disabled={savingDraft || draftImageBusy}>
+                    disabled={savingDraft || draftImageBusy}
+                    accessibilityRole="button"
+                    accessibilityLabel="清除已选择图片">
                     <Text style={styles.uploadClearBtnText}>清除</Text>
                   </Pressable>
                 ) : null}
@@ -2538,8 +2628,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   onValueChange={value =>
                     setDraft(prev => (prev ? {...prev, isPublic: value} : prev))
                   }
-                  trackColor={{false: '#cab9d8', true: '#b58cc9'}}
-                  thumbColor={draft.isPublic ? '#744988' : '#fff'}
+                  trackColor={{false: '#d7ced5', true: '#d0bcff'}}
+                  thumbColor={draft.isPublic ? '#5a3850' : '#fff'}
+                  accessibilityLabel="公开共享点位"
+                  disabled={savingDraft || deletingMarker || draftImageBusy}
                 />
               </View>
 
@@ -2556,6 +2648,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     maxLength={2}
                     placeholder="HH"
                     placeholderTextColor="#9b8cab"
+                    editable={!savingDraft && !deletingMarker && !draftImageBusy}
                   />
                   <Text style={styles.timeSelectSeparator}>:</Text>
                   <TextInput
@@ -2567,6 +2660,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     maxLength={2}
                     placeholder="MM"
                     placeholderTextColor="#9b8cab"
+                    editable={!savingDraft && !deletingMarker && !draftImageBusy}
                   />
                 </View>
               </View>
@@ -2583,6 +2677,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     maxLength={2}
                     placeholder="HH"
                     placeholderTextColor="#9b8cab"
+                    editable={!savingDraft && !deletingMarker && !draftImageBusy}
                   />
                   <Text style={styles.timeSelectSeparator}>:</Text>
                   <TextInput
@@ -2594,6 +2689,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     maxLength={2}
                     placeholder="MM"
                     placeholderTextColor="#9b8cab"
+                    editable={!savingDraft && !deletingMarker && !draftImageBusy}
                   />
                 </View>
               </View>
@@ -2609,6 +2705,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   style={styles.draftCancelBtn}
                   onPress={closeDraft}
                   disabled={savingDraft || deletingMarker || draftImageBusy}
+                  accessibilityRole="button"
                 >
                   <Text style={styles.draftCancelBtnText}>取消</Text>
                 </Pressable>
@@ -2617,6 +2714,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     style={styles.draftDeleteBtn}
                     onPress={() => setDeleteConfirmOpen(true)}
                     disabled={savingDraft || deletingMarker || draftImageBusy}
+                    accessibilityRole="button"
                   >
                     <Text style={styles.draftDeleteBtnText}>删除</Text>
                   </Pressable>
@@ -2627,10 +2725,18 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     savingDraft && styles.draftSaveBtnDisabled,
                   ]}
                   onPress={saveDraft}
-                  disabled={savingDraft || draftImageBusy}
+                  disabled={savingDraft || deletingMarker || draftImageBusy}
+                  accessibilityRole="button"
+                  accessibilityState={{
+                    disabled: savingDraft || deletingMarker || draftImageBusy,
+                    busy: savingDraft,
+                  }}
                 >
                   {savingDraft ? (
-                    <ActivityIndicator size="small" color="#fff" />
+                    <>
+                      <ActivityIndicator size="small" color="#5a3850" />
+                      <Text style={styles.draftSaveBtnText}>保存中…</Text>
+                    </>
                   ) : (
                     <Text style={styles.draftSaveBtnText}>
                       {editingId ? '保存修改' : '保存'}
@@ -2657,6 +2763,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             onPress={() => {
               if (!deletingMarker) setDeleteConfirmOpen(false);
             }}
+            accessibilityRole="button"
+            accessibilityLabel="取消删除点位"
           />
           <View style={styles.confirmCard}>
             <Text style={styles.confirmTitle}>确认删除点位？</Text>
@@ -2666,6 +2774,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 style={styles.confirmCancelBtn}
                 onPress={() => setDeleteConfirmOpen(false)}
                 disabled={deletingMarker}
+                accessibilityRole="button"
               >
                 <Text style={styles.confirmCancelBtnText}>取消</Text>
               </Pressable>
@@ -2676,6 +2785,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 ]}
                 onPress={confirmDeleteDraft}
                 disabled={deletingMarker}
+                accessibilityRole="button"
+                accessibilityState={{disabled: deletingMarker, busy: deletingMarker}}
               >
                 {deletingMarker ? (
                   <ActivityIndicator size="small" color="#fff" />
@@ -2698,17 +2809,30 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setSettingsOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="关闭地图设置"
           />
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
               <Text style={styles.sheetTitle}>地图设置</Text>
-              <Pressable onPress={() => setSettingsOpen(false)}>
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setSettingsOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="关闭地图设置">
                 <Icon source="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
 
-            <Text style={styles.sheetSectionTitle}>地图来源</Text>
-            <View style={styles.sheetChipRow}>
+            <ScrollView
+              style={styles.settingsScroll}
+              contentContainerStyle={[
+                styles.settingsContent,
+                {paddingBottom: Math.max(22, insets.bottom + 12)},
+              ]}
+              showsVerticalScrollIndicator={false}>
+              <Text style={styles.sheetSectionTitle}>地图来源</Text>
+              <View style={styles.sheetChipRow}>
               {(['osm', 'tf_atlas', 'tianditu_vec'] as TileProvider[]).map(key => {
                 const active = tileProvider === key;
                 const disabled =
@@ -2724,6 +2848,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     ]}
                     disabled={disabled}
                     onPress={() => setTileProvider(key)}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: active, disabled}}
                   >
                     <Text
                       style={[
@@ -2736,9 +2862,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   </Pressable>
                 );
               })}
-            </View>
-            {!hasThunderforestKey || !hasTiandituKey ? (
-              <Text style={styles.sheetHintText}>
+              </View>
+              {!hasThunderforestKey || !hasTiandituKey ? (
+                <Text style={styles.sheetHintText}>
                 {`未配置的来源会自动禁用：${
                   !hasThunderforestKey && !hasTiandituKey
                     ? 'TF Atlas、天地图'
@@ -2746,20 +2872,27 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                       ? 'TF Atlas'
                       : '天地图'
                 }`}
-              </Text>
-            ) : null}
-            <Text style={styles.sheetHintText}>当前不依赖 Google 地图 SDK。</Text>
+                </Text>
+              ) : null}
+              <Text style={styles.sheetHintText}>当前不依赖 Google 地图 SDK。</Text>
 
-            <Text style={styles.sheetSectionTitle}>附近查询类型</Text>
-            <View style={styles.sheetChipRow}>
-              {(['accessible_toilet', 'friendly_clinic'] as NearbyCategory[]).map(
-                key => {
+              <Text style={styles.sheetSectionTitle}>附近查询类型</Text>
+              <View style={styles.sheetChipRow}>
+              {(
+                [
+                  'accessible_toilet',
+                  'friendly_clinic',
+                  'baby_room',
+                ] as NearbyCategory[]
+              ).map(key => {
                   const active = nearbyCategory === key;
                   return (
                     <Pressable
                       key={`nearby-type-${key}`}
                       style={[styles.sheetChip, active && styles.sheetChipActive]}
                       onPress={() => setNearbyCategory(key)}
+                      accessibilityRole="button"
+                      accessibilityState={{selected: active}}
                     >
                       <Text
                         style={[
@@ -2771,12 +2904,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                       </Text>
                     </Pressable>
                   );
-                },
-              )}
-            </View>
+              })}
+              </View>
 
-            <Text style={styles.sheetSectionTitle}>附近查询范围</Text>
-            <View style={styles.sheetChipRow}>
+              <Text style={styles.sheetSectionTitle}>附近查询范围</Text>
+              <View style={styles.sheetChipRow}>
               {[500, 1000, 2500].map(radius => {
                 const active = nearbyRadius === radius;
                 return (
@@ -2788,6 +2920,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                       setNearbyRadiusInput(String(radius));
                       setNearbyRadiusError('');
                     }}
+                    accessibilityRole="button"
+                    accessibilityState={{selected: active}}
                   >
                     <Text
                       style={[
@@ -2800,10 +2934,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   </Pressable>
                 );
               })}
-            </View>
+              </View>
 
-            <View style={styles.radiusInputRow}>
-              <TextInput
+              <View style={styles.radiusInputRow}>
+                <TextInput
                 style={styles.radiusInput}
                 value={nearbyRadiusInput}
                 keyboardType="number-pad"
@@ -2814,16 +2948,23 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 onBlur={applyNearbyRadiusInput}
                 placeholder="0 - 10000"
                 placeholderTextColor="#9b8cab"
-              />
-              <Pressable style={styles.radiusApplyBtn} onPress={applyNearbyRadiusInput}>
-                <Text style={styles.radiusApplyBtnText}>应用</Text>
-              </Pressable>
-            </View>
-            {nearbyRadiusError ? (
-              <Text style={styles.radiusErrorText}>{nearbyRadiusError}</Text>
-            ) : (
-              <Text style={styles.radiusHintText}>范围支持 0-10000m，超出会自动修正。</Text>
-            )}
+                accessibilityLabel="附近查询范围，单位米"
+                />
+                <Pressable
+                style={styles.radiusApplyBtn}
+                onPress={applyNearbyRadiusInput}
+                accessibilityRole="button">
+                  <Text style={styles.radiusApplyBtnText}>应用</Text>
+                </Pressable>
+              </View>
+              {nearbyRadiusError ? (
+                <Text style={styles.radiusErrorText}>{nearbyRadiusError}</Text>
+              ) : (
+                <Text style={styles.radiusHintText}>
+                  范围支持 0-10000m，超出会自动修正。
+                </Text>
+              )}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -2838,6 +2979,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           <Pressable
             style={styles.modalBackdrop}
             onPress={() => setNearbyPanelOpen(false)}
+            accessibilityRole="button"
+            accessibilityLabel="关闭附近结果"
           />
           <View style={[styles.sheet, styles.nearbySheet]}>
             <View style={styles.sheetHeader}>
@@ -2849,7 +2992,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   共 {nearbyResults.length} 个结果，点击可在地图上定位
                 </Text>
               </View>
-              <Pressable onPress={() => setNearbyPanelOpen(false)}>
+              <Pressable
+                style={styles.closeButton}
+                onPress={() => setNearbyPanelOpen(false)}
+                accessibilityRole="button"
+                accessibilityLabel="关闭附近结果">
                 <Icon source="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
@@ -2873,6 +3020,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     focusMarker(marker);
                     setNearbyPanelOpen(false);
                   }}
+                  accessibilityRole="button"
+                  accessibilityLabel={`在地图上查看${marker.title}`}
                 >
                   <View style={styles.nearbyCardHeader}>
                     <Text style={styles.nearbyCardTitle} numberOfLines={1}>
@@ -2912,40 +3061,79 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFillObject,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: 'rgba(248,245,251,0.95)',
+    backgroundColor: 'rgba(248,235,255,0.96)',
     gap: 8,
   },
   addFab: {
     position: 'absolute',
     left: 16,
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.primary,
-    shadowColor: '#6f4384',
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    shadowOffset: {width: 0, height: 7},
-    elevation: 8,
+    backgroundColor: '#d0bcff',
+    borderWidth: 1,
+    borderColor: 'rgba(90, 56, 80, 0.14)',
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 6,
   },
   addFabActive: {
     backgroundColor: '#f2a93b',
     shadowColor: '#d9912a',
     shadowOpacity: 0.35,
   },
+  mapBrandWrap: {
+    position: 'absolute',
+    left: 78,
+    right: 126,
+    height: 46,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mapBrandPill: {
+    height: 38,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(221, 165, 196, 0.32)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    shadowOffset: {width: 0, height: 5},
+    elevation: 3,
+  },
+  mapBrandDot: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: '#eca7ce',
+  },
+  mapBrandText: {
+    color: colors.textPrimary,
+    fontSize: 16,
+    lineHeight: 20,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
   legendWrap: {
     position: 'absolute',
     right: 14,
     borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.16)',
-    backgroundColor: 'rgba(255, 255, 255, 0.96)',
-    shadowColor: 'rgba(73, 43, 92, 0.38)',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: {width: 0, height: 8},
-    elevation: 7,
+    borderColor: 'rgba(90, 56, 80, 0.13)',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.16,
+    shadowRadius: 18,
+    shadowOffset: {width: 0, height: 9},
+    elevation: 6,
     overflow: 'hidden',
   },
   legendWrapClosed: {
@@ -2955,15 +3143,15 @@ const styles = StyleSheet.create({
   },
   legendWrapOpen: {
     width: 240,
-    borderRadius: 14,
-    paddingHorizontal: 10,
-    paddingTop: 6,
-    paddingBottom: 10,
+    borderRadius: 30,
+    paddingHorizontal: 12,
+    paddingTop: 8,
+    paddingBottom: 14,
   },
   legendToggle: {
     alignSelf: 'flex-start',
-    minHeight: 34,
-    height: 34,
+    minHeight: 36,
+    height: 36,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: 12,
@@ -2973,13 +3161,13 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   legendToggleText: {
-    color: '#744988',
-    fontSize: 14,
+    color: colors.primary,
+    fontSize: 13,
     fontWeight: '700',
   },
   legendBody: {
-    marginTop: 4,
-    gap: 8,
+    marginTop: 6,
+    gap: 9,
   },
   legendTopRow: {
     flexDirection: 'row',
@@ -3017,14 +3205,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: 'rgba(116, 73, 136, 0.35)',
+    borderColor: 'rgba(90, 56, 80, 0.24)',
     paddingHorizontal: 6,
-    paddingVertical: 6,
+    minHeight: 36,
+    paddingVertical: 7,
     borderRadius: 18,
   },
   ownerFilterChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: '#d0bcff',
+    borderColor: 'rgba(90, 56, 80, 0.18)',
   },
   ownerFilterChipDisabled: {
     opacity: 0.4,
@@ -3035,7 +3224,7 @@ const styles = StyleSheet.create({
     fontWeight: '600',
   },
   ownerFilterTextActive: {
-    color: '#fff',
+    color: '#5a3850',
   },
   categoryRow: {
     flexDirection: 'row',
@@ -3043,10 +3232,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     borderWidth: 1,
-    borderColor: 'rgba(116, 73, 136, 0.2)',
-    borderRadius: 10,
+    minHeight: 44,
+    borderColor: 'rgba(90, 56, 80, 0.12)',
+    borderRadius: 16,
     paddingHorizontal: 10,
-    paddingVertical: 7,
+    paddingVertical: 8,
+    backgroundColor: 'rgba(252, 221, 236, 0.2)',
   },
   categoryLeft: {
     flexDirection: 'row',
@@ -3072,8 +3263,10 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   exitNearbyBtn: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
+    minHeight: 36,
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.28)',
     paddingHorizontal: 11,
@@ -3085,17 +3278,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   circleFab: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: colors.primary,
+    width: 46,
+    height: 46,
+    borderRadius: 23,
+    backgroundColor: '#d0bcff',
+    borderWidth: 1,
+    borderColor: 'rgba(90, 56, 80, 0.14)',
     alignItems: 'center',
     justifyContent: 'center',
-    shadowColor: '#6f4384',
-    shadowOpacity: 0.32,
-    shadowRadius: 14,
-    shadowOffset: {width: 0, height: 7},
-    elevation: 8,
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    shadowOffset: {width: 0, height: 6},
+    elevation: 6,
   },
   settingsFab: {
     position: 'absolute',
@@ -3106,38 +3301,38 @@ const styles = StyleSheet.create({
     left: '50%',
     transform: [{translateX: -96}],
     minWidth: 192,
-    height: 48,
-    borderRadius: 24,
+    height: 46,
+    borderRadius: 23,
     paddingHorizontal: 16,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     gap: 7,
     shadowColor: '#2b5d8f',
-    shadowOpacity: 0.3,
+    shadowOpacity: 0.24,
     shadowRadius: 14,
     shadowOffset: {width: 0, height: 8},
     elevation: 8,
   },
   nearbyFabText: {
-    color: '#fff',
-    fontSize: 16,
+    color: colors.textPrimary,
+    fontSize: 14,
     fontWeight: '700',
   },
   markerCard: {
     position: 'absolute',
     left: 14,
     right: 14,
-    borderRadius: 18,
+    borderRadius: 24,
     borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.16)',
-    backgroundColor: 'rgba(255, 255, 255, 0.97)',
-    padding: 12,
-    gap: 5,
-    shadowColor: 'rgba(73, 43, 92, 0.38)',
-    shadowOpacity: 0.18,
-    shadowRadius: 16,
-    shadowOffset: {width: 0, height: 8},
+    borderColor: 'rgba(221, 165, 196, 0.36)',
+    backgroundColor: 'rgba(255, 255, 255, 0.94)',
+    padding: 16,
+    gap: 7,
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.16,
+    shadowRadius: 20,
+    shadowOffset: {width: 0, height: 10},
     elevation: 8,
   },
   markerCardHeader: {
@@ -3148,15 +3343,15 @@ const styles = StyleSheet.create({
   },
   markerTitle: {
     flex: 1,
-    fontSize: 17,
-    lineHeight: 23,
-    fontWeight: '700',
+    fontSize: 19,
+    lineHeight: 25,
+    fontWeight: '800',
     color: colors.textPrimary,
   },
   markerCategoryTag: {
     borderRadius: 999,
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   markerCategoryTagText: {
     fontSize: 11,
@@ -3164,7 +3359,7 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   markerMeta: {
-    color: '#6d5b7b',
+    color: colors.textSecondary,
     fontSize: 12,
   },
   markerInactive: {
@@ -3173,15 +3368,15 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   markerDescription: {
-    color: '#40365b',
-    fontSize: 13,
-    lineHeight: 18,
+    color: colors.textPrimary,
+    fontSize: 14,
+    lineHeight: 20,
   },
   markerImage: {
     marginTop: 4,
     width: '100%',
     height: 180,
-    borderRadius: 10,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.16)',
     backgroundColor: '#f4eef8',
@@ -3199,7 +3394,9 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    minHeight: 38,
+    justifyContent: 'center',
+    paddingVertical: 7,
   },
   markerActionText: {
     color: colors.primary,
@@ -3225,7 +3422,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 8,
     paddingHorizontal: 10,
-    paddingVertical: 6,
+    minHeight: 36,
+    paddingVertical: 7,
     borderRadius: 999,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
@@ -3240,9 +3438,9 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: 14,
     right: 14,
-    borderRadius: 14,
-    paddingHorizontal: 12,
-    paddingVertical: 9,
+    borderRadius: 18,
+    paddingHorizontal: 14,
+    paddingVertical: 11,
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.16)',
@@ -3259,9 +3457,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 8,
+    minHeight: 46,
+    borderRadius: 18,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
     backgroundColor: 'rgba(255, 255, 255, 0.97)',
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.2)',
@@ -3309,34 +3508,59 @@ const styles = StyleSheet.create({
   },
   modalBackdrop: {
     ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(20, 14, 24, 0.32)',
+    backgroundColor: 'rgba(90, 56, 80, 0.22)',
   },
   sheet: {
     maxHeight: '76%',
-    borderTopLeftRadius: 18,
-    borderTopRightRadius: 18,
-    backgroundColor: colors.surface,
+    minHeight: '36%',
+    borderTopLeftRadius: 26,
+    borderTopRightRadius: 26,
+    backgroundColor: '#fffafd',
     borderTopWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.12)',
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 18,
-    gap: 10,
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 22,
+    gap: 12,
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.16,
+    shadowRadius: 22,
+    shadowOffset: {width: 0, height: -9},
+    elevation: 12,
   },
   sheetHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
   },
+  closeButton: {
+    width: 44,
+    height: 44,
+    marginTop: -8,
+    marginRight: -8,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(208, 188, 255, 0.18)',
+  },
   sheetTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 21,
+    lineHeight: 27,
+    fontWeight: '800',
     color: colors.textPrimary,
   },
   sheetSubtitle: {
     marginTop: 4,
     color: colors.textSecondary,
     fontSize: 12,
+  },
+  settingsScroll: {
+    flexShrink: 1,
+    minHeight: 1,
+  },
+  settingsContent: {
+    gap: 12,
+    paddingTop: 2,
   },
   sheetSectionTitle: {
     marginTop: 2,
@@ -3353,12 +3577,14 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.28)',
-    paddingHorizontal: 12,
-    paddingVertical: 7,
+    minHeight: 40,
+    justifyContent: 'center',
+    paddingHorizontal: 14,
+    paddingVertical: 8,
   },
   sheetChipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
+    backgroundColor: '#d0bcff',
+    borderColor: 'rgba(90, 56, 80, 0.2)',
   },
   sheetChipDisabled: {
     opacity: 0.42,
@@ -3369,7 +3595,7 @@ const styles = StyleSheet.create({
     fontSize: 12,
   },
   sheetChipTextActive: {
-    color: '#fff',
+    color: '#5a3850',
   },
   sheetHintText: {
     color: colors.textSecondary,
@@ -3377,11 +3603,11 @@ const styles = StyleSheet.create({
     marginTop: -2,
   },
   selectTrigger: {
-    minHeight: 44,
-    borderRadius: 12,
+    minHeight: 50,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.9)',
     paddingHorizontal: 12,
     paddingVertical: 10,
     flexDirection: 'row',
@@ -3390,8 +3616,8 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   selectTriggerOpen: {
-    borderColor: 'rgba(122, 75, 143, 0.52)',
-    backgroundColor: 'rgba(122, 75, 143, 0.06)',
+    borderColor: '#d0bcff',
+    backgroundColor: 'rgba(208, 188, 255, 0.18)',
   },
   selectTriggerLeft: {
     flexDirection: 'row',
@@ -3411,14 +3637,14 @@ const styles = StyleSheet.create({
   },
   selectMenu: {
     marginTop: 6,
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.2)',
     backgroundColor: '#fff',
     overflow: 'hidden',
   },
   selectOptionRow: {
-    minHeight: 38,
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
@@ -3428,7 +3654,7 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(122, 75, 143, 0.16)',
   },
   selectOptionRowActive: {
-    backgroundColor: 'rgba(122, 75, 143, 0.10)',
+    backgroundColor: 'rgba(208, 188, 255, 0.28)',
   },
   selectOptionText: {
     color: colors.textPrimary,
@@ -3455,15 +3681,15 @@ const styles = StyleSheet.create({
   },
   timeInput: {
     flex: 1,
-    minHeight: 42,
-    borderRadius: 12,
+    minHeight: 48,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
     backgroundColor: '#fff',
     paddingHorizontal: 12,
     paddingVertical: 9,
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: 16,
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -3478,17 +3704,17 @@ const styles = StyleSheet.create({
     height: '82%',
     maxHeight: 680,
     minHeight: 420,
-    borderRadius: 18,
+    borderRadius: 28,
     borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.18)',
-    backgroundColor: colors.surface,
-    paddingHorizontal: 14,
-    paddingTop: 14,
-    paddingBottom: 14,
-    gap: 10,
-    shadowColor: '#3b2248',
-    shadowOpacity: 0.22,
-    shadowRadius: 16,
+    borderColor: 'rgba(236, 167, 206, 0.56)',
+    backgroundColor: '#fffafd',
+    paddingHorizontal: 18,
+    paddingTop: 18,
+    paddingBottom: 18,
+    gap: 12,
+    shadowColor: '#5a3850',
+    shadowOpacity: 0.2,
+    shadowRadius: 24,
     shadowOffset: {width: 0, height: 10},
     elevation: 10,
   },
@@ -3501,14 +3727,14 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   formInput: {
-    height: 44,
-    borderRadius: 12,
+    minHeight: 50,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    paddingHorizontal: 14,
     color: colors.textPrimary,
-    fontSize: 14,
+    fontSize: 16,
   },
   formMultiline: {
     height: 108,
@@ -3522,14 +3748,14 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   uploadPickBtn: {
-    minHeight: 34,
+    minHeight: 40,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.4)',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: 14,
-    backgroundColor: 'rgba(255,255,255,0.96)',
+    paddingHorizontal: 16,
+    backgroundColor: '#d0bcff',
   },
   uploadPickBtnText: {
     color: colors.primary,
@@ -3537,7 +3763,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   uploadClearBtn: {
-    minHeight: 34,
+    minHeight: 40,
     borderRadius: 999,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
@@ -3600,7 +3826,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   draftCancelBtn: {
-    height: 38,
+    height: 44,
     minWidth: 76,
     borderRadius: 999,
     borderWidth: 1,
@@ -3615,7 +3841,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   draftDeleteBtn: {
-    height: 38,
+    height: 44,
     minWidth: 76,
     borderRadius: 999,
     borderWidth: 1,
@@ -3630,30 +3856,34 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   draftSaveBtn: {
-    height: 38,
+    height: 44,
     minWidth: 84,
     borderRadius: 999,
-    backgroundColor: colors.primary,
+    backgroundColor: '#d0bcff',
+    borderWidth: 1,
+    borderColor: 'rgba(90, 56, 80, 0.2)',
     paddingHorizontal: 18,
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 6,
   },
   draftSaveBtnDisabled: {
     opacity: 0.7,
   },
   draftSaveBtnText: {
-    color: '#fff',
+    color: '#5a3850',
     fontSize: 13,
     fontWeight: '700',
   },
   confirmCard: {
-    borderRadius: 16,
+    borderRadius: 24,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.18)',
     backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
-    gap: 10,
+    paddingHorizontal: 18,
+    paddingVertical: 18,
+    gap: 12,
     shadowColor: '#3b2248',
     shadowOpacity: 0.22,
     shadowRadius: 16,
@@ -3676,7 +3906,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   confirmCancelBtn: {
-    height: 36,
+    height: 42,
     minWidth: 72,
     borderRadius: 999,
     borderWidth: 1,
@@ -3691,7 +3921,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   confirmDeleteBtn: {
-    height: 36,
+    height: 42,
     minWidth: 84,
     borderRadius: 999,
     backgroundColor: '#b44d4d',
@@ -3714,18 +3944,19 @@ const styles = StyleSheet.create({
   },
   radiusInput: {
     flex: 1,
-    height: 40,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 16,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.24)',
     backgroundColor: '#fff',
     paddingHorizontal: 12,
     color: colors.textPrimary,
+    fontSize: 16,
   },
   radiusApplyBtn: {
     minWidth: 64,
-    height: 40,
-    borderRadius: 12,
+    height: 46,
+    borderRadius: 23,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.32)',
     alignItems: 'center',
@@ -3754,11 +3985,11 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   nearbySheet: {
-    height: '62%',
+    height: '52%',
     minHeight: 280,
   },
   nearbyEmptyWrap: {
-    borderRadius: 12,
+    borderRadius: 18,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.16)',
     backgroundColor: '#fff',
@@ -3771,12 +4002,13 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   nearbyCard: {
-    borderRadius: 14,
+    minHeight: 72,
+    borderRadius: 20,
     borderWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.14)',
     backgroundColor: '#fff',
-    padding: 10,
-    gap: 4,
+    padding: 13,
+    gap: 5,
   },
   nearbyCardHeader: {
     flexDirection: 'row',
