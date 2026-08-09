@@ -25,7 +25,6 @@ type DocSlug = 'nora-hrt-guide';
 type DocEntry = {
   slug: DocSlug;
   title: string;
-  subtitle?: string;
   markdown: string;
 };
 
@@ -38,7 +37,7 @@ type TocItem = {
 const DOCS: DocEntry[] = [
   {
     slug: 'nora-hrt-guide',
-    title: '雪雁的 HRT 指南',
+    title: '雪雁的HRT指南',
     markdown: noraHrtGuideMarkdownRaw,
   },
 ];
@@ -317,11 +316,7 @@ export function DocsScreen() {
   const drawerContent = (
     <View style={styles.drawerInner}>
       <View style={styles.drawerHeader}>
-        <View style={styles.drawerMark} />
-        <View style={styles.drawerHeaderText}>
-          <Text style={styles.drawerEyebrow}>LYCORIS LIBRARY</Text>
-          <Text style={styles.drawerTitle}>阅读目录</Text>
-        </View>
+        <Text style={styles.drawerTitle}>阅读目录</Text>
       </View>
 
       <Text style={styles.drawerSectionTitle}>文档</Text>
@@ -343,9 +338,6 @@ export function DocsScreen() {
               ]}>
               {doc.title}
             </Text>
-            {doc.subtitle ? (
-              <Text style={styles.drawerItemSubtitle}>{doc.subtitle}</Text>
-            ) : null}
           </Pressable>
         ))}
       </View>
@@ -394,13 +386,12 @@ export function DocsScreen() {
 
         <View style={styles.contentArea}>
           <View style={styles.readerChrome}>
-            <View style={styles.readerBrandMark}>
-              <View style={styles.readerBrandDot} />
-            </View>
-            <View style={styles.readerBrandCopy}>
-              <Text style={styles.readerBrand}>Lycoris</Text>
-              <Text style={styles.readerSubtitle}>互助资料库 · 离线可读</Text>
-            </View>
+            <Text
+              accessibilityRole="header"
+              numberOfLines={1}
+              style={styles.readerTitle}>
+              {activeDoc.title}
+            </Text>
             {!isWideLayout ? (
               <IconButton
                 icon="format-list-bulleted"
@@ -424,7 +415,6 @@ export function DocsScreen() {
                 styles.markdownCard,
                 !isWideLayout ? styles.markdownCardMobile : null,
               ]}>
-              <Text style={styles.docEyebrow}>NORA'S FIELD GUIDE</Text>
               <Text style={styles.docManualTitle}>{displayTitle}</Text>
               <View style={styles.titleRule} />
               <Markdown
@@ -561,28 +551,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   drawerHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
     marginBottom: 24,
-  },
-  drawerMark: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#fcddec',
-    borderWidth: 7,
-    borderColor: 'rgba(236, 167, 206, 0.45)',
-    marginRight: 11,
-  },
-  drawerHeaderText: {
-    flex: 1,
-  },
-  drawerEyebrow: {
-    color: colors.textSecondary,
-    fontSize: 9,
-    lineHeight: 12,
-    fontWeight: '800',
-    letterSpacing: 1.4,
   },
   drawerTitle: {
     fontSize: 19,
@@ -622,12 +591,6 @@ const styles = StyleSheet.create({
   drawerItemTitleActive: {
     color: '#5a3850',
     fontWeight: '700',
-  },
-  drawerItemSubtitle: {
-    marginTop: 2,
-    fontSize: 12,
-    lineHeight: 16,
-    color: colors.textSecondary,
   },
   tocHeading: {
     marginTop: 14,
@@ -677,7 +640,7 @@ const styles = StyleSheet.create({
   readerChrome: {
     minHeight: 62,
     marginBottom: 10,
-    paddingLeft: 10,
+    paddingLeft: 18,
     paddingRight: 6,
     borderRadius: 31,
     borderWidth: 1,
@@ -691,36 +654,13 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
     elevation: 3,
   },
-  readerBrandMark: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
-    backgroundColor: '#fcddec',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  readerBrandDot: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    backgroundColor: '#eca7ce',
-  },
-  readerBrandCopy: {
+  readerTitle: {
     flex: 1,
-    marginLeft: 11,
-  },
-  readerBrand: {
     color: colors.textPrimary,
     fontSize: 18,
-    lineHeight: 22,
+    lineHeight: 24,
     fontWeight: '800',
-    letterSpacing: 0.2,
-  },
-  readerSubtitle: {
-    marginTop: 1,
-    color: colors.textSecondary,
-    fontSize: 11,
-    lineHeight: 15,
+    letterSpacing: -0.2,
   },
   menuButton: {
     width: 44,
@@ -763,19 +703,12 @@ const styles = StyleSheet.create({
     shadowOpacity: 0,
     elevation: 0,
   },
-  docEyebrow: {
-    color: colors.primary,
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: '800',
-    letterSpacing: 1.6,
-  },
   docManualTitle: {
     fontSize: 29,
     lineHeight: 36,
     fontWeight: '800',
     color: colors.textPrimary,
-    marginTop: 8,
+    marginTop: 0,
     marginBottom: 16,
     letterSpacing: -0.5,
   },
