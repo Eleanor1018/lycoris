@@ -2150,14 +2150,6 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         />
       </Pressable>
 
-      {!legendOpen ? (
-        <View pointerEvents="none" style={[styles.mapBrandWrap, {top: topOffset}]}>
-          <View style={styles.mapBrandPill}>
-            <View style={styles.mapBrandDot} />
-            <Text style={styles.mapBrandText}>Lycoris</Text>
-          </View>
-        </View>
-      ) : null}
       {showAddModeHint ? (
         <Pressable
           style={[styles.addModeHintBubble, {top: topOffset + 56}]}
@@ -2314,7 +2306,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         <Icon
           source={nearbyCategoryIcon[nearbyCategory]}
           size={18}
-          color={colors.textPrimary}
+          color={colors.onPrimary}
         />
         <Text style={styles.nearbyFabText}>
           {nearbyLoading
@@ -3086,43 +3078,6 @@ const styles = StyleSheet.create({
     shadowColor: '#d9912a',
     shadowOpacity: 0.35,
   },
-  mapBrandWrap: {
-    position: 'absolute',
-    left: 78,
-    right: 126,
-    height: 46,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  mapBrandPill: {
-    height: 38,
-    paddingHorizontal: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: 'rgba(221, 165, 196, 0.32)',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 7,
-    shadowColor: '#5a3850',
-    shadowOpacity: 0.1,
-    shadowRadius: 10,
-    shadowOffset: {width: 0, height: 5},
-    elevation: 3,
-  },
-  mapBrandDot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#eca7ce',
-  },
-  mapBrandText: {
-    color: colors.textPrimary,
-    fontSize: 16,
-    lineHeight: 20,
-    fontWeight: '800',
-    letterSpacing: 0.2,
-  },
   legendWrap: {
     position: 'absolute',
     right: 14,
@@ -3315,7 +3270,7 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   nearbyFabText: {
-    color: colors.textPrimary,
+    color: colors.onPrimary,
     fontSize: 14,
     fontWeight: '700',
   },
