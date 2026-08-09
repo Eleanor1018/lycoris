@@ -160,13 +160,9 @@ function MarkerListEntryCard({
 
 function PanelHeader({
   title,
-  subtitle,
-  eyebrow,
   onBack,
 }: {
   title: string;
-  subtitle: string;
-  eyebrow: string;
   onBack: () => void;
 }) {
   return (
@@ -185,15 +181,10 @@ function PanelHeader({
         >
           <Icon source="arrow-left" size={20} color={colors.primary} />
         </Pressable>
-        <View style={styles.brandPill}>
-          <View style={styles.brandDot} />
-          <Text style={styles.brandPillText}>{eyebrow}</Text>
-        </View>
+        <Text accessibilityRole="header" style={styles.title}>
+          {title}
+        </Text>
       </View>
-      <Text accessibilityRole="header" style={styles.title}>
-        {title}
-      </Text>
-      <Text style={styles.subtitle}>{subtitle}</Text>
     </View>
   );
 }
@@ -602,8 +593,6 @@ export function MeScreen({
         <PageBackground />
         <PanelHeader
           title="关于夏水仙"
-          subtitle="关于这张互助地图，也关于我们怎样彼此照亮。"
-          eyebrow="LYCORIS · ABOUT"
           onBack={() => goPanel('root')}
         />
 
@@ -646,12 +635,6 @@ export function MeScreen({
         <PageBackground />
         <PanelHeader
           title={title}
-          subtitle={
-            isCreatedPanel
-              ? '你放进地图里的互助线索。'
-              : '留在身边、随时可以再找到的地点。'
-          }
-          eyebrow={isCreatedPanel ? 'LYCORIS · CREATED' : 'LYCORIS · SAVED'}
           onBack={() => goPanel('root')}
         />
 
@@ -663,7 +646,6 @@ export function MeScreen({
           <View style={styles.card}>
             <View style={styles.markerListSummaryRow}>
               <View>
-                <Text style={styles.sectionEyebrow}>POINTS</Text>
                 <Text style={styles.markerListSummaryTitle}>
                   共 {rows.length} 个点位
                 </Text>
@@ -690,13 +672,6 @@ export function MeScreen({
               </View>
             ) : slice.length === 0 ? (
               <View style={styles.markerListEmptyWrap}>
-                <View style={styles.emptyIconWrap}>
-                  <Icon
-                    source="map-marker-outline"
-                    size={26}
-                    color={colors.primary}
-                  />
-                </View>
                 <Text style={styles.markerListEmptyText}>{emptyText}</Text>
               </View>
             ) : (
@@ -828,9 +803,7 @@ export function MeScreen({
       >
         <PageBackground />
         <PanelHeader
-          title="创建你的账号"
-          subtitle="登录之后，收藏、资料和你留下的互助线索会陪你走得更远。"
-          eyebrow="LYCORIS · JOIN"
+          title="注册"
           onBack={() => goPanel('root')}
         />
 
@@ -842,8 +815,6 @@ export function MeScreen({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            <Text style={styles.sectionEyebrow}>NEW ACCOUNT</Text>
-            <Text style={styles.formTitle}>把你的名字留在这里</Text>
             <Text style={styles.label}>用户名</Text>
             <TextInput
               accessibilityLabel="用户名"
@@ -966,9 +937,7 @@ export function MeScreen({
       >
         <PageBackground />
         <PanelHeader
-          title="更新你的密码"
-          subtitle="定期换一把钥匙，让你的账号继续安全、安稳。"
-          eyebrow="LYCORIS · SECURITY"
+          title="修改密码"
           onBack={() => goPanel('root')}
         />
         <ScrollView
@@ -979,9 +948,6 @@ export function MeScreen({
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.card}>
-            <Text style={styles.sectionEyebrow}>PASSWORD</Text>
-            <Text style={styles.formTitle}>确认是你，再设置新密码</Text>
-
             <Text style={styles.label}>原密码</Text>
             <TextInput
               accessibilityLabel="原密码"
@@ -1077,27 +1043,11 @@ export function MeScreen({
         keyboardDismissMode="on-drag"
         keyboardShouldPersistTaps="handled"
       >
-        <View style={styles.rootIntro}>
-          <View style={styles.brandPill}>
-            <View style={styles.brandDot} />
-            <Text style={styles.brandPillText}>LYCORIS · ME</Text>
-          </View>
-          <Text accessibilityRole="header" style={styles.rootTitle}>
-            {isLoggedIn && user ? '欢迎回来' : '把你的足迹带回家'}
-          </Text>
-          <Text style={styles.rootSubtitle}>
-            {isLoggedIn && user
-              ? '你的资料、收藏和互助线索，都安稳地收在这里。'
-              : '登录后同步收藏、个人资料和你留在地图上的每一束光。'}
-          </Text>
-        </View>
-
         {isLoggedIn && user ? (
           <>
             <View
               style={[styles.profileMainCard, styles.rootPrimaryCardSpacing]}
             >
-              <View pointerEvents="none" style={styles.profileAccentOrb} />
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel="编辑个人资料"
@@ -1140,7 +1090,6 @@ export function MeScreen({
                 {user.pronouns ? ` · ${user.pronouns}` : ''}
               </Text>
               <View style={styles.profileSignatureBubble}>
-                <Icon source="format-quote-open" size={18} color={colors.pin} />
                 <Text style={styles.profileSignature}>
                   {user.signature || 'Attendre et espérer.'}
                 </Text>
@@ -1193,7 +1142,6 @@ export function MeScreen({
               </View>
             </View>
 
-            <Text style={styles.sectionLabel}>我的地图</Text>
             <MarkerListEntryCard
               title="我创建的点位"
               icon="map-marker-plus-outline"
@@ -1215,17 +1163,8 @@ export function MeScreen({
               styles.rootPrimaryCardSpacing,
             ]}
           >
-            <View style={styles.authIconWrap}>
-              <Icon
-                source="account-heart-outline"
-                size={28}
-                color={colors.primary}
-              />
-            </View>
-            <Text style={styles.sectionEyebrow}>WELCOME BACK</Text>
-            <Text style={styles.formTitle}>登录 Lycoris</Text>
-            <Text style={styles.authDescription}>
-              继续收藏地点，也继续被这座城市温柔接住。
+            <Text accessibilityRole="header" style={styles.formTitle}>
+              登录
             </Text>
             <Text style={styles.label}>用户名</Text>
             <TextInput
@@ -1293,7 +1232,6 @@ export function MeScreen({
           </View>
         )}
 
-        <Text style={styles.sectionLabel}>了解 Lycoris</Text>
         <AboutEntryCard onPress={() => goPanel('about')} />
       </ScrollView>
 
@@ -1327,7 +1265,6 @@ export function MeScreen({
             <View accessibilityViewIsModal style={styles.editCard}>
               <View style={styles.editTitleRow}>
                 <View style={styles.editTitleTextWrap}>
-                  <Text style={styles.sectionEyebrow}>YOUR PROFILE</Text>
                   <Text accessibilityRole="header" style={styles.editTitle}>
                     编辑资料
                   </Text>
@@ -1663,18 +1600,12 @@ const styles = StyleSheet.create({
     minHeight: sizes.touchTarget,
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: spacing.sm,
-    marginBottom: spacing.md,
   },
   title: {
+    flex: 1,
     ...typography.display,
     color: colors.primary,
-  },
-  subtitle: {
-    marginTop: spacing.xs,
-    color: colors.textSecondary,
-    ...typography.bodySmall,
   },
   backRow: {
     width: sizes.touchTarget,
@@ -1685,32 +1616,6 @@ const styles = StyleSheet.create({
     backgroundColor: colors.lilac,
     borderWidth: 1,
     borderColor: colors.border,
-  },
-  brandPill: {
-    minHeight: 36,
-    maxWidth: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-    alignSelf: 'flex-start',
-    borderRadius: radii.pill,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: 'rgba(255, 255, 255, 0.84)',
-    paddingHorizontal: spacing.sm,
-  },
-  brandDot: {
-    width: 9,
-    height: 9,
-    borderRadius: 5,
-    backgroundColor: colors.pin,
-  },
-  brandPillText: {
-    color: colors.primary,
-    fontSize: 11,
-    lineHeight: 15,
-    fontWeight: '800',
-    letterSpacing: 0.8,
   },
   menuEntryCard: {
     minHeight: 72,
@@ -1826,16 +1731,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
   },
-  emptyIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.blush,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
   markerListEmptyText: {
     color: colors.textSecondary,
     ...typography.body,
@@ -1926,15 +1821,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.lg,
     alignItems: 'center',
     ...shadows.floating,
-  },
-  profileAccentOrb: {
-    position: 'absolute',
-    top: -112,
-    right: -76,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: 'rgba(252, 221, 236, 0.76)',
   },
   profileEditFab: {
     position: 'absolute',
@@ -2264,34 +2150,6 @@ const styles = StyleSheet.create({
     color: colors.primary,
     fontWeight: '700',
   },
-  rootIntro: {
-    marginBottom: spacing.lg,
-    paddingHorizontal: spacing.xxs,
-  },
-  rootTitle: {
-    marginTop: spacing.md,
-    color: colors.primary,
-    ...typography.display,
-  },
-  rootSubtitle: {
-    marginTop: spacing.xs,
-    maxWidth: 520,
-    color: colors.textSecondary,
-    ...typography.body,
-  },
-  sectionLabel: {
-    marginBottom: spacing.xs,
-    paddingHorizontal: spacing.xxs,
-    color: colors.primary,
-    ...typography.label,
-  },
-  sectionEyebrow: {
-    color: colors.textSecondary,
-    fontSize: 10,
-    lineHeight: 14,
-    fontWeight: '800',
-    letterSpacing: 1.1,
-  },
   formTitle: {
     marginBottom: spacing.xs,
     color: colors.primary,
@@ -2300,22 +2158,6 @@ const styles = StyleSheet.create({
   authCard: {
     position: 'relative',
     paddingTop: spacing.xl,
-  },
-  authIconWrap: {
-    width: 56,
-    height: 56,
-    marginBottom: spacing.sm,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.blush,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  authDescription: {
-    marginBottom: spacing.xs,
-    color: colors.textSecondary,
-    ...typography.bodySmall,
   },
   readingCard: {
     width: '100%',
