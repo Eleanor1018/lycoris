@@ -51,6 +51,7 @@ spring:
 
 app:
   upload-dir: ${user.dir}/uploads
+  availability-zone: ${APP_AVAILABILITY_ZONE:Asia/Shanghai}
   cors:
     allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:https://lycoris.online,https://www.lycoris.online,http://localhost:5173,https://localhost:5173}
 
