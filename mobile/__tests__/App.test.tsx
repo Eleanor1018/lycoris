@@ -14,6 +14,7 @@ import {
   useLanguage,
 } from '../src/i18n/LanguageProvider';
 import { createHeadingIdGenerator } from '../src/screens/DocsScreen';
+import { LanguageEntryCard } from '../src/screens/MeScreen';
 import { ApiError, requestJson } from '../src/lib/http';
 import {
   nearbyCategories,
@@ -34,8 +35,13 @@ function LanguageProbe() {
 
 test('normalizes Chinese locales and defaults other locales to English', () => {
   expect(languageFromLocale('zh-Hans-CN')).toBe('zh');
+  expect(languageFromLocale('zh-Hant-TW')).toBe('zh');
+  expect(languageFromLocale('zh-HK')).toBe('zh');
   expect(languageFromLocale('zh_TW')).toBe('zh');
   expect(languageFromLocale('en-US')).toBe('en');
+  expect(languageFromLocale('fr-FR')).toBe('en');
+  expect(languageFromLocale('es-ES')).toBe('en');
+  expect(languageFromLocale('ja-JP')).toBe('en');
   expect(languageFromLocale('')).toBe('en');
 });
 
@@ -129,7 +135,53 @@ test('restores, persists, and sends the selected language', async () => {
   });
 });
 
+test('switches and remembers language from the Me page dropdown', async () => {
+  await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
+  let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
+
+  await ReactTestRenderer.act(async () => {
+    renderer = ReactTestRenderer.create(
+      <LanguageProvider>
+        <LanguageEntryCard />
+      </LanguageProvider>,
+    );
+  });
+
+  const englishTrigger = renderer?.root.findByProps({
+    accessibilityLabel: 'Select language',
+  });
+  expect(englishTrigger?.props.accessibilityValue).toEqual({ text: 'English' });
+  expect(englishTrigger?.props.accessibilityState).toEqual({ expanded: false });
+
+  await ReactTestRenderer.act(() => {
+    englishTrigger?.props.onPress();
+  });
+
+  expect(
+    renderer?.root.findByProps({ accessibilityLabel: '中文' }).props
+      .accessibilityState,
+  ).toEqual({ selected: false });
+
+  await ReactTestRenderer.act(async () => {
+    await renderer?.root
+      .findByProps({ accessibilityLabel: '中文' })
+      .props.onPress();
+  });
+
+  expect(await AsyncStorage.getItem(LANGUAGE_STORAGE_KEY)).toBe('zh');
+  const chineseTrigger = renderer?.root.findByProps({
+    accessibilityLabel: '选择语言',
+  });
+  expect(chineseTrigger?.props.accessibilityValue).toEqual({ text: '中文' });
+  expect(chineseTrigger?.props.accessibilityState).toEqual({ expanded: false });
+
+  await ReactTestRenderer.act(() => {
+    renderer?.unmount();
+  });
+});
+
 test('renders the app shell with the default map route', async () => {
+  await AsyncStorage.setItem(LANGUAGE_STORAGE_KEY, 'en');
   let renderer: ReactTestRenderer.ReactTestRenderer | undefined;
 
   await ReactTestRenderer.act(() => {
@@ -142,16 +194,6 @@ test('renders the app shell with the default map route', async () => {
   expect(nearbyCategoryLabel.friendly_clinic).toBe('Trans-Friendly Clinic');
   expect(nearbyCategoryLabel.baby_room).toBe('Nursing Room');
   expect(nearbyCategories).not.toContain('conversion_therapy');
-
-  await ReactTestRenderer.act(() => {
-    renderer?.root
-      .findByProps({ accessibilityLabel: 'Open map settings' })
-      .props.onPress();
-  });
-  expect(
-    renderer?.root.findByProps({ accessibilityLabel: 'Select language' }).props
-      .accessibilityValue,
-  ).toEqual({ text: 'English' });
 
   await ReactTestRenderer.act(() => {
     renderer?.unmount();

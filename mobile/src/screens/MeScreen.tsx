@@ -30,7 +30,7 @@ import { PageBackground } from '../components/PageBackground';
 import { radii, shadows, sizes, spacing, typography } from '../theme/tokens';
 import aboutEnglishMarkdownRaw from '../docs/about.md';
 import aboutChineseMarkdownRaw from '../docs/about.zh.md';
-import { useLanguage } from '../i18n/LanguageProvider';
+import { type AppLanguage, useLanguage } from '../i18n/LanguageProvider';
 
 export type MePanel =
   | 'root'
@@ -122,6 +122,92 @@ function AboutEntryCard({ onPress }: { onPress: () => void }) {
       </View>
       <Icon source="chevron-right" size={20} color={colors.textSecondary} />
     </Pressable>
+  );
+}
+
+export function LanguageEntryCard() {
+  const { language, setLanguage, tr } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const currentLabel = language === 'zh' ? '中文' : 'English';
+  const options: { value: AppLanguage; label: string }[] = [
+    { value: 'zh', label: '中文' },
+    { value: 'en', label: 'English' },
+  ];
+
+  return (
+    <View style={styles.languageEntryWrap} testID="language-entry">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={tr('选择语言', 'Select language')}
+        accessibilityHint={tr(
+          '打开中文和英文选项',
+          'Opens Chinese and English options',
+        )}
+        accessibilityValue={{ text: currentLabel }}
+        accessibilityState={{ expanded: open }}
+        onPress={() => setOpen(value => !value)}
+        style={({ pressed }) => [
+          styles.languageEntryTrigger,
+          open && styles.languageEntryTriggerOpen,
+          pressed && styles.pressablePressed,
+        ]}
+      >
+        <View style={[styles.menuEntryIconWrap, styles.menuEntryIconLilac]}>
+          <Icon source="translate" size={22} color={colors.primary} />
+        </View>
+        <View style={styles.menuEntryTextWrap}>
+          <Text style={styles.menuEntryTitle}>{tr('语言', 'Language')}</Text>
+        </View>
+        <View style={styles.languageEntryValueWrap}>
+          <Text numberOfLines={1} style={styles.languageEntryValue}>
+            {currentLabel}
+          </Text>
+          <Icon
+            source={open ? 'chevron-up' : 'chevron-down'}
+            size={20}
+            color={colors.textSecondary}
+          />
+        </View>
+      </Pressable>
+
+      {open ? (
+        <View style={styles.languageEntryMenu} accessibilityRole="menu">
+          {options.map((option, index) => {
+            const selected = language === option.value;
+            return (
+              <Pressable
+                key={option.value}
+                accessibilityRole="menuitem"
+                accessibilityLabel={option.label}
+                accessibilityState={{ selected }}
+                onPress={() => {
+                  setOpen(false);
+                  setLanguage(option.value).catch(() => undefined);
+                }}
+                style={({ pressed }) => [
+                  styles.languageEntryOption,
+                  index > 0 && styles.languageEntryOptionDivider,
+                  selected && styles.languageEntryOptionSelected,
+                  pressed && styles.pressablePressed,
+                ]}
+              >
+                <Text
+                  style={[
+                    styles.languageEntryOptionText,
+                    selected && styles.languageEntryOptionTextSelected,
+                  ]}
+                >
+                  {option.label}
+                </Text>
+                {selected ? (
+                  <Icon source="check" size={18} color={colors.primary} />
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : null}
+    </View>
   );
 }
 
@@ -1349,6 +1435,7 @@ export function MeScreen({
           </View>
         )}
 
+        <LanguageEntryCard />
         <AboutEntryCard onPress={() => goPanel('about')} />
       </ScrollView>
 
@@ -1796,6 +1883,69 @@ const styles = StyleSheet.create({
   menuEntryTitle: {
     color: colors.textPrimary,
     ...typography.subtitle,
+  },
+  languageEntryWrap: {
+    marginBottom: spacing.sm,
+  },
+  languageEntryTrigger: {
+    minHeight: 72,
+    borderRadius: radii.floating,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.88)',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    ...shadows.card,
+  },
+  languageEntryTriggerOpen: {
+    borderColor: 'rgba(90, 56, 80, 0.32)',
+  },
+  languageEntryValueWrap: {
+    maxWidth: '44%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: spacing.xxs,
+  },
+  languageEntryValue: {
+    flexShrink: 1,
+    color: colors.textSecondary,
+    ...typography.bodySmall,
+    fontWeight: '700',
+  },
+  languageEntryMenu: {
+    marginTop: spacing.xs,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: 'rgba(255, 255, 255, 0.96)',
+    overflow: 'hidden',
+    ...shadows.card,
+  },
+  languageEntryOption: {
+    minHeight: sizes.touchTarget,
+    paddingHorizontal: spacing.md,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  languageEntryOptionDivider: {
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+  },
+  languageEntryOptionSelected: {
+    backgroundColor: colors.primarySoft,
+  },
+  languageEntryOptionText: {
+    color: colors.textPrimary,
+    ...typography.body,
+  },
+  languageEntryOptionTextSelected: {
+    color: colors.primary,
+    fontWeight: '700',
   },
   menuEntrySubtitle: {
     marginTop: spacing.xxs,

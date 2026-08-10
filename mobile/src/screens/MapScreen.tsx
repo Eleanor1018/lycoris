@@ -42,7 +42,6 @@ import {
   type LocalUploadImage,
 } from '../lib/imageUpload';
 import {
-  type AppLanguage,
   getAcceptLanguage,
   tr as runtimeTr,
   useLanguage,
@@ -673,7 +672,7 @@ type MapScreenProps = {
 export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
   const insets = useSafeAreaInsets();
   const { user, isLoggedIn } = useAuth();
-  const { language, setLanguage, tr } = useLanguage();
+  const { language, tr } = useLanguage();
   const localizedCategoryLabel = useMemo<Record<MarkerCategory, string>>(
     () => ({
       accessible_toilet: tr('无障碍卫生间', 'Accessible Restroom'),
@@ -752,7 +751,6 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
     useState<TileProvider>(initialTileProvider);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [languageSelectOpen, setLanguageSelectOpen] = useState(false);
   const [nearbyPanelOpen, setNearbyPanelOpen] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyOnly, setNearbyOnly] = useState(false);
@@ -3285,18 +3283,12 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
         visible={settingsOpen}
         transparent
         animationType="slide"
-        onRequestClose={() => {
-          setLanguageSelectOpen(false);
-          setSettingsOpen(false);
-        }}
+        onRequestClose={() => setSettingsOpen(false)}
       >
         <View style={styles.modalWrap}>
           <Pressable
             style={styles.modalBackdrop}
-            onPress={() => {
-              setLanguageSelectOpen(false);
-              setSettingsOpen(false);
-            }}
+            onPress={() => setSettingsOpen(false)}
             accessibilityRole="button"
             accessibilityLabel={tr('关闭地图设置', 'Close map settings')}
           />
@@ -3307,10 +3299,7 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
               </Text>
               <Pressable
                 style={styles.closeButton}
-                onPress={() => {
-                  setLanguageSelectOpen(false);
-                  setSettingsOpen(false);
-                }}
+                onPress={() => setSettingsOpen(false)}
                 accessibilityRole="button"
                 accessibilityLabel={tr('关闭地图设置', 'Close map settings')}
               >
@@ -3326,85 +3315,6 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
               ]}
               showsVerticalScrollIndicator={false}
             >
-              <Text style={styles.sheetSectionTitle}>
-                {tr('语言', 'Language')}
-              </Text>
-              <View style={styles.languageSelectWrap}>
-                <Pressable
-                  style={[
-                    styles.languageSelectTrigger,
-                    languageSelectOpen && styles.selectTriggerOpen,
-                  ]}
-                  onPress={() => setLanguageSelectOpen(open => !open)}
-                  accessibilityRole="button"
-                  accessibilityLabel={tr('选择语言', 'Select language')}
-                  accessibilityHint={tr(
-                    '打开中文和英文选项',
-                    'Opens Chinese and English options',
-                  )}
-                  accessibilityValue={{
-                    text: language === 'zh' ? '中文' : 'English',
-                  }}
-                  accessibilityState={{ expanded: languageSelectOpen }}
-                >
-                  <Text style={styles.languageSelectText}>
-                    {language === 'zh' ? '中文' : 'English'}
-                  </Text>
-                  <Icon
-                    source={languageSelectOpen ? 'chevron-up' : 'chevron-down'}
-                    size={20}
-                    color={colors.textSecondary}
-                  />
-                </Pressable>
-                {languageSelectOpen ? (
-                  <View
-                    style={styles.languageSelectMenu}
-                    accessibilityRole="menu"
-                  >
-                    {(
-                      [
-                        { value: 'zh', label: '中文' },
-                        { value: 'en', label: 'English' },
-                      ] as { value: AppLanguage; label: string }[]
-                    ).map(option => {
-                      const selected = language === option.value;
-                      return (
-                        <Pressable
-                          key={option.value}
-                          style={[
-                            styles.languageSelectOption,
-                            selected && styles.selectOptionRowActive,
-                          ]}
-                          onPress={() => {
-                            setLanguageSelectOpen(false);
-                            setLanguage(option.value).catch(() => undefined);
-                          }}
-                          accessibilityRole="menuitem"
-                          accessibilityLabel={option.label}
-                          accessibilityState={{ selected }}
-                        >
-                          <Text
-                            style={[
-                              styles.languageSelectText,
-                              selected && styles.selectOptionTextActive,
-                            ]}
-                          >
-                            {option.label}
-                          </Text>
-                          {selected ? (
-                            <Icon
-                              source="check"
-                              size={18}
-                              color={colors.primary}
-                            />
-                          ) : null}
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
-              </View>
-
               <Text style={styles.sheetSectionTitle}>
                 {tr('地图源', 'Map Source')}
               </Text>
@@ -4157,40 +4067,6 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     fontSize: 13,
     fontWeight: '700',
-  },
-  languageSelectWrap: {
-    position: 'relative',
-  },
-  languageSelectTrigger: {
-    minHeight: 48,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.24)',
-    backgroundColor: '#fff',
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  languageSelectMenu: {
-    marginTop: 6,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(122, 75, 143, 0.2)',
-    backgroundColor: '#fff',
-    overflow: 'hidden',
-  },
-  languageSelectOption: {
-    minHeight: 48,
-    paddingHorizontal: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  languageSelectText: {
-    color: colors.textPrimary,
-    fontSize: 14,
-    fontWeight: '600',
   },
   sheetChipRow: {
     flexDirection: 'row',
