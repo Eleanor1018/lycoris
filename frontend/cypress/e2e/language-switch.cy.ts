@@ -111,6 +111,14 @@ describe('Responsive language navigation', () => {
             .should('not.have.text', '中')
             .find('svg')
             .should('have.length', 1)
+
+        cy.get('[data-testid="desktop-language-toggle"]')
+            .filter(':visible')
+            .trigger('mouseover')
+            .should(($toggle) => {
+                const style = window.getComputedStyle($toggle[0])
+                expect(style.borderRadius).to.eq('50%')
+            })
     })
 
     ;[320, 375].forEach((width) => {
@@ -124,10 +132,12 @@ describe('Responsive language navigation', () => {
             cy.get(drawerId).should('be.visible').within(() => {
                 cy.get('[data-testid="mobile-language-toggle"]')
                     .should('be.visible')
-                    .should('have.text', '中')
-                    .should('not.have.descendants', 'svg')
+                    .should('not.have.text', '中')
+                    .find('svg')
+                    .should('have.length', 1)
                     .should(($toggle) => {
-                        const style = window.getComputedStyle($toggle[0])
+                        const button = $toggle.closest('button')
+                        const style = window.getComputedStyle(button[0])
                         expect(style.borderWidth).to.eq('0px')
                         expect(style.backgroundColor).to.eq('rgba(0, 0, 0, 0)')
                     })
@@ -151,8 +161,9 @@ describe('Responsive language navigation', () => {
         cy.get(drawerId).should('be.visible').within(() => {
             cy.get('[data-testid="mobile-language-toggle"]')
                 .should('be.visible')
-                .should('have.text', 'EN')
-                .should('not.have.descendants', 'svg')
+                .should('not.have.text', 'EN')
+                .find('svg')
+                .should('have.length', 1)
             cy.contains('Language').should('not.exist')
             cy.contains('语言').should('not.exist')
         })
@@ -165,7 +176,9 @@ describe('Responsive language navigation', () => {
         cy.get(drawerId).should('be.visible').within(() => {
             cy.get('[data-testid="mobile-language-toggle"]')
                 .should('be.visible')
-                .should('have.text', 'EN')
+                .should('not.have.text', 'EN')
+                .find('svg')
+                .should('have.length', 1)
             cy.contains('Language').should('not.exist')
             cy.contains('语言').should('not.exist')
         })

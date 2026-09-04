@@ -250,7 +250,7 @@ export default function NavigationBar() {
                                     display: { xs: 'none', md: 'inline-flex' },
                                     width: { md: 48, lg: 54 },
                                     height: { md: 48, lg: 54 },
-                                    borderRadius: 0,
+                                    borderRadius: '50%',
                                     color: 'var(--ly-color-ink)',
                                     bgcolor: 'transparent',
                                     '&:hover': {
@@ -421,7 +421,7 @@ export default function NavigationBar() {
                             '&:hover': { bgcolor: 'transparent' },
                         }}
                     >
-                        {language === 'en' ? '中' : 'EN'}
+                        <TranslateIcon />
                     </Button>
                 </Box>
             </Drawer>
