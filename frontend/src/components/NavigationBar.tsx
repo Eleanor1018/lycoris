@@ -19,6 +19,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
+import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { useLanguage } from '../i18n/LanguageProvider.tsx'
@@ -47,6 +48,7 @@ export default function NavigationBar() {
     const mobileAvatarUrl = isLoggedIn ? user?.avatarUrl || chisatoAvatar : undefined
     const isActive = (to: string) => location.pathname === to || location.pathname.startsWith(`${to}/`)
     const closeNavMenu = () => setNavOpen(false)
+    const languageSwitchLabel = language === 'en' ? 'Switch to Chinese' : '切换到英文'
 
     useEffect(() => {
         const el = navShellRef.current
@@ -239,11 +241,12 @@ export default function NavigationBar() {
                         }}
                     >
                         <Button
+                            data-testid="desktop-language-toggle"
                             onClick={toggleLanguage}
-                            aria-label={language === 'en' ? '切换到中文' : 'Switch to English'}
-                            title={language === 'en' ? '切换到中文' : 'Switch to English'}
+                            aria-label={languageSwitchLabel}
+                            title={languageSwitchLabel}
                             sx={{
-                                display: navOpen ? { xs: 'none', md: 'inline-flex' } : 'inline-flex',
+                                display: { xs: 'none', md: 'inline-flex' },
                                 minWidth: { xs: 44, md: 48 },
                                 height: { xs: 44, md: 48 },
                                 px: { xs: 1, md: 1.25 },
@@ -291,6 +294,7 @@ export default function NavigationBar() {
                 anchor="left"
                 open={navOpen}
                 onClose={closeNavMenu}
+                sx={{ zIndex: 10000 }}
                 PaperProps={{
                     id: mobileDrawerId,
                     sx: {
@@ -393,6 +397,50 @@ export default function NavigationBar() {
                             <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     ))}
+                </List>
+
+                <Divider />
+
+                <List sx={{ px: 2, py: 1.5 }}>
+                    <ListItemButton
+                        data-testid="mobile-language-toggle"
+                        onClick={toggleLanguage}
+                        aria-label={languageSwitchLabel}
+                        title={languageSwitchLabel}
+                        sx={{
+                            minHeight: 52,
+                            borderRadius: 999,
+                            border: '1px solid rgba(90, 56, 80, 0.14)',
+                            bgcolor: 'rgba(255, 255, 255, 0.58)',
+                            color: 'var(--ly-color-ink)',
+                            px: 1.5,
+                            '&:hover': { bgcolor: 'rgba(248, 235, 255, 0.84)' },
+                        }}
+                    >
+                        <TranslateRoundedIcon sx={{ mr: 1.5, fontSize: 22 }} />
+                        <ListItemText
+                            primary={tr('语言', 'Language')}
+                            primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }}
+                        />
+                        <Box
+                            component="span"
+                            sx={{
+                                minWidth: 48,
+                                height: 34,
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: 999,
+                                bgcolor: 'rgba(208, 188, 255, 0.52)',
+                                color: 'var(--ly-color-ink)',
+                                fontFamily: 'var(--ly-font-body)',
+                                fontSize: 13,
+                                fontWeight: 800,
+                            }}
+                        >
+                            {language === 'en' ? '中文' : 'EN'}
+                        </Box>
+                    </ListItemButton>
                 </List>
             </Drawer>
         </AppBar>
