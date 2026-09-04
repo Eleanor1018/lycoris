@@ -108,6 +108,7 @@ describe('Responsive language navigation', () => {
         cy.get('[data-testid="desktop-language-toggle"]')
             .filter(':visible')
             .should('have.length', 1)
+            .should('have.text', '中')
     })
 
     ;[320, 375].forEach((width) => {
@@ -119,8 +120,17 @@ describe('Responsive language navigation', () => {
             cy.get('button[aria-label="Open login navigation"]').click()
 
             cy.get(drawerId).should('be.visible').within(() => {
-                cy.get('[data-testid="mobile-language-toggle"]').should('be.visible')
-                cy.contains('Language').should('be.visible')
+                cy.get('[data-testid="mobile-language-toggle"]')
+                    .should('be.visible')
+                    .should('have.text', '中')
+                    .should('not.have.descendants', 'svg')
+                    .should(($toggle) => {
+                        const style = window.getComputedStyle($toggle[0])
+                        expect(style.borderWidth).to.eq('0px')
+                        expect(style.backgroundColor).to.eq('rgba(0, 0, 0, 0)')
+                    })
+                cy.contains('Language').should('not.exist')
+                cy.contains('语言').should('not.exist')
             })
         })
     })
@@ -137,7 +147,12 @@ describe('Responsive language navigation', () => {
 
         cy.get('html').should('have.attr', 'lang', 'zh-CN')
         cy.get(drawerId).should('be.visible').within(() => {
-            cy.contains('语言').should('be.visible')
+            cy.get('[data-testid="mobile-language-toggle"]')
+                .should('be.visible')
+                .should('have.text', 'EN')
+                .should('not.have.descendants', 'svg')
+            cy.contains('Language').should('not.exist')
+            cy.contains('语言').should('not.exist')
         })
         cy.window().its('localStorage').invoke('getItem', 'lycoris.language.v1').should('eq', 'zh')
 
@@ -146,8 +161,42 @@ describe('Responsive language navigation', () => {
         cy.contains('a', '打开地图').should('be.visible')
         cy.get('button[aria-label="打开登录导航菜单"]').click()
         cy.get(drawerId).should('be.visible').within(() => {
-            cy.get('[data-testid="mobile-language-toggle"]').should('be.visible')
-            cy.contains('语言').should('be.visible')
+            cy.get('[data-testid="mobile-language-toggle"]')
+                .should('be.visible')
+                .should('have.text', 'EN')
+            cy.contains('Language').should('not.exist')
+            cy.contains('语言').should('not.exist')
+        })
+    })
+
+    it('keeps the Chinese home title to two unbroken lines on mobile', () => {
+        cy.viewport(375, 812)
+        cy.intercept('GET', '/api/me', {
+            statusCode: 401,
+            body: { message: '未登录' },
+        })
+        cy.visit('/', {
+            onBeforeLoad(win) {
+                win.localStorage.setItem('lycoris.language.v1', 'zh')
+            },
+        })
+
+        cy.get('h1[aria-label="跨越山海，并肩同行。"]')
+            .should('be.visible')
+            .children('span')
+            .should('have.length', 2)
+            .first()
+            .should('have.text', '跨越山海，')
+            .next()
+            .should('have.text', '并肩同行。')
+            .should('have.css', 'white-space', 'nowrap')
+
+        cy.get('h1[aria-label="跨越山海，并肩同行。"]').should(($title) => {
+            const style = window.getComputedStyle($title[0])
+            const fontSize = Number.parseFloat(style.fontSize)
+            const lineHeight = Number.parseFloat(style.lineHeight)
+            expect(fontSize).to.be.greaterThan(0)
+            expect(lineHeight / fontSize).to.be.closeTo(1.08, 0.02)
         })
     })
 })

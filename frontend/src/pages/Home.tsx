@@ -52,7 +52,7 @@ function HomePinBackdrop() {
 }
 
 export default function Home() {
-    const { tr } = useLanguage()
+    const { language, tr } = useLanguage()
     const { user, refresh } = useAuth()
     const [editOpen, setEditOpen] = useState(false)
     const [nickname, setNickname] = useState('')
@@ -109,22 +109,38 @@ export default function Home() {
                 >
                     <Typography
                         component="h1"
-                        aria-label={tr('跨越山海，并肩同行', 'Trans Support Together')}
+                        aria-label={tr('跨越山海，并肩同行。', 'Trans Support Together')}
                         sx={{
                             m: 0,
                             color: '#000',
                             fontFamily: 'var(--ly-font-display)',
                             fontSize: { xs: 'clamp(3.15rem, 13.6vw, 4rem)', md: 'clamp(5.6rem, 7.5vw, 7.25rem)' },
                             fontWeight: 500,
-                            lineHeight: { xs: 0.82, md: 0.78 },
+                            lineHeight: {
+                                xs: language === 'zh' ? 1.08 : 0.82,
+                                md: language === 'zh' ? 1.02 : 0.78,
+                            },
                             letterSpacing: { xs: '-0.085em', md: '-0.08em' },
                             textTransform: 'uppercase',
                             userSelect: 'none',
                         }}
                     >
-                        <Box component="span" sx={{ display: 'block' }}>{tr('跨越山海', 'TRANS-')}</Box>
-                        <Box component="span" sx={{ display: 'block' }}>{tr('并肩', 'SUPPORT')}</Box>
-                        <Box component="span" sx={{ display: 'block' }}>{tr('同行', 'TOGETHER')}</Box>
+                        {language === 'zh' ? (
+                            <>
+                                <Box component="span" sx={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                    跨越山海，
+                                </Box>
+                                <Box component="span" sx={{ display: 'block', whiteSpace: 'nowrap' }}>
+                                    并肩同行。
+                                </Box>
+                            </>
+                        ) : (
+                            <>
+                                <Box component="span" sx={{ display: 'block' }}>TRANS-</Box>
+                                <Box component="span" sx={{ display: 'block' }}>SUPPORT</Box>
+                                <Box component="span" sx={{ display: 'block' }}>TOGETHER</Box>
+                            </>
+                        )}
                     </Typography>
 
                     <Typography

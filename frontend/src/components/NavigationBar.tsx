@@ -19,7 +19,6 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
-import TranslateRoundedIcon from '@mui/icons-material/TranslateRounded'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { useLanguage } from '../i18n/LanguageProvider.tsx'
@@ -227,6 +226,30 @@ export default function NavigationBar() {
                                 </Button>
                             )
                         })}
+                        <Button
+                            data-testid="desktop-language-toggle"
+                            onClick={toggleLanguage}
+                            aria-label={languageSwitchLabel}
+                            title={languageSwitchLabel}
+                            variant="text"
+                            sx={{
+                                fontFamily: 'var(--ly-font-body)',
+                                fontSize: { md: 19, lg: 21 },
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                borderRadius: 0,
+                                minWidth: 0,
+                                px: 1,
+                                color: 'var(--ly-color-ink)',
+                                bgcolor: 'transparent',
+                                '&:hover': {
+                                    bgcolor: 'transparent',
+                                    color: 'var(--ly-color-ink)',
+                                },
+                            }}
+                        >
+                            {language === 'en' ? '中' : 'EN'}
+                        </Button>
                     </Stack>
 
                     <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
@@ -240,32 +263,6 @@ export default function NavigationBar() {
                             alignItems: 'center',
                         }}
                     >
-                        <Button
-                            data-testid="desktop-language-toggle"
-                            onClick={toggleLanguage}
-                            aria-label={languageSwitchLabel}
-                            title={languageSwitchLabel}
-                            sx={{
-                                display: { xs: 'none', md: 'inline-flex' },
-                                minWidth: { xs: 44, md: 48 },
-                                height: { xs: 44, md: 48 },
-                                px: { xs: 1, md: 1.25 },
-                                borderRadius: 999,
-                                border: '1px solid rgba(90, 56, 80, 0.14)',
-                                bgcolor: 'rgba(255, 255, 255, 0.58)',
-                                color: 'var(--ly-color-ink)',
-                                fontFamily: 'var(--ly-font-body)',
-                                fontSize: 13,
-                                fontWeight: 800,
-                                lineHeight: 1,
-                                textTransform: 'none',
-                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.72)',
-                                '&:hover': { bgcolor: 'rgba(248, 235, 255, 0.84)' },
-                            }}
-                        >
-                            {language === 'en' ? '中文' : 'EN'}
-                        </Button>
-
                         <IconButton
                             aria-label={tr('打开搜索', 'Open search')}
                             onClick={() => navigate('/search')}
@@ -401,47 +398,33 @@ export default function NavigationBar() {
 
                 <Divider />
 
-                <List sx={{ px: 2, py: 1.5 }}>
-                    <ListItemButton
+                <Box sx={{ px: 2, py: 1.5 }}>
+                    <Button
                         data-testid="mobile-language-toggle"
                         onClick={toggleLanguage}
                         aria-label={languageSwitchLabel}
                         title={languageSwitchLabel}
+                        variant="text"
                         sx={{
-                            minHeight: 52,
-                            borderRadius: 999,
-                            border: '1px solid rgba(90, 56, 80, 0.14)',
-                            bgcolor: 'rgba(255, 255, 255, 0.58)',
+                            minWidth: 44,
+                            minHeight: 44,
+                            borderRadius: 0,
+                            border: 0,
+                            bgcolor: 'transparent',
                             color: 'var(--ly-color-ink)',
-                            px: 1.5,
-                            '&:hover': { bgcolor: 'rgba(248, 235, 255, 0.84)' },
+                            px: 0.5,
+                            fontFamily: 'var(--ly-font-body)',
+                            fontSize: 15,
+                            fontWeight: 700,
+                            lineHeight: 1,
+                            textTransform: 'none',
+                            justifyContent: 'flex-start',
+                            '&:hover': { bgcolor: 'transparent' },
                         }}
                     >
-                        <TranslateRoundedIcon sx={{ mr: 1.5, fontSize: 22 }} />
-                        <ListItemText
-                            primary={tr('语言', 'Language')}
-                            primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }}
-                        />
-                        <Box
-                            component="span"
-                            sx={{
-                                minWidth: 48,
-                                height: 34,
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                borderRadius: 999,
-                                bgcolor: 'rgba(208, 188, 255, 0.52)',
-                                color: 'var(--ly-color-ink)',
-                                fontFamily: 'var(--ly-font-body)',
-                                fontSize: 13,
-                                fontWeight: 800,
-                            }}
-                        >
-                            {language === 'en' ? '中文' : 'EN'}
-                        </Box>
-                    </ListItemButton>
-                </List>
+                        {language === 'en' ? '中' : 'EN'}
+                    </Button>
+                </Box>
             </Drawer>
         </AppBar>
         </>
