@@ -15,10 +15,12 @@ import {
     ListItemText,
     Typography,
     Avatar,
+    Tooltip,
 } from '@mui/material'
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
+import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { useLanguage } from '../i18n/LanguageProvider.tsx'
@@ -226,30 +228,6 @@ export default function NavigationBar() {
                                 </Button>
                             )
                         })}
-                        <Button
-                            data-testid="desktop-language-toggle"
-                            onClick={toggleLanguage}
-                            aria-label={languageSwitchLabel}
-                            title={languageSwitchLabel}
-                            variant="text"
-                            sx={{
-                                fontFamily: 'var(--ly-font-body)',
-                                fontSize: { md: 19, lg: 21 },
-                                fontWeight: 700,
-                                textTransform: 'none',
-                                borderRadius: 0,
-                                minWidth: 0,
-                                px: 1,
-                                color: 'var(--ly-color-ink)',
-                                bgcolor: 'transparent',
-                                '&:hover': {
-                                    bgcolor: 'transparent',
-                                    color: 'var(--ly-color-ink)',
-                                },
-                            }}
-                        >
-                            {language === 'en' ? '中' : 'EN'}
-                        </Button>
                     </Stack>
 
                     <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
@@ -263,6 +241,27 @@ export default function NavigationBar() {
                             alignItems: 'center',
                         }}
                     >
+                        <Tooltip title={languageSwitchLabel} arrow>
+                            <IconButton
+                                data-testid="desktop-language-toggle"
+                                onClick={toggleLanguage}
+                                aria-label={languageSwitchLabel}
+                                sx={{
+                                    display: { xs: 'none', md: 'inline-flex' },
+                                    width: { md: 48, lg: 54 },
+                                    height: { md: 48, lg: 54 },
+                                    borderRadius: 0,
+                                    color: 'var(--ly-color-ink)',
+                                    bgcolor: 'transparent',
+                                    '&:hover': {
+                                        bgcolor: 'rgba(208, 188, 255, 0.24)',
+                                    },
+                                }}
+                            >
+                                <LanguageOutlinedIcon />
+                            </IconButton>
+                        </Tooltip>
+
                         <IconButton
                             aria-label={tr('打开搜索', 'Open search')}
                             onClick={() => navigate('/search')}

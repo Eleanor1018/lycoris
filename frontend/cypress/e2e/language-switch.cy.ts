@@ -108,7 +108,9 @@ describe('Responsive language navigation', () => {
         cy.get('[data-testid="desktop-language-toggle"]')
             .filter(':visible')
             .should('have.length', 1)
-            .should('have.text', '中')
+            .should('not.have.text', '中')
+            .find('svg')
+            .should('have.length', 1)
     })
 
     ;[320, 375].forEach((width) => {
