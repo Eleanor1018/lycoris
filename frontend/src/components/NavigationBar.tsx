@@ -20,7 +20,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search'
 import CloseIcon from '@mui/icons-material/Close'
 import PersonOutlineIcon from '@mui/icons-material/PersonOutline'
-import LanguageOutlinedIcon from '@mui/icons-material/LanguageOutlined'
+import TranslateIcon from '@mui/icons-material/Translate'
 
 import { useAuth } from '../auth/AuthProvider.tsx'
 import { useLanguage } from '../i18n/LanguageProvider.tsx'
@@ -258,7 +258,7 @@ export default function NavigationBar() {
                                     },
                                 }}
                             >
-                                <LanguageOutlinedIcon />
+                                <TranslateIcon />
                             </IconButton>
                         </Tooltip>
 
@@ -411,7 +411,7 @@ export default function NavigationBar() {
                             border: 0,
                             bgcolor: 'transparent',
                             color: 'var(--ly-color-ink)',
-                            px: 0.5,
+                            px: 2,
                             fontFamily: 'var(--ly-font-body)',
                             fontSize: 15,
                             fontWeight: 700,
