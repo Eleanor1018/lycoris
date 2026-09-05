@@ -6,6 +6,8 @@
 
 安装完整 Xcode，首次打开完成组件安装，并在 Settings → Locations 选择 Command Line Tools。在 Xcode 中安装一个 iOS Simulator runtime。当前锁定的 RN 依赖要求 iOS 15.1+、Xcode 16.1+、Node 20.19.4+；使用 Mac 支持的较新 Xcode 和满足要求的 Node。安装可用的 Ruby/Bundler；CocoaPods 由仓库 Gemfile 管理，不需要额外安装全局 React Native CLI。[RN 0.83 环境说明](https://reactnative.dev/docs/0.83/set-up-your-environment)
 
+准备提交 App Store Connect 时使用 Xcode 26 或更新版本，以及 iOS 26 SDK 或更新版本；Apple 自 2026 年 4 月 28 日起已要求这个 SDK 下限。上面的 Xcode 16.1 是 RN 依赖下限，不代表当前商店提交要求。[Apple 提交要求](https://developer.apple.com/app-store/submitting/)
+
 先确认工具可用：
 
 ```sh
