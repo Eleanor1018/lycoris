@@ -10,6 +10,8 @@ export type MapMarker = {
   lng: number;
   category: MarkerCategory;
   title: string;
+  contentLanguage?: 'zh' | 'en';
+  sourceLanguage?: 'zh' | 'en';
   description?: string;
   isPublic: boolean;
   isActive: boolean;

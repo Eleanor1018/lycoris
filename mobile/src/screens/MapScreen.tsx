@@ -1,4 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useRef, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   ActivityIndicator,
@@ -9,6 +15,7 @@ import {
   Platform,
   Pressable,
   ScrollView,
+  Share,
   StyleSheet,
   Switch,
   Text,
@@ -16,10 +23,10 @@ import {
   Image,
   View,
 } from 'react-native';
-import {WebView, type WebViewMessageEvent} from 'react-native-webview';
-import {Icon} from 'react-native-paper';
-import {useSafeAreaInsets} from 'react-native-safe-area-context';
-import {useAuth} from '../auth/AuthProvider';
+import { WebView, type WebViewMessageEvent } from 'react-native-webview';
+import { Icon } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../auth/AuthProvider';
 import {
   buildApiUrl,
   THUNDERFOREST_API_KEY,
@@ -27,25 +34,32 @@ import {
   WEB_BASE_URL,
   toBackendAssetUrl,
 } from '../config/runtime';
-import {ApiError, requestJson} from '../lib/http';
+import { ApiError, isAbortError, requestJson } from '../lib/http';
+import { useLanguage } from '../i18n/useLanguage';
 import {
-  pickUploadImage,
-  type LocalUploadImage,
-} from '../lib/imageUpload';
-import {getAndroidLocationAccess} from '../lib/locationPermissions';
+  getCurrentLanguage,
+  setLanguagePreference,
+  type Language,
+  type LanguagePreference,
+} from '../i18n/language';
+import { translate as t } from '../i18n/messages';
+import { buildDirectionsUrls, buildMarkerShareUrl } from '../lib/markerLinks';
+import { LEAFLET_MARKER_RENDERER_SCRIPT } from '../lib/leafletMarkerRenderer';
+import { pickUploadImage, type LocalUploadImage } from '../lib/imageUpload';
+import { getAndroidLocationAccess } from '../lib/locationPermissions';
 import {
   createMarkerRequestId,
   MarkerImageUploadError,
   submitMarkerWithImage,
   type MarkerSubmissionCheckpoint,
 } from '../lib/markerSubmission';
-import {colors} from '../theme/colors';
-import type {MapMarker, MarkerCategory} from '../types/marker';
+import { colors } from '../theme/colors';
+import type { MapMarker, MarkerCategory } from '../types/marker';
 
 type OwnerFilter = 'all' | 'mine' | 'fav';
 type NearbyCategory = 'accessible_toilet' | 'friendly_clinic';
 type TileProvider = 'osm' | 'tf_atlas' | 'tianditu_vec';
-type NearbyResult = MapMarker & {distanceMeters: number};
+type NearbyResult = MapMarker & { distanceMeters: number };
 type MapFocusRequest = {
   markerId: number;
   lat?: number;
@@ -70,9 +84,9 @@ type ViewportBounds = {
 };
 
 type WebMapMessage =
-  | {type: 'mapReady'}
-  | {type: 'mapPress'; latitude?: number; longitude?: number}
-  | {type: 'markerPress'; id: number}
+  | { type: 'mapReady' }
+  | { type: 'mapPress'; latitude?: number; longitude?: number }
+  | { type: 'markerPress'; id: number }
   | {
       type: 'moveend';
       latitude: number;
@@ -83,12 +97,14 @@ type WebMapMessage =
       west?: number;
       east?: number;
     }
-  | {type: 'userLocation'; latitude: number; longitude: number}
-  | {type: 'geoError'; message?: string}
-  | {type: 'leafletLoadFailed'; message?: string};
+  | { type: 'userLocation'; latitude: number; longitude: number }
+  | { type: 'geoError'; message?: string }
+  | { type: 'leafletLoadFailed'; message?: string };
 
 type DraftMarker = {
   clientRequestId: string;
+  language: Language;
+  originalText?: string;
   lat: number;
   lng: number;
   category: MarkerCategory;
@@ -110,7 +126,10 @@ type NativeLocationPayload = {
 };
 
 type NativeLocationModule = {
-  getCurrentPosition: (options?: {timeoutMs?: number; maxAgeMs?: number}) => Promise<NativeLocationPayload>;
+  getCurrentPosition: (options?: {
+    timeoutMs?: number;
+    maxAgeMs?: number;
+  }) => Promise<NativeLocationPayload>;
 };
 
 const nativeLocationModule = (NativeModules.NativeLocation ??
@@ -159,12 +178,12 @@ const hasTiandituKey = TIANDITU_API_KEY.length > 0;
 const initialTileProvider: TileProvider = hasTiandituKey
   ? 'tianditu_vec'
   : hasThunderforestKey
-    ? 'tf_atlas'
-    : 'osm';
+  ? 'tf_atlas'
+  : 'osm';
 
 const tileProviderConfig: Record<
   TileProvider,
-  {label: string; url: string; labelUrl?: string}
+  { label: string; url: string; labelUrl?: string }
 > = {
   osm: {
     label: 'OSM',
@@ -213,7 +232,11 @@ const normalizeMarkers = (raw: unknown): MapMarker[] => {
     const id = Number(marker.id);
     const lat = Number(marker.lat);
     const lng = Number(marker.lng);
-    if (!Number.isFinite(id) || !Number.isFinite(lat) || !Number.isFinite(lng)) {
+    if (
+      !Number.isFinite(id) ||
+      !Number.isFinite(lat) ||
+      !Number.isFinite(lng)
+    ) {
       return;
     }
     result.push({
@@ -221,7 +244,7 @@ const normalizeMarkers = (raw: unknown): MapMarker[] => {
       lat,
       lng,
       category: normalizeCategory(marker.category),
-      title: marker.title?.trim() || '未命名点位',
+      title: marker.title?.trim() || t('未命名点位'),
       description: marker.description ?? '',
       isPublic: marker.isPublic ?? true,
       isActive: marker.isActive ?? true,
@@ -230,6 +253,8 @@ const normalizeMarkers = (raw: unknown): MapMarker[] => {
       markImage: marker.markImage ?? null,
       username: marker.username ?? '',
       userPublicId: marker.userPublicId ?? null,
+      contentLanguage: marker.contentLanguage,
+      sourceLanguage: marker.sourceLanguage,
     });
   });
   return result;
@@ -255,10 +280,10 @@ const isValidHHMM = (value: string): boolean => {
   );
 };
 
-const splitHHMM = (value?: string | null): {hour: string; minute: string} => {
-  if (!value || !/^\d{2}:\d{2}$/.test(value)) return {hour: '', minute: ''};
+const splitHHMM = (value?: string | null): { hour: string; minute: string } => {
+  if (!value || !/^\d{2}:\d{2}$/.test(value)) return { hour: '', minute: '' };
   const [hour, minute] = value.split(':');
-  return {hour, minute};
+  return { hour, minute };
 };
 
 const composeHHMM = (hour: string, minute: string): string => {
@@ -276,7 +301,7 @@ const parseFavoriteIds = (raw: unknown): Set<number> => {
 };
 
 const formatOpenTime = (marker: MapMarker) => {
-  if (!marker.openTimeStart || !marker.openTimeEnd) return '全天可用';
+  if (!marker.openTimeStart || !marker.openTimeEnd) return t('全天可用');
   return `${marker.openTimeStart} - ${marker.openTimeEnd}`;
 };
 
@@ -306,7 +331,7 @@ const haversineMeters = (
 const clampLat = (value: number) => Math.max(-90, Math.min(90, value));
 
 const normalizeLng = (value: number) => {
-  const normalized = ((value + 180) % 360 + 360) % 360 - 180;
+  const normalized = ((((value + 180) % 360) + 360) % 360) - 180;
   return Math.max(-180, Math.min(180, normalized));
 };
 
@@ -321,7 +346,9 @@ const parseStoredViewport = (raw: string | null): LatLngZoom | null => {
     const longitude = Number(parsed.longitude);
     const zoom = Number(parsed.zoom);
     if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
-    const safeZoom = Number.isFinite(zoom) ? Math.max(3, Math.min(20, zoom)) : 11;
+    const safeZoom = Number.isFinite(zoom)
+      ? Math.max(3, Math.min(20, zoom))
+      : 11;
     return {
       latitude: clampLat(latitude),
       longitude: normalizeLng(longitude),
@@ -340,7 +367,7 @@ const bytesToBase64 = (bytes: Uint8Array): string => {
     binary += String.fromCharCode(...Array.from(chunk));
   }
   const btoaFn = (
-    globalThis as typeof globalThis & {btoa?: (value: string) => string}
+    globalThis as typeof globalThis & { btoa?: (value: string) => string }
   ).btoa;
   if (typeof btoaFn !== 'function') {
     throw new Error('btoa is not available');
@@ -355,7 +382,7 @@ const normalizeImageContentType = (value: string | null): string => {
 };
 
 const fetchImageAsDataUrl = async (url: string): Promise<string> => {
-  const response = await fetch(url, {method: 'GET', credentials: 'include'});
+  const response = await fetch(url, { method: 'GET', credentials: 'include' });
   if (!response.ok) {
     throw new Error(`avatar fetch failed (${response.status})`);
   }
@@ -531,28 +558,7 @@ const buildLeafletHtml = (provider: TileProvider, initView: LatLngZoom) => {
         }
       }
 
-      function renderMarkers(markers) {
-        markerLayer.clearLayers();
-        if (!Array.isArray(markers)) return;
-
-        markers.forEach(function (m) {
-          var lat = Number(m.lat);
-          var lng = Number(m.lng);
-          if (!Number.isFinite(lat) || !Number.isFinite(lng)) return;
-
-          var color = typeof m.color === 'string' && m.color ? m.color : '#1e88e5';
-          var marker = L.marker([lat, lng], {
-            icon: getMarkerIcon(color),
-          });
-          marker.on('click', function (evt) {
-            if (evt) {
-              L.DomEvent.stopPropagation(evt);
-            }
-            post({ type: 'markerPress', id: Number(m.id) });
-          });
-          markerLayer.addLayer(marker);
-        });
-      }
+      ${LEAFLET_MARKER_RENDERER_SCRIPT}
 
       window.__rnRenderMarkers = function (markers) {
         renderMarkers(markers || []);
@@ -635,14 +641,20 @@ type MapScreenProps = {
   isActive?: boolean;
 };
 
-export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
+export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
+  const { language, preference } = useLanguage();
   const insets = useSafeAreaInsets();
-  const {user, isLoggedIn, sessionNotice} = useAuth();
+  const { user, isLoggedIn, sessionNotice } = useAuth();
 
   const webViewRef = useRef<WebView>(null);
+  const lastMarkerPayloadRef = useRef<string | null>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const timeFixHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const addModeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const timeFixHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+  const addModeHintTimerRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
   const appStateRef = useRef(AppState.currentState);
   const nativeLocateInFlightRef = useRef(false);
   const nativeFallbackCooldownRef = useRef(0);
@@ -650,6 +662,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const restoredViewportRef = useRef<LatLngZoom | null>(null);
   const startupCameraAppliedRef = useRef(false);
   const markerQuerySeqRef = useRef(0);
+  const markerAbortRef = useRef<AbortController | null>(null);
+  const nearbyAbortRef = useRef<AbortController | null>(null);
+  const nearbySeqRef = useRef(0);
+  const searchSeqRef = useRef(0);
   const avatarResolveSeqRef = useRef(0);
   const markerImageUrlRef = useRef<Map<number, string>>(new Map());
   const hasLoadedMarkersRef = useRef(false);
@@ -682,20 +698,25 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [deletingMarker, setDeletingMarker] = useState(false);
 
-  const [visibleCats, setVisibleCats] = useState<Record<MarkerCategory, boolean>>(
-    {
-      accessible_toilet: true,
-      friendly_clinic: true,
-      baby_room: true,
-      self_definition: true,
-    },
-  );
+  const [visibleCats, setVisibleCats] = useState<
+    Record<MarkerCategory, boolean>
+  >({
+    accessible_toilet: true,
+    friendly_clinic: true,
+    baby_room: true,
+    self_definition: true,
+  });
   const [legendOpen, setLegendOpen] = useState(false);
   const [ownerFilter, setOwnerFilter] = useState<OwnerFilter>('all');
   const [tileProvider, setTileProvider] =
     useState<TileProvider>(initialTileProvider);
 
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<MapMarker[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState('');
   const [nearbyPanelOpen, setNearbyPanelOpen] = useState(false);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [nearbyOnly, setNearbyOnly] = useState(false);
@@ -710,17 +731,18 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(
     Platform.OS !== 'android',
   );
-  const [userLocation, setUserLocation] = useState<
-    {latitude: number; longitude: number} | null
-  >(null);
+  const [userLocation, setUserLocation] = useState<{
+    latitude: number;
+    longitude: number;
+  } | null>(null);
   const [mapViewport, setMapViewport] = useState<LatLngZoom>(INITIAL_VIEW);
   const [mapBounds, setMapBounds] = useState<ViewportBounds | null>(null);
   const [mapInitView, setMapInitView] = useState<LatLngZoom>(INITIAL_VIEW);
   const [sessionRestored, setSessionRestored] = useState(false);
   const [mapAvatarSource, setMapAvatarSource] = useState('');
-  const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<Set<number>>(
-    new Set(),
-  );
+  const [missingImageMarkerIds, setMissingImageMarkerIds] = useState<
+    Set<number>
+  >(new Set());
   const [showAddModeHint, setShowAddModeHint] = useState(false);
 
   const topOffset = insets.top + 12;
@@ -736,7 +758,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, []);
 
   useEffect(() => {
-    if (sessionNotice) showNotice(sessionNotice);
+    if (sessionNotice) showNotice(t(sessionNotice));
   }, [sessionNotice, showNotice]);
 
   const showTimeFixHint = useCallback((text: string) => {
@@ -791,7 +813,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       recenter?: boolean;
       silent?: boolean;
       permissionConfirmed?: boolean;
-    } = {}): Promise<{latitude: number; longitude: number} | null> => {
+    } = {}): Promise<{ latitude: number; longitude: number } | null> => {
       if (!supportsNativeLocation) return null;
       if (!locationPermissionGranted && !permissionConfirmed) return null;
       if (
@@ -811,10 +833,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         const latitude = Number(payload?.latitude);
         const longitude = Number(payload?.longitude);
         if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
-          throw new Error('原生定位返回坐标无效');
+          throw new Error(t('原生定位返回坐标无效'));
         }
 
-        setUserLocation({latitude, longitude});
+        setUserLocation({ latitude, longitude });
         if (recenter) {
           webViewRef.current?.injectJavaScript(
             `window.__rnSetView(${latitude}, ${longitude}, 15);\ntrue;`,
@@ -826,16 +848,16 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             typeof payload.provider === 'string' && payload.provider.trim()
               ? payload.provider
               : 'native';
-          showNotice(`已使用原生定位（${provider}）。`);
+          showNotice(t('已使用原生定位（{provider}）。', { provider }));
         }
-        return {latitude, longitude};
+        return { latitude, longitude };
       } catch (err) {
         const nativeCode =
           typeof err === 'object' &&
           err !== null &&
           'code' in err &&
-          typeof (err as {code?: unknown}).code === 'string'
-            ? (err as {code: string}).code
+          typeof (err as { code?: unknown }).code === 'string'
+            ? (err as { code: string }).code
             : '';
         if (nativeCode === 'LOCATION_PERMISSION_DENIED') {
           setLocationPermissionGranted(false);
@@ -844,8 +866,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           const message =
             err instanceof Error && err.message
               ? err.message
-              : '定位失败，请稍后重试。';
-          showNotice(`原生定位失败：${message}`);
+              : t('定位失败，请稍后重试。');
+          showNotice(t('原生定位失败：{message}', { message }));
         }
         return null;
       } finally {
@@ -873,8 +895,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   useEffect(() => {
     return () => {
       if (noticeTimerRef.current) clearTimeout(noticeTimerRef.current);
-      if (timeFixHintTimerRef.current) clearTimeout(timeFixHintTimerRef.current);
-      if (addModeHintTimerRef.current) clearTimeout(addModeHintTimerRef.current);
+      if (timeFixHintTimerRef.current)
+        clearTimeout(timeFixHintTimerRef.current);
+      if (addModeHintTimerRef.current)
+        clearTimeout(addModeHintTimerRef.current);
     };
   }, []);
 
@@ -916,7 +940,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, [showAddModeHint]);
 
   const syncLocationPermission = useCallback(
-    async (requestIfMissing: boolean, recoverBlocked = false): Promise<boolean> => {
+    async (
+      requestIfMissing: boolean,
+      recoverBlocked = false,
+    ): Promise<boolean> => {
       if (Platform.OS !== 'android') {
         setLocationPermissionGranted(true);
         return true;
@@ -927,27 +954,30 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         setLocationPermissionGranted(granted);
         if (granted) {
           if (access === 'approximate' && requestIfMissing) {
-            showNotice('已允许大致位置，附近距离可能存在偏差。');
+            showNotice(t('已允许大致位置，附近距离可能存在偏差。'));
           }
           return true;
         }
         setUserLocation(null);
         if (requestIfMissing) {
           if (access === 'blocked' && recoverBlocked) {
-            showNotice('请在系统设置中允许位置访问，返回后再点击定位或附近查询。');
+            showNotice(
+              t('请在系统设置中允许位置访问，返回后再点击定位或附近查询。'),
+            );
             await Linking.openSettings();
           } else {
             showNotice(
               access === 'blocked'
-                ? '定位权限已关闭，点击定位按钮可前往系统设置。'
-                : '定位权限未开启，点击定位或附近查询可重新申请。',
+                ? t('定位权限已关闭，点击定位按钮可前往系统设置。')
+                : t('定位权限未开启，点击定位或附近查询可重新申请。'),
             );
           }
         }
         return false;
       } catch {
         setLocationPermissionGranted(false);
-        if (requestIfMissing) showNotice('无法读取定位权限，请在系统设置中检查位置访问。');
+        if (requestIfMissing)
+          showNotice(t('无法读取定位权限，请在系统设置中检查位置访问。'));
         return false;
       }
     },
@@ -1024,12 +1054,17 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   useEffect(() => {
     if (!isActive || !locationPermissionGranted) return;
     requestWebViewCurrentLocation();
-  }, [isActive, locationPermissionGranted, mapReady, requestWebViewCurrentLocation]);
+  }, [
+    isActive,
+    locationPermissionGranted,
+    mapReady,
+    requestWebViewCurrentLocation,
+  ]);
 
   useEffect(() => {
     if (!isActive || !locationPermissionGranted || userLocation) return;
     const timer = setTimeout(() => {
-      requestNativeCurrentLocation({silent: true}).catch(() => {});
+      requestNativeCurrentLocation({ silent: true }).catch(() => {});
     }, 1800);
     return () => clearTimeout(timer);
   }, [
@@ -1046,6 +1081,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   const loadMarkersInViewport = useCallback(
     async (bounds: ViewportBounds, categories: MarkerCategory[]) => {
+      const seq = ++markerQuerySeqRef.current;
+      markerAbortRef.current?.abort();
+      const controller = new AbortController();
+      markerAbortRef.current = controller;
       if (categories.length === 0) {
         setMarkers([]);
         setError('');
@@ -1056,7 +1095,6 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         return;
       }
 
-      const seq = ++markerQuerySeqRef.current;
       const isFirstLoad = !hasLoadedMarkersRef.current;
       if (isFirstLoad) setLoading(true);
       if (__DEV__) {
@@ -1075,7 +1113,13 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           maxLng: String(maxLng),
           categories: categories.join(','),
         });
-        return requestJson<unknown>(`/api/markers/viewport?${params.toString()}`);
+        return requestJson<unknown>(
+          `/api/markers/viewport?${params.toString()}`,
+          {
+            language,
+            signal: controller.signal,
+          },
+        );
       };
 
       try {
@@ -1083,8 +1127,14 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         if (bounds.wholeWorld) {
           const payload = await fetchViewportSegment(-180, 180);
           mergedMarkers = normalizeMarkers(payload);
-        } else if (!bounds.wrapsAntimeridian && bounds.minLng <= bounds.maxLng) {
-          const payload = await fetchViewportSegment(bounds.minLng, bounds.maxLng);
+        } else if (
+          !bounds.wrapsAntimeridian &&
+          bounds.minLng <= bounds.maxLng
+        ) {
+          const payload = await fetchViewportSegment(
+            bounds.minLng,
+            bounds.maxLng,
+          );
           mergedMarkers = normalizeMarkers(payload);
         } else {
           const [leftPayload, rightPayload] = await Promise.all([
@@ -1092,15 +1142,17 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             fetchViewportSegment(-180, bounds.maxLng),
           ]);
           const mergedById = new Map<number, MapMarker>();
-          [...normalizeMarkers(leftPayload), ...normalizeMarkers(rightPayload)].forEach(
-            marker => {
-              mergedById.set(marker.id, marker);
-            },
-          );
+          [
+            ...normalizeMarkers(leftPayload),
+            ...normalizeMarkers(rightPayload),
+          ].forEach(marker => {
+            mergedById.set(marker.id, marker);
+          });
           mergedMarkers = Array.from(mergedById.values());
         }
 
-        if (seq !== markerQuerySeqRef.current) return;
+        if (seq !== markerQuerySeqRef.current || controller.signal.aborted)
+          return;
         if (__DEV__) {
           console.log('[MapViewport] success', {
             seq,
@@ -1110,14 +1162,19 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         setMarkers(mergedMarkers);
         setError('');
       } catch (e) {
-        if (seq !== markerQuerySeqRef.current) return;
+        if (
+          seq !== markerQuerySeqRef.current ||
+          controller.signal.aborted ||
+          isAbortError(e)
+        )
+          return;
         if (__DEV__) {
           console.log('[MapViewport] failed', {
             seq,
             error: e instanceof Error ? e.message : String(e),
           });
         }
-        const message = e instanceof Error ? e.message : '加载点位失败';
+        const message = e instanceof Error ? e.message : t('加载点位失败');
         setError(message);
       } finally {
         if (seq === markerQuerySeqRef.current && !hasLoadedMarkersRef.current) {
@@ -1126,7 +1183,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         }
       }
     },
-    [],
+    [language],
   );
 
   const reloadMarkersInCurrentViewport = useCallback(async () => {
@@ -1152,9 +1209,36 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, [isLoggedIn]);
 
   useEffect(() => {
+    ++markerQuerySeqRef.current;
+    ++nearbySeqRef.current;
+    markerAbortRef.current?.abort();
+    nearbyAbortRef.current?.abort();
+    setMarkers([]);
+    setSelectedMarkerId(null);
+    pendingFocusMarkerIdRef.current = null;
+    setNearbyResults([]);
+    setNearbyIds(new Set());
+    setNearbyOnly(false);
+    setNearbyLoading(false);
+    setNearbyPanelOpen(false);
+    setError('');
+    setNotice('');
+    hasLoadedMarkersRef.current = false;
+    return () => {
+      markerAbortRef.current?.abort();
+      nearbyAbortRef.current?.abort();
+    };
+  }, [language, user?.publicId]);
+
+  useEffect(() => {
     if (!mapBounds) return;
     loadMarkersInViewport(mapBounds, selectedVisibleCategories).catch(() => {});
-  }, [loadMarkersInViewport, mapBounds, selectedVisibleCategories]);
+  }, [
+    loadMarkersInViewport,
+    mapBounds,
+    selectedVisibleCategories,
+    user?.publicId,
+  ]);
 
   useEffect(() => {
     loadFavorites().catch(() => {});
@@ -1175,7 +1259,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       if (!visibleCats[marker.category]) return false;
       if (nearbyOnly && !nearbyIds.has(marker.id)) return false;
       if (ownerFilter === 'mine') {
-        if (!user?.publicId || marker.userPublicId !== user.publicId) return false;
+        if (!user?.publicId || marker.userPublicId !== user.publicId)
+          return false;
       }
       if (ownerFilter === 'fav') {
         if (!favoriteIds.has(marker.id)) return false;
@@ -1194,7 +1279,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   useEffect(() => {
     if (selectedMarkerId == null) return;
-    const exists = filteredMarkers.some(marker => marker.id === selectedMarkerId);
+    const exists = filteredMarkers.some(
+      marker => marker.id === selectedMarkerId,
+    );
     if (!exists) setSelectedMarkerId(null);
   }, [filteredMarkers, selectedMarkerId]);
 
@@ -1208,7 +1295,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, [filteredMarkers]);
 
   const selectedMarker = useMemo(
-    () => filteredMarkers.find(marker => marker.id === selectedMarkerId) ?? null,
+    () =>
+      filteredMarkers.find(marker => marker.id === selectedMarkerId) ?? null,
     [filteredMarkers, selectedMarkerId],
   );
   const selectedMarkerImageUri = useMemo(() => {
@@ -1247,6 +1335,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         lat: marker.lat,
         lng: marker.lng,
         color: getMarkerPinColor(marker),
+        title: marker.title,
       })),
     [filteredMarkers],
   );
@@ -1270,7 +1359,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       return Array.from(new Set(candidates));
     };
     const candidates = resolveUrlCandidates();
-    const isInsecureHttp = candidates.some(candidate => /^http:\/\//i.test(candidate));
+    const isInsecureHttp = candidates.some(candidate =>
+      /^http:\/\//i.test(candidate),
+    );
 
     (async () => {
       if (__DEV__) {
@@ -1278,7 +1369,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       }
 
       for (const candidate of candidates) {
-        const withBuster = `${candidate}${candidate.includes('?') ? '&' : '?'}v=${Date.now()}`;
+        const withBuster = `${candidate}${
+          candidate.includes('?') ? '&' : '?'
+        }v=${Date.now()}`;
         try {
           const dataUrl = await fetchImageAsDataUrl(withBuster);
           if (cancelled || avatarResolveSeqRef.current !== seq) return;
@@ -1295,11 +1388,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       }
 
       if (cancelled || avatarResolveSeqRef.current !== seq) return;
-      const fallback = `${candidates[0]}${candidates[0].includes('?') ? '&' : '?'}v=${Date.now()}`;
+      const fallback = `${candidates[0]}${
+        candidates[0].includes('?') ? '&' : '?'
+      }v=${Date.now()}`;
       setMapAvatarSource(fallback);
       if (__DEV__) {
         console.log(
-          `[MapAvatar] all data-url attempts failed${isInsecureHttp ? ' (insecure-http)' : ''}, fallback to direct url`,
+          `[MapAvatar] all data-url attempts failed${
+            isInsecureHttp ? ' (insecure-http)' : ''
+          }, fallback to direct url`,
         );
       }
     })();
@@ -1327,9 +1424,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         longitude: normalizeLng(mapViewport.longitude),
         zoom: Math.max(3, Math.min(20, mapViewport.zoom)),
       };
-      AsyncStorage.setItem(MAP_VIEWPORT_STORAGE_KEY, JSON.stringify(payload)).catch(
-        () => {},
-      );
+      AsyncStorage.setItem(
+        MAP_VIEWPORT_STORAGE_KEY,
+        JSON.stringify(payload),
+      ).catch(() => {});
     }, 450);
     return () => clearTimeout(timer);
   }, [
@@ -1349,6 +1447,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   useEffect(() => {
     // provider change时保留当前视角
     setMapInitView(mapViewportRef.current);
+    lastMarkerPayloadRef.current = null;
     setMapReady(false);
   }, [activeTileProvider]);
 
@@ -1360,6 +1459,20 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const injectJs = useCallback((script: string) => {
     webViewRef.current?.injectJavaScript(`${script}\ntrue;`);
   }, []);
+
+  const handleMapLoadStart = useCallback(() => {
+    lastMarkerPayloadRef.current = null;
+    setMapReady(false);
+  }, []);
+
+  const sendMarkerPayload = useCallback(
+    (payload: string) => {
+      if (!webViewRef.current || lastMarkerPayloadRef.current === payload) return;
+      injectJs(`window.__rnRenderMarkers(${payload});`);
+      lastMarkerPayloadRef.current = payload;
+    },
+    [injectJs],
+  );
 
   const applyStartupCamera = useCallback(
     (target: LatLngZoom) => {
@@ -1393,13 +1506,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       applyStartupCamera(fallback);
     }, 1800);
     return () => clearTimeout(timer);
-  }, [
-    applyStartupCamera,
-    isActive,
-    mapReady,
-    sessionRestored,
-    userLocation,
-  ]);
+  }, [applyStartupCamera, isActive, mapReady, sessionRestored, userLocation]);
 
   useEffect(() => {
     if (!mapReady) return;
@@ -1409,13 +1516,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         markerCount: webMarkers.length,
       });
     }
-    injectJs(`window.__rnRenderMarkers(${payload});`);
-  }, [injectJs, mapReady, webMarkers]);
+    sendMarkerPayload(payload);
+  }, [sendMarkerPayload, mapReady, webMarkers]);
 
   useEffect(() => {
     if (!mapReady) return;
     if (!userLocation) {
-      injectJs('window.__rnClearUserLocation && window.__rnClearUserLocation();');
+      injectJs(
+        'window.__rnClearUserLocation && window.__rnClearUserLocation();',
+      );
       return;
     }
     const avatar = JSON.stringify(mapAvatarSource);
@@ -1444,7 +1553,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     const markerId = Number(focusRequest.markerId);
     if (!Number.isFinite(markerId)) return;
 
-    const currentMarker = markers.find(marker => marker.id === markerId) || null;
+    const currentMarker =
+      markers.find(marker => marker.id === markerId) || null;
     if (currentMarker) {
       setSelectedMarkerId(currentMarker.id);
       pendingFocusMarkerIdRef.current = null;
@@ -1453,15 +1563,21 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     }
 
     const latCandidate =
-      typeof focusRequest.lat === 'number' ? focusRequest.lat : currentMarker?.lat;
+      typeof focusRequest.lat === 'number'
+        ? focusRequest.lat
+        : currentMarker?.lat;
     const lngCandidate =
-      typeof focusRequest.lng === 'number' ? focusRequest.lng : currentMarker?.lng;
+      typeof focusRequest.lng === 'number'
+        ? focusRequest.lng
+        : currentMarker?.lng;
     if (Number.isFinite(latCandidate) && Number.isFinite(lngCandidate)) {
       injectJs(`window.__rnSetView(${latCandidate}, ${lngCandidate}, 15);`);
     }
 
     showNotice(
-      `已定位到点位：${focusRequest.title || currentMarker?.title || String(markerId)}`,
+      t('已定位到点位：{title}', {
+        title: focusRequest.title || currentMarker?.title || String(markerId),
+      }),
     );
   }, [focusRequest, injectJs, mapReady, markers, showNotice]);
 
@@ -1469,6 +1585,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     (lat: number, lng: number) => {
       openDraftMenu({
         clientRequestId: createMarkerRequestId(),
+        language,
         lat,
         lng,
         category: 'accessible_toilet',
@@ -1484,26 +1601,32 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       setCanDeleteDraft(true);
       setDeleteConfirmOpen(false);
       setAddMode(false);
-      showNotice('已选择坐标，请完善点位信息。');
+      showNotice(t('已选择坐标，请完善点位信息。'));
     },
-    [openDraftMenu, showNotice],
+    [language, openDraftMenu, showNotice],
   );
 
   const openEditDraft = useCallback(
     (marker: MapMarker) => {
       if (!isLoggedIn) {
-        showNotice('请先登录后再编辑。');
+        showNotice(t('请先登录后再编辑。'));
         return;
       }
       const start = splitHHMM(marker.openTimeStart);
       const end = splitHHMM(marker.openTimeEnd);
+      const needsTranslation =
+        marker.contentLanguage && marker.contentLanguage !== language;
       openDraftMenu({
         clientRequestId: createMarkerRequestId(),
+        language,
+        originalText: needsTranslation
+          ? `${marker.title}\n${marker.description ?? ''}`
+          : undefined,
         lat: marker.lat,
         lng: marker.lng,
         category: marker.category,
-        title: marker.title,
-        description: marker.description ?? '',
+        title: needsTranslation ? '' : marker.title,
+        description: needsTranslation ? '' : marker.description ?? '',
         isPublic: marker.isPublic,
         openStartHour: start.hour,
         openStartMinute: start.minute,
@@ -1516,9 +1639,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       );
       setDeleteConfirmOpen(false);
       setAddMode(false);
-      showNotice('已进入编辑模式。');
+      showNotice(t('已进入编辑模式。'));
     },
-    [isLoggedIn, openDraftMenu, showNotice, user?.publicId],
+    [isLoggedIn, language, openDraftMenu, showNotice, user?.publicId],
   );
 
   const handleMapPress = useCallback(
@@ -1564,7 +1687,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         setMapReady(true);
         setError('');
         const payload = JSON.stringify(webMarkers);
-        injectJs(`window.__rnRenderMarkers(${payload});`);
+        sendMarkerPayload(payload);
         return;
       }
 
@@ -1592,8 +1715,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         const north = Number(msg.north);
         const west = Number(msg.west);
         const east = Number(msg.east);
-        if (Number.isFinite(lat) && Number.isFinite(lng) && Number.isFinite(zoom)) {
-          setMapViewport({latitude: lat, longitude: normalizeLng(lng), zoom});
+        if (
+          Number.isFinite(lat) &&
+          Number.isFinite(lng) &&
+          Number.isFinite(zoom)
+        ) {
+          setMapViewport({ latitude: lat, longitude: normalizeLng(lng), zoom });
         }
         if (
           Number.isFinite(south) &&
@@ -1634,7 +1761,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         const lat = Number(msg.latitude);
         const lng = Number(msg.longitude);
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
-          setUserLocation({latitude: lat, longitude: lng});
+          setUserLocation({ latitude: lat, longitude: lng });
         }
         return;
       }
@@ -1646,24 +1773,26 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           const now = Date.now();
           if (now - nativeFallbackCooldownRef.current < 1800) return;
           nativeFallbackCooldownRef.current = now;
-          requestNativeCurrentLocation({silent: true})
+          requestNativeCurrentLocation({ silent: true })
             .then(ok => {
               if (ok) {
                 return;
               }
               if (/secure origins?/i.test(detail)) {
-                showNotice('定位失败：当前地图页来源不安全，已切换为安全来源重试。');
+                showNotice(
+                  t('定位失败：当前地图页来源不安全，已切换为安全来源重试。'),
+                );
               } else if (detail) {
-                showNotice(`获取定位失败：${detail}`);
+                showNotice(t('获取定位失败：{message}', { message: detail }));
               } else {
-                showNotice('获取定位失败，可继续浏览地图。');
+                showNotice(t('获取定位失败，可继续浏览地图。'));
               }
             })
             .catch(() => {
               if (detail) {
-                showNotice(`获取定位失败：${detail}`);
+                showNotice(t('获取定位失败：{message}', { message: detail }));
               } else {
-                showNotice('获取定位失败，可继续浏览地图。');
+                showNotice(t('获取定位失败，可继续浏览地图。'));
               }
             });
         }
@@ -1671,12 +1800,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       }
 
       if (msg.type === 'leafletLoadFailed') {
-        setError('地图脚本加载失败。请检查网络后重试。');
+        setError(t('地图脚本加载失败。请检查网络后重试。'));
       }
     },
     [
       handleMapPress,
-      injectJs,
+      sendMarkerPayload,
       locationPermissionGranted,
       requestNativeCurrentLocation,
       showNotice,
@@ -1686,6 +1815,27 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   const focusMarker = useCallback(
     (marker: MapMarker) => {
+      ++markerQuerySeqRef.current;
+      markerAbortRef.current?.abort();
+      // The camera's next moveend supplies the destination bounds. Do not
+      // refresh the previous viewport when resetting the existing filters.
+      setMapBounds(null);
+      setOwnerFilter('all');
+      setNearbyOnly(false);
+      setVisibleCats(previous =>
+        supportedCategories.every(category => previous[category])
+          ? previous
+          : {
+              accessible_toilet: true,
+              friendly_clinic: true,
+              baby_room: true,
+              self_definition: true,
+            },
+      );
+      setMarkers(prev => [
+        ...prev.filter(item => item.id !== marker.id),
+        marker,
+      ]);
       setSelectedMarkerId(marker.id);
       injectJs(`window.__rnSetView(${marker.lat}, ${marker.lng}, 15);`);
     },
@@ -1703,7 +1853,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         permissionConfirmed: true,
       });
       if (!ok) {
-        showNotice('暂时无法获取定位，请稍后重试。');
+        showNotice(t('暂时无法获取定位，请稍后重试。'));
       }
       return;
     }
@@ -1721,18 +1871,47 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   const openWebMap = useCallback(
     async (marker?: MapMarker) => {
-      let url = `${WEB_BASE_URL}/maps`;
-      if (marker) {
-        const title = encodeURIComponent(marker.title);
-        url += `?markerId=${marker.id}&lat=${marker.lat}&lng=${marker.lng}&title=${title}`;
-      }
+      const url = marker
+        ? buildMarkerShareUrl(WEB_BASE_URL, marker, language)
+        : `${WEB_BASE_URL}/maps?lang=${language}`;
       try {
         await Linking.openURL(url);
       } catch {
-        showNotice('打开网页地图失败');
+        showNotice(t('打开网页地图失败'));
       }
     },
+    [language, showNotice],
+  );
+
+  const openDirections = useCallback(
+    async (marker: MapMarker) => {
+      for (const url of buildDirectionsUrls(marker, Platform.OS)) {
+        try {
+          await Linking.openURL(url);
+          return;
+        } catch {
+          /* Try a web map if no native map app handles the URI. */
+        }
+      }
+      showNotice(t('无法打开导航，请稍后重试。'));
+    },
     [showNotice],
+  );
+
+  const shareMarker = useCallback(
+    async (marker: MapMarker) => {
+      const url = buildMarkerShareUrl(WEB_BASE_URL, marker, language);
+      try {
+        await Share.share(
+          Platform.OS === 'ios'
+            ? { title: marker.title, message: marker.title, url }
+            : { title: marker.title, message: `${marker.title}\n${url}` },
+        );
+      } catch {
+        showNotice(t('无法打开分享菜单。'));
+      }
+    },
+    [language, showNotice],
   );
 
   const resetDraftState = useCallback(() => {
@@ -1757,7 +1936,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     if (!draft || savingDraft || draftImageBusy) return;
     setDraftImageBusy(true);
     setDraftImageError('');
-    const result = await pickUploadImage({mode: 'marker'});
+    const result = await pickUploadImage({ mode: 'marker' });
     setDraftImageBusy(false);
 
     if (result.cancelled) return;
@@ -1781,7 +1960,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const handleAddButtonPress = useCallback(() => {
     setShowAddModeHint(false);
     if (!isLoggedIn) {
-      showNotice('请先登录后再标点。');
+      showNotice(t('请先登录后再标点。'));
       return;
     }
 
@@ -1799,9 +1978,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         setDeleteConfirmOpen(false);
         setSelectedMarkerId(null);
         setLegendOpen(false);
-        showNotice('标点模式已开启，请点击地图选择位置；再点一次加号可直接用中心点。');
+        showNotice(
+          t('标点模式已开启，请点击地图选择位置；再点一次加号可直接用中心点。'),
+        );
       } else {
-        showNotice('已退出标点模式。');
+        showNotice(t('已退出标点模式。'));
       }
       return next;
     });
@@ -1809,18 +1990,28 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   const setDraftTimePart = useCallback(
     (
-      key: 'openStartHour' | 'openStartMinute' | 'openEndHour' | 'openEndMinute',
+      key:
+        | 'openStartHour'
+        | 'openStartMinute'
+        | 'openEndHour'
+        | 'openEndMinute',
       value: string,
     ) => {
       const digits = value.replace(/\D/g, '').slice(0, 2);
       setTimeFixHint('');
-      setDraft(prev => (prev ? {...prev, [key]: digits} : prev));
+      setDraft(prev => (prev ? { ...prev, [key]: digits } : prev));
     },
     [],
   );
 
   const normalizeDraftTimePartOnBlur = useCallback(
-    (key: 'openStartHour' | 'openStartMinute' | 'openEndHour' | 'openEndMinute') => {
+    (
+      key:
+        | 'openStartHour'
+        | 'openStartMinute'
+        | 'openEndHour'
+        | 'openEndMinute',
+    ) => {
       setDraft(prev => {
         if (!prev) return prev;
         const current = prev[key];
@@ -1831,16 +2022,21 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
         const isHour = key === 'openStartHour' || key === 'openEndHour';
         const max = isHour ? 23 : 59;
-        const unit = isHour ? '小时' : '分钟';
+        const unit = isHour ? t('小时') : t('分钟');
         const clamped = Math.max(0, Math.min(max, Math.trunc(parsed)));
         const normalized = String(clamped).padStart(2, '0');
 
         if (parsed > max) {
-          showTimeFixHint(`${unit}超出范围，已自动修正为 ${normalized}。`);
+          showTimeFixHint(
+            t('{unit}超出范围，已自动修正为 {value}。', {
+              unit,
+              value: normalized,
+            }),
+          );
         }
 
         if (normalized === current) return prev;
-        return {...prev, [key]: normalized};
+        return { ...prev, [key]: normalized };
       });
     },
     [showTimeFixHint],
@@ -1849,7 +2045,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const saveDraft = useCallback(async () => {
     if (!draft || savingDraft) return;
     if (!isLoggedIn) {
-      showNotice('请先登录后再标点。');
+      showNotice(t('请先登录后再标点。'));
       resetDraftState();
       return;
     }
@@ -1861,12 +2057,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     const hasEndMinute = Boolean(draft.openEndMinute);
 
     if (hasStartHour !== hasStartMinute) {
-      showNotice('开始时间请同时选择小时和分钟。');
+      showNotice(t('开始时间请同时选择小时和分钟。'));
       return;
     }
 
     if (hasEndHour !== hasEndMinute) {
-      showNotice('结束时间请同时选择小时和分钟。');
+      showNotice(t('结束时间请同时选择小时和分钟。'));
       return;
     }
 
@@ -1874,21 +2070,21 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     const end = composeHHMM(draft.openEndHour, draft.openEndMinute);
 
     if (!title) {
-      showNotice('请填写标题（例如：地铁站 A 口无障碍卫生间）。');
+      showNotice(t('请填写标题（例如：地铁站 A 口无障碍卫生间）。'));
       return;
     }
 
     if (Boolean(start) !== Boolean(end)) {
-      showNotice('开始和结束时间需同时填写，或都留空。');
+      showNotice(t('开始和结束时间需同时填写，或都留空。'));
       return;
     }
 
     if (start && !isValidHHMM(start)) {
-      showNotice('开始时间格式不正确，请使用 HH:MM。');
+      showNotice(t('开始时间格式不正确，请使用 HH:MM。'));
       return;
     }
     if (end && !isValidHHMM(end)) {
-      showNotice('结束时间格式不正确，请使用 HH:MM。');
+      showNotice(t('结束时间格式不正确，请使用 HH:MM。'));
       return;
     }
 
@@ -1897,8 +2093,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     try {
       const created = await submitMarkerWithImage({
         clientRequestId: draft.clientRequestId,
+        language: draft.language,
         editingId,
-        coordinates: {lat: draft.lat, lng: draft.lng},
+        coordinates: { lat: draft.lat, lng: draft.lng },
         fields: {
           category: draft.category,
           title,
@@ -1913,13 +2110,18 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         onMarkerSaved: setSubmissionCheckpoint,
       });
 
-      setMarkers(prev => [created, ...prev.filter(marker => marker.id !== created.id)]);
-      setSelectedMarkerId(created.id);
+      if (draft.language === getCurrentLanguage()) {
+        setMarkers(prev => [
+          created,
+          ...prev.filter(marker => marker.id !== created.id),
+        ]);
+        setSelectedMarkerId(created.id);
+      }
       resetDraftState();
-      showNotice('已提交管理员审核，将在审核通过后显示。');
+      showNotice(t('已提交管理员审核，将在审核通过后显示。'));
       injectJs(`window.__rnSetView(${created.lat}, ${created.lng}, 15);`);
     } catch (e) {
-      const message = e instanceof Error ? e.message : '保存失败';
+      const message = e instanceof Error ? e.message : t('保存失败');
       if (e instanceof MarkerImageUploadError) setDraftImageError(message);
       showNotice(message);
     } finally {
@@ -1941,14 +2143,16 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     if (!editingId || deletingMarker) return;
     setDeletingMarker(true);
     try {
-      await requestJson<unknown>(`/api/markers/${editingId}`, {method: 'DELETE'});
+      await requestJson<unknown>(`/api/markers/${editingId}`, {
+        method: 'DELETE',
+      });
       resetDraftState();
       setSelectedMarkerId(null);
       await reloadMarkersInCurrentViewport();
       await loadFavorites();
-      showNotice('点位已删除。');
+      showNotice(t('点位已删除。'));
     } catch (e) {
-      const message = e instanceof Error ? e.message : '删除失败';
+      const message = e instanceof Error ? e.message : t('删除失败');
       showNotice(message);
     } finally {
       setDeletingMarker(false);
@@ -1963,7 +2167,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   ]);
 
   const toggleCategory = useCallback((key: MarkerCategory) => {
-    setVisibleCats(prev => ({...prev, [key]: !prev[key]}));
+    setVisibleCats(prev => ({ ...prev, [key]: !prev[key] }));
   }, []);
 
   const setAllCategoriesVisible = useCallback((visible: boolean) => {
@@ -1982,16 +2186,23 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
   const searchNearby = useCallback(async () => {
     if (nearbyLoading) return;
+    const seq = ++nearbySeqRef.current;
+    nearbyAbortRef.current?.abort();
+    const controller = new AbortController();
+    nearbyAbortRef.current = controller;
     const granted = await syncLocationPermission(true, true);
-    if (!granted) return;
+    if (!granted || seq !== nearbySeqRef.current) return;
     setNearbyLoading(true);
     try {
-      const location = userLocation ?? await requestNativeCurrentLocation({
-        silent: true,
-        permissionConfirmed: true,
-      });
+      const location =
+        userLocation ??
+        (await requestNativeCurrentLocation({
+          silent: true,
+          permissionConfirmed: true,
+        }));
+      if (seq !== nearbySeqRef.current || controller.signal.aborted) return;
       if (!location) {
-        showNotice('暂时无法获取定位，请稍后重试。');
+        showNotice(t('暂时无法获取定位，请稍后重试。'));
         return;
       }
       const params = new URLSearchParams({
@@ -2002,7 +2213,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       });
       const payload = await requestJson<unknown>(
         `/api/markers/nearby?${params.toString()}`,
+        { language, signal: controller.signal },
       );
+      if (seq !== nearbySeqRef.current || controller.signal.aborted) return;
       const list = normalizeMarkers(payload);
       const results = list
         .map(marker => ({
@@ -2030,16 +2243,26 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 
       if (results.length === 0) {
         showNotice(
-          `你附近 ${nearbyRadius}m 内暂无${nearbyCategoryLabel[nearbyCategory]}点位。`,
+          t('你附近 {radius}m 内暂无{category}点位。', {
+            radius: nearbyRadius,
+            category: t(nearbyCategoryLabel[nearbyCategory]),
+          }),
         );
       }
     } catch (e) {
-      const message = e instanceof Error ? e.message : '附近查询失败';
+      if (
+        seq !== nearbySeqRef.current ||
+        controller.signal.aborted ||
+        isAbortError(e)
+      )
+        return;
+      const message = e instanceof Error ? e.message : t('附近查询失败');
       showNotice(message);
     } finally {
-      setNearbyLoading(false);
+      if (seq === nearbySeqRef.current) setNearbyLoading(false);
     }
   }, [
+    language,
     nearbyCategory,
     nearbyLoading,
     nearbyRadius,
@@ -2049,15 +2272,64 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     userLocation,
   ]);
 
+  useEffect(() => {
+    ++nearbySeqRef.current;
+    nearbyAbortRef.current?.abort();
+    setNearbyLoading(false);
+    setNearbyResults([]);
+    setNearbyOnly(false);
+  }, [nearbyCategory, nearbyRadius]);
+
+  useEffect(() => {
+    const seq = ++searchSeqRef.current;
+    const controller = new AbortController();
+    const query = searchQuery.trim();
+    setSearchResults([]);
+    setSearchError('');
+    setSearchLoading(Boolean(searchOpen && query));
+    if (!searchOpen || !query) return () => controller.abort();
+    const timer = setTimeout(async () => {
+      try {
+        const params = new URLSearchParams({ q: query });
+        const payload = await requestJson<unknown>(
+          `/api/markers/search?${params.toString()}`,
+          {
+            language,
+            signal: controller.signal,
+          },
+        );
+        if (seq !== searchSeqRef.current || controller.signal.aborted) return;
+        setSearchResults(normalizeMarkers(payload));
+      } catch (e) {
+        if (
+          seq !== searchSeqRef.current ||
+          controller.signal.aborted ||
+          isAbortError(e)
+        )
+          return;
+        setSearchError(
+          e instanceof Error ? e.message : t('搜索失败，请重试。'),
+        );
+      } finally {
+        if (seq === searchSeqRef.current && !controller.signal.aborted)
+          setSearchLoading(false);
+      }
+    }, 250);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [language, searchOpen, searchQuery, user?.publicId]);
+
   const applyNearbyRadiusInput = useCallback(() => {
     const parsed = Number(nearbyRadiusInput.trim());
     if (!Number.isFinite(parsed)) {
-      setNearbyRadiusError('请输入数字（0-10000）');
+      setNearbyRadiusError(t('请输入数字（0-10000）'));
       return;
     }
     const safe = Math.max(0, Math.min(10000, Math.round(parsed)));
     if (safe !== parsed) {
-      setNearbyRadiusError('范围需在 0-10000m，已自动修正');
+      setNearbyRadiusError(t('范围需在 0-10000m，已自动修正'));
     } else {
       setNearbyRadiusError('');
     }
@@ -2068,7 +2340,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const toggleFavorite = useCallback(
     async (markerId: number) => {
       if (!isLoggedIn) {
-        showNotice('请先登录后再收藏。');
+        showNotice(t('请先登录后再收藏。'));
         return;
       }
       const isFav = favoriteIds.has(markerId);
@@ -2078,7 +2350,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         });
         await loadFavorites();
       } catch (e) {
-        const message = e instanceof Error ? e.message : '收藏操作失败';
+        const message = e instanceof Error ? e.message : t('收藏操作失败');
         showNotice(message);
       }
     },
@@ -2091,7 +2363,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         ref={webViewRef}
         key={`leaflet-${activeTileProvider}`}
         originWhitelist={['*']}
-        source={{html: leafletHtml, baseUrl: WEB_BASE_URL}}
+        source={{ html: leafletHtml, baseUrl: WEB_BASE_URL }}
+        onLoadStart={handleMapLoadStart}
         onMessage={handleWebMessage}
         javaScriptEnabled
         domStorageEnabled
@@ -2102,29 +2375,48 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         renderLoading={() => (
           <View style={styles.webLoadingOverlay}>
             <ActivityIndicator color={colors.primary} />
-            <Text style={styles.loadingText}>地图加载中...</Text>
+            <Text style={styles.loadingText}>{t('地图加载中...')}</Text>
           </View>
         )}
       />
 
       <Pressable
-        style={[styles.addFab, addMode && styles.addFabActive, {top: topOffset}]}
+        style={[
+          styles.addFab,
+          addMode && styles.addFabActive,
+          { top: topOffset },
+        ]}
         onPress={handleAddButtonPress}
+        accessibilityLabel={t('新增点位')}
       >
         <Icon
-          source={addMode ? 'map-marker-check-outline' : 'map-marker-plus-outline'}
+          source={
+            addMode ? 'map-marker-check-outline' : 'map-marker-plus-outline'
+          }
           size={21}
           color={addMode ? '#3b2a14' : '#fff'}
         />
       </Pressable>
+      <Pressable
+        accessibilityLabel={t('搜索点位')}
+        accessibilityRole="button"
+        testID="marker-search-button"
+        style={[styles.addFab, styles.searchFab, { top: topOffset }]}
+        onPress={() => {
+          setLegendOpen(false);
+          setSearchOpen(true);
+        }}
+      >
+        <Icon source="magnify" size={23} color={colors.primary} />
+      </Pressable>
       {showAddModeHint ? (
         <Pressable
-          style={[styles.addModeHintBubble, {top: topOffset + 56}]}
+          style={[styles.addModeHintBubble, { top: topOffset + 56 }]}
           onPress={() => setShowAddModeHint(false)}
         >
           <View style={styles.addModeHintArrow} />
           <Text style={styles.addModeHintText}>
-            点击左上角按钮以进入添加点位模式
+            {t('点击左上角按钮以进入添加点位模式')}
           </Text>
           <Icon source="close" size={14} color="#8b7a9b" />
         </Pressable>
@@ -2134,32 +2426,35 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         style={[
           styles.legendWrap,
           legendOpen ? styles.legendWrapOpen : styles.legendWrapClosed,
-          {top: topOffset},
+          { top: topOffset },
         ]}
       >
         <Pressable
           style={[styles.legendToggle, legendOpen && styles.legendToggleOpen]}
           onPress={() => setLegendOpen(v => !v)}
         >
-          <Text style={styles.legendToggleText}>筛选点位 {legendOpen ? '▲' : '▼'}</Text>
+          <Text style={styles.legendToggleText}>
+            {t('筛选点位')}
+            {legendOpen ? '▲' : '▼'}
+          </Text>
         </Pressable>
 
         {legendOpen ? (
           <View style={styles.legendBody}>
             <View style={styles.legendTopRow}>
-              <Text style={styles.legendTitle}>图例</Text>
+              <Text style={styles.legendTitle}>{t('图例')}</Text>
               <View style={styles.legendQuickRow}>
                 <Pressable
                   style={styles.legendQuickBtn}
                   onPress={() => setAllCategoriesVisible(true)}
                 >
-                  <Text style={styles.legendQuickBtnText}>全选</Text>
+                  <Text style={styles.legendQuickBtnText}>{t('全选')}</Text>
                 </Pressable>
                 <Pressable
                   style={styles.legendQuickBtn}
                   onPress={() => setAllCategoriesVisible(false)}
                 >
-                  <Text style={styles.legendQuickBtnText}>全不选</Text>
+                  <Text style={styles.legendQuickBtnText}>{t('全不选')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -2169,7 +2464,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 const active = ownerFilter === key;
                 const disabled = !isLoggedIn && key !== 'all';
                 const text =
-                  key === 'all' ? '全部' : key === 'mine' ? '我添加的' : '我收藏的';
+                  key === 'all'
+                    ? t('全部')
+                    : key === 'mine'
+                    ? t('我添加的')
+                    : t('我收藏的');
                 return (
                   <Pressable
                     key={`owner-${key}`}
@@ -2204,10 +2503,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   <View
                     style={[
                       styles.categoryDot,
-                      {backgroundColor: categoryColor[key]},
+                      { backgroundColor: categoryColor[key] },
                     ]}
                   />
-                  <Text style={styles.categoryText}>{categoryLabel[key]}</Text>
+                  <Text style={styles.categoryText}>
+                    {t(categoryLabel[key])}
+                  </Text>
                 </View>
                 <Icon
                   source={
@@ -2228,23 +2529,24 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         ) : null}
       </View>
 
-      <View style={[styles.bottomLeftStack, {bottom: bottomOffset}]}> 
+      <View style={[styles.bottomLeftStack, { bottom: bottomOffset }]}>
         {nearbyOnly ? (
           <Pressable style={styles.exitNearbyBtn} onPress={clearNearbyFilter}>
-            <Text style={styles.exitNearbyText}>退出附近筛选</Text>
+            <Text style={styles.exitNearbyText}>{t('退出附近筛选')}</Text>
           </Pressable>
         ) : null}
         <Pressable
-          accessibilityLabel="定位到当前位置"
+          accessibilityLabel={t('定位到当前位置')}
           accessibilityRole="button"
           style={styles.circleFab}
-          onPress={recenterToUserLocation}>
+          onPress={recenterToUserLocation}
+        >
           <Icon source="crosshairs-gps" size={21} color="#fff" />
         </Pressable>
       </View>
 
       <Pressable
-        accessibilityLabel="查询附近点位"
+        accessibilityLabel={t('查询附近点位')}
         accessibilityRole="button"
         style={[
           styles.nearbyFab,
@@ -2270,22 +2572,23 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         />
         <Text style={styles.nearbyFabText}>
           {nearbyLoading
-            ? '查询中...'
+            ? t('查询中...')
             : nearbyCategory === 'friendly_clinic'
-              ? '附近友好医疗机构'
-              : '附近无障碍卫生间'}
+            ? t('附近友好医疗机构')
+            : t('附近无障碍卫生间')}
         </Text>
       </Pressable>
 
       <Pressable
-        style={[styles.circleFab, styles.settingsFab, {bottom: bottomOffset}]}
+        style={[styles.circleFab, styles.settingsFab, { bottom: bottomOffset }]}
+        accessibilityLabel={t('地图设置')}
         onPress={() => setSettingsOpen(true)}
       >
         <Icon source="cog-outline" size={21} color="#fff" />
       </Pressable>
 
       {selectedMarker ? (
-        <View style={[styles.markerCard, {bottom: bottomOffset + 66}]}> 
+        <View style={[styles.markerCard, { bottom: bottomOffset + 66 }]}>
           <View style={styles.markerCardHeader}>
             <Text style={styles.markerTitle} numberOfLines={2}>
               {selectedMarker.title}
@@ -2293,41 +2596,48 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <View
               style={[
                 styles.markerCategoryTag,
-                {backgroundColor: `${getMarkerPinColor(selectedMarker)}20`},
+                { backgroundColor: `${getMarkerPinColor(selectedMarker)}20` },
               ]}
             >
               <Text style={styles.markerCategoryTagText}>
-                {categoryLabel[selectedMarker.category]}
+                {t(categoryLabel[selectedMarker.category])}
               </Text>
             </View>
           </View>
-          <Text style={styles.markerMeta}>开放时间：{formatOpenTime(selectedMarker)}</Text>
+          <Text style={styles.markerMeta}>
+            {t('开放时间：')}
+            {formatOpenTime(selectedMarker)}
+          </Text>
+          {selectedMarker.contentLanguage &&
+          selectedMarker.contentLanguage !== language ? (
+            <Text style={styles.sheetHintText}>
+              {t('当前显示原文，尚无此语言的翻译。')}
+            </Text>
+          ) : null}
           {!selectedMarker.isActive ? (
-            <Text style={styles.markerInactive}>当前不可用</Text>
+            <Text style={styles.markerInactive}>{t('当前不可用')}</Text>
           ) : null}
           {selectedMarker.markImage &&
           selectedMarkerImageUri &&
           !missingImageMarkerIds.has(selectedMarker.id) ? (
             <Image
-              source={{uri: selectedMarkerImageUri}}
+              source={{ uri: selectedMarkerImageUri }}
               style={styles.markerImage}
               resizeMode="cover"
-              onError={() =>
-                {
-                  if (__DEV__) {
-                    console.log('[MarkerImage] load failed', {
-                      markerId: selectedMarker.id,
-                      markImage: selectedMarker.markImage,
-                      imageUri: selectedMarkerImageUri,
-                    });
-                  }
-                  setMissingImageMarkerIds(prev => {
-                    const next = new Set(prev);
-                    next.add(selectedMarker.id);
-                    return next;
+              onError={() => {
+                if (__DEV__) {
+                  console.log('[MarkerImage] load failed', {
+                    markerId: selectedMarker.id,
+                    markImage: selectedMarker.markImage,
+                    imageUri: selectedMarkerImageUri,
                   });
                 }
-              }
+                setMissingImageMarkerIds(prev => {
+                  const next = new Set(prev);
+                  next.add(selectedMarker.id);
+                  return next;
+                });
+              }}
             />
           ) : null}
           {selectedMarker.description ? (
@@ -2336,17 +2646,45 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             </Text>
           ) : null}
           <Text style={styles.markerMeta}>
-            坐标：{selectedMarker.lat.toFixed(6)}, {selectedMarker.lng.toFixed(6)}
+            {t('坐标：')}
+            {selectedMarker.lat.toFixed(6)}, {selectedMarker.lng.toFixed(6)}
           </Text>
 
           <View style={styles.markerActions}>
+            <Pressable
+              style={styles.markerActionBtn}
+              onPress={() => openDirections(selectedMarker)}
+              accessibilityRole="button"
+              accessibilityLabel={t('导航')}
+            >
+              <Icon source="directions" size={18} color={colors.primary} />
+              <Text style={styles.markerActionText}>{t('导航')}</Text>
+            </Pressable>
+            <Pressable
+              style={styles.markerActionBtn}
+              onPress={() => shareMarker(selectedMarker)}
+              accessibilityRole="button"
+              accessibilityLabel={t('分享')}
+            >
+              <Icon
+                source="share-variant-outline"
+                size={18}
+                color={colors.primary}
+              />
+              <Text style={styles.markerActionText}>{t('分享')}</Text>
+            </Pressable>
             {isLoggedIn ? (
               <Pressable
                 style={styles.markerActionBtn}
+                testID="marker-edit-button"
                 onPress={() => openEditDraft(selectedMarker)}
               >
-                <Icon source="pencil-outline" size={18} color={colors.primary} />
-                <Text style={styles.markerActionText}>编辑</Text>
+                <Icon
+                  source="pencil-outline"
+                  size={18}
+                  color={colors.primary}
+                />
+                <Text style={styles.markerActionText}>{t('编辑')}</Text>
               </Pressable>
             ) : null}
             <Pressable
@@ -2354,20 +2692,25 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               onPress={() => toggleFavorite(selectedMarker.id)}
             >
               <Icon
-                source={favoriteIds.has(selectedMarker.id) ? 'star' : 'star-outline'}
+                source={
+                  favoriteIds.has(selectedMarker.id) ? 'star' : 'star-outline'
+                }
                 size={18}
-                color={favoriteIds.has(selectedMarker.id) ? '#f6c344' : '#8b7a9c'}
+                color={
+                  favoriteIds.has(selectedMarker.id) ? '#f6c344' : '#8b7a9c'
+                }
               />
               <Text style={styles.markerActionText}>
-                {favoriteIds.has(selectedMarker.id) ? '已收藏' : '收藏'}
+                {favoriteIds.has(selectedMarker.id) ? t('已收藏') : t('收藏')}
               </Text>
             </Pressable>
             <Pressable
               style={styles.markerActionBtn}
               onPress={() => openWebMap(selectedMarker)}
+              accessibilityLabel={t('网页查看')}
             >
               <Icon source="open-in-new" size={18} color={colors.primary} />
-              <Text style={styles.markerActionText}>网页查看</Text>
+              <Text style={styles.markerActionText}>{t('网页查看')}</Text>
             </Pressable>
           </View>
         </View>
@@ -2376,18 +2719,20 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       {loading ? (
         <View pointerEvents="none" style={styles.loadingOverlay}>
           <ActivityIndicator color={colors.primary} />
-          <Text style={styles.loadingText}>正在加载点位...</Text>
+          <Text style={styles.loadingText}>{t('正在加载点位...')}</Text>
         </View>
       ) : null}
 
       {error ? (
-        <View style={[styles.noticeCard, {top: topOffset + 52}]}> 
+        <View style={[styles.noticeCard, { top: topOffset + 52 }]}>
           <Text style={styles.noticeText}>{error}</Text>
         </View>
       ) : null}
 
       {notice ? (
-        <View style={[styles.noticeCard, {top: topOffset + (error ? 94 : 52)}]}>
+        <View
+          style={[styles.noticeCard, { top: topOffset + (error ? 94 : 52) }]}
+        >
           <Text style={styles.noticeText}>{notice}</Text>
         </View>
       ) : null}
@@ -2399,7 +2744,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <View style={styles.sheetHeader}>
               <View>
                 <Text style={styles.sheetTitle}>
-                  {editingId ? '编辑点位' : '新增点位'}
+                  {editingId ? t('编辑点位') : t('新增点位')}
                 </Text>
                 <Text style={styles.sheetSubtitle}>
                   {draft.lat.toFixed(6)}, {draft.lng.toFixed(6)}
@@ -2417,7 +2762,23 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               style={styles.draftDialogScroll}
               contentContainerStyle={styles.draftScrollContent}
             >
-              <Text style={styles.sheetSectionTitle}>类别</Text>
+              <Text style={styles.sheetHintText}>
+                {t('贡献语言：{language}', {
+                  language: draft.language === 'en' ? 'English' : '中文',
+                })}
+              </Text>
+              {draft.originalText ? (
+                <View style={styles.nearbyCard}>
+                  <Text style={styles.sheetSectionTitle}>{t('原文参考')}</Text>
+                  <Text style={styles.markerDescription}>
+                    {draft.originalText}
+                  </Text>
+                  <Text style={styles.sheetHintText}>
+                    {t('请为此语言填写标题和描述。')}
+                  </Text>
+                </View>
+              ) : null}
+              <Text style={styles.sheetSectionTitle}>{t('类别')}</Text>
               <Pressable
                 style={[
                   styles.selectTrigger,
@@ -2431,11 +2792,11 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   <View
                     style={[
                       styles.selectCategoryDot,
-                      {backgroundColor: categoryColor[draft.category]},
+                      { backgroundColor: categoryColor[draft.category] },
                     ]}
                   />
                   <Text style={styles.selectTriggerText}>
-                    {categoryLabel[draft.category]}
+                    {t(categoryLabel[draft.category])}
                   </Text>
                 </View>
                 <Icon
@@ -2457,7 +2818,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                           active && styles.selectOptionRowActive,
                         ]}
                         onPress={() => {
-                          setDraft(prev => (prev ? {...prev, category: key} : prev));
+                          setDraft(prev =>
+                            prev ? { ...prev, category: key } : prev,
+                          );
                           setCategorySelectOpen(false);
                         }}
                       >
@@ -2465,7 +2828,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                           <View
                             style={[
                               styles.selectCategoryDot,
-                              {backgroundColor: categoryColor[key]},
+                              { backgroundColor: categoryColor[key] },
                             ]}
                           />
                           <Text
@@ -2474,11 +2837,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                               active && styles.selectOptionTextActive,
                             ]}
                           >
-                            {categoryLabel[key]}
+                            {t(categoryLabel[key])}
                           </Text>
                         </View>
                         {active ? (
-                          <Icon source="check" size={16} color={colors.primary} />
+                          <Icon
+                            source="check"
+                            size={16}
+                            color={colors.primary}
+                          />
                         ) : null}
                       </Pressable>
                     );
@@ -2486,40 +2853,45 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 </View>
               ) : null}
 
-              <Text style={styles.sheetSectionTitle}>标题</Text>
+              <Text style={styles.sheetSectionTitle}>{t('标题')}</Text>
               <TextInput
                 style={styles.formInput}
+                testID="draft-title-input"
                 value={draft.title}
                 onChangeText={value =>
-                  setDraft(prev => (prev ? {...prev, title: value} : prev))
+                  setDraft(prev => (prev ? { ...prev, title: value } : prev))
                 }
-                placeholder="例如：地铁站A口无障碍卫生间"
+                placeholder={t('例如：地铁站A口无障碍卫生间')}
                 placeholderTextColor="#9b8cab"
                 maxLength={80}
               />
 
-              <Text style={styles.sheetSectionTitle}>描述</Text>
+              <Text style={styles.sheetSectionTitle}>{t('描述')}</Text>
               <TextInput
                 style={[styles.formInput, styles.formMultiline]}
+                testID="draft-description-input"
                 value={draft.description}
                 onChangeText={value =>
-                  setDraft(prev => (prev ? {...prev, description: value} : prev))
+                  setDraft(prev =>
+                    prev ? { ...prev, description: value } : prev,
+                  )
                 }
-                placeholder="例如：入口在XX旁边，晚上关闭时间..."
+                placeholder={t('例如：入口在XX旁边，晚上关闭时间...')}
                 placeholderTextColor="#9b8cab"
                 multiline
                 textAlignVertical="top"
                 maxLength={800}
               />
 
-              <Text style={styles.sheetSectionTitle}>图片（可选）</Text>
+              <Text style={styles.sheetSectionTitle}>{t('图片（可选）')}</Text>
               <View style={styles.uploadRow}>
                 <Pressable
                   style={styles.uploadPickBtn}
                   onPress={pickDraftImage}
-                  disabled={savingDraft || draftImageBusy}>
+                  disabled={savingDraft || draftImageBusy}
+                >
                   <Text style={styles.uploadPickBtnText}>
-                    {draftImageBusy ? '处理中...' : '选择图片'}
+                    {draftImageBusy ? t('处理中...') : t('选择图片')}
                   </Text>
                 </Pressable>
                 {draftImageFile ? (
@@ -2530,8 +2902,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                       setDraftImageHint('');
                       setDraftImageError('');
                     }}
-                    disabled={savingDraft || draftImageBusy}>
-                    <Text style={styles.uploadClearBtnText}>清除</Text>
+                    disabled={savingDraft || draftImageBusy}
+                  >
+                    <Text style={styles.uploadClearBtnText}>{t('清除')}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -2543,30 +2916,35 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               ) : null}
               {draftImageFile ? (
                 <Text style={styles.uploadPickedText}>
-                  已选择：{draftImageFile.name}
+                  {t('已选择：')}
+                  {draftImageFile.name}
                 </Text>
               ) : null}
 
               <View style={styles.draftSwitchRow}>
-                <Text style={styles.draftSwitchLabel}>公开共享</Text>
+                <Text style={styles.draftSwitchLabel}>{t('公开共享')}</Text>
                 <Switch
                   value={draft.isPublic}
                   onValueChange={value =>
-                    setDraft(prev => (prev ? {...prev, isPublic: value} : prev))
+                    setDraft(prev =>
+                      prev ? { ...prev, isPublic: value } : prev,
+                    )
                   }
-                  trackColor={{false: '#cab9d8', true: '#b58cc9'}}
+                  trackColor={{ false: '#cab9d8', true: '#b58cc9' }}
                   thumbColor={draft.isPublic ? '#744988' : '#fff'}
                 />
               </View>
 
-              <Text style={styles.sheetSectionTitle}>开放时间</Text>
+              <Text style={styles.sheetSectionTitle}>{t('开放时间')}</Text>
               <View style={styles.timeGroup}>
-                <Text style={styles.timeGroupLabel}>开始</Text>
+                <Text style={styles.timeGroupLabel}>{t('开始')}</Text>
                 <View style={styles.timeSelectRow}>
                   <TextInput
                     style={styles.timeInput}
                     value={draft.openStartHour}
-                    onChangeText={value => setDraftTimePart('openStartHour', value)}
+                    onChangeText={value =>
+                      setDraftTimePart('openStartHour', value)
+                    }
                     onBlur={() => normalizeDraftTimePartOnBlur('openStartHour')}
                     keyboardType="number-pad"
                     maxLength={2}
@@ -2577,8 +2955,12 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   <TextInput
                     style={styles.timeInput}
                     value={draft.openStartMinute}
-                    onChangeText={value => setDraftTimePart('openStartMinute', value)}
-                    onBlur={() => normalizeDraftTimePartOnBlur('openStartMinute')}
+                    onChangeText={value =>
+                      setDraftTimePart('openStartMinute', value)
+                    }
+                    onBlur={() =>
+                      normalizeDraftTimePartOnBlur('openStartMinute')
+                    }
                     keyboardType="number-pad"
                     maxLength={2}
                     placeholder="MM"
@@ -2588,12 +2970,14 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               </View>
 
               <View style={styles.timeGroup}>
-                <Text style={styles.timeGroupLabel}>结束</Text>
+                <Text style={styles.timeGroupLabel}>{t('结束')}</Text>
                 <View style={styles.timeSelectRow}>
                   <TextInput
                     style={styles.timeInput}
                     value={draft.openEndHour}
-                    onChangeText={value => setDraftTimePart('openEndHour', value)}
+                    onChangeText={value =>
+                      setDraftTimePart('openEndHour', value)
+                    }
                     onBlur={() => normalizeDraftTimePartOnBlur('openEndHour')}
                     keyboardType="number-pad"
                     maxLength={2}
@@ -2604,7 +2988,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   <TextInput
                     style={styles.timeInput}
                     value={draft.openEndMinute}
-                    onChangeText={value => setDraftTimePart('openEndMinute', value)}
+                    onChangeText={value =>
+                      setDraftTimePart('openEndMinute', value)
+                    }
                     onBlur={() => normalizeDraftTimePartOnBlur('openEndMinute')}
                     keyboardType="number-pad"
                     maxLength={2}
@@ -2614,7 +3000,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 </View>
               </View>
               <Text style={styles.formHint}>
-                不设置表示全天可用；若设置时间请按 HH:MM 填写，超范围会自动修正。
+                {t(
+                  '不设置表示全天可用；若设置时间请按 HH:MM 填写，超范围会自动修正。',
+                )}
               </Text>
               {timeFixHint ? (
                 <Text style={styles.timeFixHintText}>{timeFixHint}</Text>
@@ -2626,7 +3014,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                   onPress={closeDraft}
                   disabled={savingDraft || deletingMarker || draftImageBusy}
                 >
-                  <Text style={styles.draftCancelBtnText}>取消</Text>
+                  <Text style={styles.draftCancelBtnText}>{t('取消')}</Text>
                 </Pressable>
                 {editingId && canDeleteDraft ? (
                   <Pressable
@@ -2634,7 +3022,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     onPress={() => setDeleteConfirmOpen(true)}
                     disabled={savingDraft || deletingMarker || draftImageBusy}
                   >
-                    <Text style={styles.draftDeleteBtnText}>删除</Text>
+                    <Text style={styles.draftDeleteBtnText}>{t('删除')}</Text>
                   </Pressable>
                 ) : null}
                 <Pressable
@@ -2643,13 +3031,14 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     savingDraft && styles.draftSaveBtnDisabled,
                   ]}
                   onPress={saveDraft}
+                  testID="draft-save-button"
                   disabled={savingDraft || draftImageBusy}
                 >
                   {savingDraft ? (
                     <ActivityIndicator size="small" color="#fff" />
                   ) : (
                     <Text style={styles.draftSaveBtnText}>
-                      {editingId ? '保存修改' : '保存'}
+                      {editingId ? t('保存修改') : t('保存')}
                     </Text>
                   )}
                 </Pressable>
@@ -2675,15 +3064,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             }}
           />
           <View style={styles.confirmCard}>
-            <Text style={styles.confirmTitle}>确认删除点位？</Text>
-            <Text style={styles.confirmDesc}>删除后将无法恢复。</Text>
+            <Text style={styles.confirmTitle}>{t('确认删除点位？')}</Text>
+            <Text style={styles.confirmDesc}>{t('删除后将无法恢复。')}</Text>
             <View style={styles.confirmActions}>
               <Pressable
                 style={styles.confirmCancelBtn}
                 onPress={() => setDeleteConfirmOpen(false)}
                 disabled={deletingMarker}
               >
-                <Text style={styles.confirmCancelBtnText}>取消</Text>
+                <Text style={styles.confirmCancelBtnText}>{t('取消')}</Text>
               </Pressable>
               <Pressable
                 style={[
@@ -2696,7 +3085,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                 {deletingMarker ? (
                   <ActivityIndicator size="small" color="#fff" />
                 ) : (
-                  <Text style={styles.confirmDeleteBtnText}>确认删除</Text>
+                  <Text style={styles.confirmDeleteBtnText}>
+                    {t('确认删除')}
+                  </Text>
                 )}
               </Pressable>
             </View>
@@ -2717,64 +3108,113 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
           />
           <View style={styles.sheet}>
             <View style={styles.sheetHeader}>
-              <Text style={styles.sheetTitle}>地图设置</Text>
+              <Text style={styles.sheetTitle}>{t('地图设置')}</Text>
               <Pressable onPress={() => setSettingsOpen(false)}>
                 <Icon source="close" size={20} color={colors.textSecondary} />
               </Pressable>
             </View>
 
-            <Text style={styles.sheetSectionTitle}>地图来源</Text>
-            <View style={styles.sheetChipRow}>
-              {(['osm', 'tf_atlas', 'tianditu_vec'] as TileProvider[]).map(key => {
-                const active = tileProvider === key;
-                const disabled =
-                  (key === 'tf_atlas' && !hasThunderforestKey) ||
-                  (key === 'tianditu_vec' && !hasTiandituKey);
-                return (
-                  <Pressable
-                    key={`tile-provider-${key}`}
-                    style={[
-                      styles.sheetChip,
-                      active && styles.sheetChipActive,
-                      disabled && styles.sheetChipDisabled,
-                    ]}
-                    disabled={disabled}
-                    onPress={() => setTileProvider(key)}
-                  >
-                    <Text
-                      style={[
-                        styles.sheetChipText,
-                        active && styles.sheetChipTextActive,
-                      ]}
-                    >
-                      {tileProviderConfig[key].label}
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
-            {!hasThunderforestKey || !hasTiandituKey ? (
-              <Text style={styles.sheetHintText}>
-                {`未配置的来源会自动禁用：${
-                  !hasThunderforestKey && !hasTiandituKey
-                    ? 'TF Atlas、天地图'
-                    : !hasThunderforestKey
-                      ? 'TF Atlas'
-                      : '天地图'
-                }`}
+            <ScrollView contentContainerStyle={styles.settingsContent}>
+              <Text style={styles.sheetSectionTitle}>
+                {t('界面和点位语言')}
               </Text>
-            ) : null}
-            <Text style={styles.sheetHintText}>当前不依赖 Google 地图 SDK。</Text>
+              <View style={styles.sheetChipRow}>
+                {(['system', 'zh', 'en'] as LanguagePreference[]).map(
+                  option => (
+                    <Pressable
+                      key={option}
+                      testID={`language-${option}`}
+                      accessibilityLabel={option === 'system' ? t('跟随系统') : option === 'zh' ? '中文' : 'English'}
+                      accessibilityRole="radio"
+                      accessibilityState={{ selected: preference === option }}
+                      style={[
+                        styles.sheetChip,
+                        preference === option && styles.sheetChipActive,
+                      ]}
+                      onPress={() => {
+                        setLanguagePreference(option).catch(() => undefined);
+                      }}
+                    >
+                      <Text
+                        style={[
+                          styles.sheetChipText,
+                          preference === option && styles.sheetChipTextActive,
+                        ]}
+                      >
+                        {option === 'system'
+                          ? t('跟随系统')
+                          : option === 'zh'
+                          ? '中文'
+                          : 'English'}
+                      </Text>
+                    </Pressable>
+                  ),
+                )}
+              </View>
+              <Text style={styles.sheetHintText}>
+                {t('不支持的系统语言将使用中文。')}
+              </Text>
+              <Text style={styles.sheetSectionTitle}>{t('地图来源')}</Text>
+              <View style={styles.sheetChipRow}>
+                {(['osm', 'tf_atlas', 'tianditu_vec'] as TileProvider[]).map(
+                  key => {
+                    const active = tileProvider === key;
+                    const disabled =
+                      (key === 'tf_atlas' && !hasThunderforestKey) ||
+                      (key === 'tianditu_vec' && !hasTiandituKey);
+                    return (
+                      <Pressable
+                        key={`tile-provider-${key}`}
+                        style={[
+                          styles.sheetChip,
+                          active && styles.sheetChipActive,
+                          disabled && styles.sheetChipDisabled,
+                        ]}
+                        disabled={disabled}
+                        onPress={() => setTileProvider(key)}
+                      >
+                        <Text
+                          style={[
+                            styles.sheetChipText,
+                            active && styles.sheetChipTextActive,
+                          ]}
+                        >
+                          {t(tileProviderConfig[key].label)}
+                        </Text>
+                      </Pressable>
+                    );
+                  },
+                )}
+              </View>
+              {!hasThunderforestKey || !hasTiandituKey ? (
+                <Text style={styles.sheetHintText}>
+                  {t('未配置的来源会自动禁用：{sources}', {
+                    sources:
+                      !hasThunderforestKey && !hasTiandituKey
+                        ? t('TF Atlas、天地图')
+                        : !hasThunderforestKey
+                        ? 'TF Atlas'
+                        : t('天地图'),
+                  })}
+                </Text>
+              ) : null}
+              <Text style={styles.sheetHintText}>
+                {t('当前不依赖 Google 地图 SDK。')}
+              </Text>
 
-            <Text style={styles.sheetSectionTitle}>附近查询类型</Text>
-            <View style={styles.sheetChipRow}>
-              {(['accessible_toilet', 'friendly_clinic'] as NearbyCategory[]).map(
-                key => {
+              <Text style={styles.sheetSectionTitle}>{t('附近查询类型')}</Text>
+              <View style={styles.sheetChipRow}>
+                {(
+                  ['accessible_toilet', 'friendly_clinic'] as NearbyCategory[]
+                ).map(key => {
                   const active = nearbyCategory === key;
                   return (
                     <Pressable
                       key={`nearby-type-${key}`}
-                      style={[styles.sheetChip, active && styles.sheetChipActive]}
+                      style={[
+                        styles.sheetChip,
+                        active && styles.sheetChipActive,
+                      ]}
                       onPress={() => setNearbyCategory(key)}
                     >
                       <Text
@@ -2783,63 +3223,150 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                           active && styles.sheetChipTextActive,
                         ]}
                       >
-                        {nearbyCategoryLabel[key]}
+                        {t(nearbyCategoryLabel[key])}
                       </Text>
                     </Pressable>
                   );
-                },
-              )}
-            </View>
+                })}
+              </View>
 
-            <Text style={styles.sheetSectionTitle}>附近查询范围</Text>
-            <View style={styles.sheetChipRow}>
-              {[500, 1000, 2500].map(radius => {
-                const active = nearbyRadius === radius;
-                return (
-                  <Pressable
-                    key={`radius-${radius}`}
-                    style={[styles.sheetChip, active && styles.sheetChipActive]}
-                    onPress={() => {
-                      setNearbyRadius(radius);
-                      setNearbyRadiusInput(String(radius));
-                      setNearbyRadiusError('');
-                    }}
-                  >
-                    <Text
+              <Text style={styles.sheetSectionTitle}>{t('附近查询范围')}</Text>
+              <View style={styles.sheetChipRow}>
+                {[500, 1000, 2500].map(radius => {
+                  const active = nearbyRadius === radius;
+                  return (
+                    <Pressable
+                      key={`radius-${radius}`}
                       style={[
-                        styles.sheetChipText,
-                        active && styles.sheetChipTextActive,
+                        styles.sheetChip,
+                        active && styles.sheetChipActive,
                       ]}
+                      onPress={() => {
+                        setNearbyRadius(radius);
+                        setNearbyRadiusInput(String(radius));
+                        setNearbyRadiusError('');
+                      }}
                     >
-                      {radius}m
-                    </Text>
-                  </Pressable>
-                );
-              })}
-            </View>
+                      <Text
+                        style={[
+                          styles.sheetChipText,
+                          active && styles.sheetChipTextActive,
+                        ]}
+                      >
+                        {radius}m
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
 
-            <View style={styles.radiusInputRow}>
-              <TextInput
-                style={styles.radiusInput}
-                value={nearbyRadiusInput}
-                keyboardType="number-pad"
-                onChangeText={value => {
-                  setNearbyRadiusInput(value);
-                  if (nearbyRadiusError) setNearbyRadiusError('');
-                }}
-                onBlur={applyNearbyRadiusInput}
-                placeholder="0 - 10000"
-                placeholderTextColor="#9b8cab"
-              />
-              <Pressable style={styles.radiusApplyBtn} onPress={applyNearbyRadiusInput}>
-                <Text style={styles.radiusApplyBtnText}>应用</Text>
+              <View style={styles.radiusInputRow}>
+                <TextInput
+                  style={styles.radiusInput}
+                  value={nearbyRadiusInput}
+                  keyboardType="number-pad"
+                  onChangeText={value => {
+                    setNearbyRadiusInput(value);
+                    if (nearbyRadiusError) setNearbyRadiusError('');
+                  }}
+                  onBlur={applyNearbyRadiusInput}
+                  placeholder="0 - 10000"
+                  placeholderTextColor="#9b8cab"
+                />
+                <Pressable
+                  style={styles.radiusApplyBtn}
+                  onPress={applyNearbyRadiusInput}
+                >
+                  <Text style={styles.radiusApplyBtnText}>{t('应用')}</Text>
+                </Pressable>
+              </View>
+              {nearbyRadiusError ? (
+                <Text style={styles.radiusErrorText}>{nearbyRadiusError}</Text>
+              ) : (
+                <Text style={styles.radiusHintText}>
+                  {t('范围支持 0-10000m，超出会自动修正。')}
+                </Text>
+              )}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+
+      <Modal
+        visible={searchOpen}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setSearchOpen(false)}
+      >
+        <View style={styles.modalWrap}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setSearchOpen(false)}
+          />
+          <View style={[styles.sheet, styles.nearbySheet]}>
+            <View style={styles.sheetHeader}>
+              <Text style={styles.sheetTitle}>{t('搜索点位')}</Text>
+              <Pressable
+                onPress={() => setSearchOpen(false)}
+                accessibilityLabel={t('关闭')}
+              >
+                <Icon source="close" size={22} color={colors.textSecondary} />
               </Pressable>
             </View>
-            {nearbyRadiusError ? (
-              <Text style={styles.radiusErrorText}>{nearbyRadiusError}</Text>
-            ) : (
-              <Text style={styles.radiusHintText}>范围支持 0-10000m，超出会自动修正。</Text>
-            )}
+            <TextInput
+              testID="marker-search-input"
+              accessibilityLabel={t('搜索点位')}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              maxLength={160}
+              placeholder={t('名称、描述或坐标')}
+              placeholderTextColor="#9b8cab"
+              style={styles.searchInput}
+              returnKeyType="search"
+              autoCorrect={false}
+              autoFocus
+            />
+            {searchLoading ? (
+              <ActivityIndicator color={colors.primary} />
+            ) : null}
+            {searchError ? (
+              <Text style={styles.radiusErrorText}>{searchError}</Text>
+            ) : null}
+            <ScrollView
+              style={styles.nearbyList}
+              contentContainerStyle={styles.nearbyListContent}
+              keyboardShouldPersistTaps="handled"
+            >
+              {!searchLoading && !searchError && searchResults.length === 0 ? (
+                <Text style={styles.nearbyEmptyText}>
+                  {searchQuery.trim()
+                    ? t('没有找到匹配的点位。')
+                    : t('请输入关键词开始搜索。')}
+                </Text>
+              ) : null}
+              {searchResults.map(marker => (
+                <Pressable
+                  key={marker.id}
+                  style={styles.nearbyCard}
+                  testID={`marker-search-result-${marker.id}`}
+                  onPress={() => {
+                    focusMarker(marker);
+                    setSearchOpen(false);
+                  }}
+                >
+                  <Text style={styles.nearbyCardTitle}>{marker.title}</Text>
+                  <Text style={styles.nearbyCardMeta}>
+                    {t(categoryLabel[marker.category])} ·{' '}
+                    {formatOpenTime(marker)}
+                  </Text>
+                  {marker.description ? (
+                    <Text style={styles.nearbyCardDesc} numberOfLines={2}>
+                      {marker.description}
+                    </Text>
+                  ) : null}
+                </Pressable>
+              ))}
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -2859,10 +3386,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <View style={styles.sheetHeader}>
               <View>
                 <Text style={styles.sheetTitle}>
-                  附近 {nearbyRadius}m {nearbyCategoryLabel[nearbyCategory]}
+                  {t('附近 {radius}m {category}', {
+                    radius: nearbyRadius,
+                    category: t(nearbyCategoryLabel[nearbyCategory]),
+                  })}
                 </Text>
                 <Text style={styles.sheetSubtitle}>
-                  共 {nearbyResults.length} 个结果，点击可在地图上定位
+                  {t('共 {count} 个结果，点击可在地图上定位', {
+                    count: nearbyResults.length,
+                  })}
                 </Text>
               </View>
               <Pressable onPress={() => setNearbyPanelOpen(false)}>
@@ -2877,7 +3409,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               {nearbyResults.length === 0 ? (
                 <View style={styles.nearbyEmptyWrap}>
                   <Text style={styles.nearbyEmptyText}>
-                    暂无结果，请尝试扩大范围或切换分类。
+                    {t('暂无结果，请尝试扩大范围或切换分类。')}
                   </Text>
                 </View>
               ) : null}
@@ -2901,7 +3433,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
                     </View>
                   </View>
                   <Text style={styles.nearbyCardMeta}>
-                    {categoryLabel[marker.category]} · {formatOpenTime(marker)}
+                    {t(categoryLabel[marker.category])} ·{' '}
+                    {formatOpenTime(marker)}
                   </Text>
                   {marker.description ? (
                     <Text style={styles.nearbyCardDesc} numberOfLines={2}>
@@ -2919,6 +3452,16 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
 }
 
 const styles = StyleSheet.create({
+  searchFab: { left: 74, backgroundColor: colors.surface },
+  searchInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    color: colors.textPrimary,
+  },
+  settingsContent: { gap: 10, paddingBottom: 8 },
   page: {
     flex: 1,
     backgroundColor: colors.background,
@@ -2943,7 +3486,7 @@ const styles = StyleSheet.create({
     shadowColor: '#6f4384',
     shadowOpacity: 0.32,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 7},
+    shadowOffset: { width: 0, height: 7 },
     elevation: 8,
   },
   addFabActive: {
@@ -2960,7 +3503,7 @@ const styles = StyleSheet.create({
     shadowColor: 'rgba(73, 43, 92, 0.38)',
     shadowOpacity: 0.18,
     shadowRadius: 16,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     elevation: 7,
     overflow: 'hidden',
   },
@@ -3110,7 +3653,7 @@ const styles = StyleSheet.create({
     shadowColor: '#6f4384',
     shadowOpacity: 0.32,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 7},
+    shadowOffset: { width: 0, height: 7 },
     elevation: 8,
   },
   settingsFab: {
@@ -3120,7 +3663,7 @@ const styles = StyleSheet.create({
   nearbyFab: {
     position: 'absolute',
     left: '50%',
-    transform: [{translateX: -96}],
+    transform: [{ translateX: -96 }],
     minWidth: 192,
     height: 48,
     borderRadius: 24,
@@ -3132,7 +3675,7 @@ const styles = StyleSheet.create({
     shadowColor: '#2b5d8f',
     shadowOpacity: 0.3,
     shadowRadius: 14,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
   nearbyFabText: {
@@ -3153,7 +3696,7 @@ const styles = StyleSheet.create({
     shadowColor: 'rgba(73, 43, 92, 0.38)',
     shadowOpacity: 0.18,
     shadowRadius: 16,
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     elevation: 8,
   },
   markerCardHeader: {
@@ -3205,6 +3748,7 @@ const styles = StyleSheet.create({
   markerActions: {
     marginTop: 4,
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: 8,
   },
   markerActionBtn: {
@@ -3284,7 +3828,7 @@ const styles = StyleSheet.create({
     shadowColor: 'rgba(73, 43, 92, 0.34)',
     shadowOpacity: 0.16,
     shadowRadius: 10,
-    shadowOffset: {width: 0, height: 4},
+    shadowOffset: { width: 0, height: 4 },
     elevation: 6,
   },
   addModeHintArrow: {
@@ -3297,7 +3841,7 @@ const styles = StyleSheet.create({
     borderLeftWidth: 1,
     borderTopWidth: 1,
     borderColor: 'rgba(122, 75, 143, 0.2)',
-    transform: [{rotate: '45deg'}],
+    transform: [{ rotate: '45deg' }],
   },
   addModeHintText: {
     flex: 1,
@@ -3505,7 +4049,7 @@ const styles = StyleSheet.create({
     shadowColor: '#3b2248',
     shadowOpacity: 0.22,
     shadowRadius: 16,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     elevation: 10,
   },
   draftDialogScroll: {
@@ -3673,7 +4217,7 @@ const styles = StyleSheet.create({
     shadowColor: '#3b2248',
     shadowOpacity: 0.22,
     shadowRadius: 16,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     elevation: 8,
   },
   confirmTitle: {

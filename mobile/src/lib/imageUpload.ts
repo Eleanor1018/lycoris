@@ -1,4 +1,5 @@
-import {launchImageLibrary} from 'react-native-image-picker';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { translate as t } from '../i18n/messages';
 
 export const MAX_UPLOAD_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -10,9 +11,9 @@ export type LocalUploadImage = {
 };
 
 export type PickUploadImageResult =
-  | {cancelled: true; file: null}
-  | {cancelled: false; file: null; error: string}
-  | {cancelled: false; file: LocalUploadImage; hint: string};
+  | { cancelled: true; file: null }
+  | { cancelled: false; file: null; error: string }
+  | { cancelled: false; file: LocalUploadImage; hint: string };
 
 type PickUploadImageOptions = {
   mode: 'avatar' | 'marker';
@@ -30,7 +31,7 @@ const extFromMime = (mime: string): string => {
   return 'jpg';
 };
 
-const looksLikeHeic = (file: {name: string; type: string}) =>
+const looksLikeHeic = (file: { name: string; type: string }) =>
   /image\/hei(c|f)/i.test(file.type) || /\.(heic|heif)$/i.test(file.name);
 
 const normalizeUploadImage = (
@@ -61,7 +62,7 @@ const normalizeUploadImage = (
       ? Math.max(0, Math.floor(asset.fileSize))
       : 0;
 
-  return {uri, name, type, size};
+  return { uri, name, type, size };
 };
 
 export const pickUploadImage = async (
@@ -80,13 +81,13 @@ export const pickUploadImage = async (
     });
 
     if (result.didCancel) {
-      return {cancelled: true, file: null};
+      return { cancelled: true, file: null };
     }
     if (result.errorCode) {
       return {
         cancelled: false,
         file: null,
-        error: result.errorMessage || '选择图片失败，请稍后重试。',
+        error: result.errorMessage || t('选择图片失败，请稍后重试。'),
       };
     }
 
@@ -95,14 +96,16 @@ export const pickUploadImage = async (
       options.mode,
     );
     if (!normalized) {
-      return {cancelled: false, file: null, error: '未获取到有效图片。'};
+      return { cancelled: false, file: null, error: t('未获取到有效图片。') };
     }
 
     if (normalized.size > MAX_UPLOAD_IMAGE_BYTES) {
       return {
         cancelled: false,
         file: null,
-        error: `图片处理后仍超过 5MB（当前 ${formatMb(normalized.size)}），请换一张更小的图片。`,
+        error: t('图片处理后仍超过 5MB（当前 {size}），请换一张更小的图片。', {
+          size: formatMb(normalized.size),
+        }),
       };
     }
 
@@ -110,17 +113,22 @@ export const pickUploadImage = async (
       return {
         cancelled: false,
         file: null,
-        error: '当前图片仍是 HEIC/HEIF 格式，请在相册中导出为 JPG/PNG 后再上传。',
+        error: t(
+          '当前图片仍是 HEIC/HEIF 格式，请在相册中导出为 JPG/PNG 后再上传。',
+        ),
       };
     }
 
     const hint =
       normalized.size > 0
-        ? `已处理图片：${normalized.name}（${formatMb(normalized.size)}）`
-        : `已选择图片：${normalized.name}`;
-    return {cancelled: false, file: normalized, hint};
+        ? t('已处理图片：{name}（{size}）', {
+            name: normalized.name,
+            size: formatMb(normalized.size),
+          })
+        : t('已选择图片：{name}', { name: normalized.name });
+    return { cancelled: false, file: normalized, hint };
   } catch {
-    return {cancelled: false, file: null, error: '图片处理失败，请重试。'};
+    return { cancelled: false, file: null, error: t('图片处理失败，请重试。') };
   }
 };
 
@@ -129,12 +137,9 @@ export const appendUploadImageToFormData = (
   field: string,
   file: LocalUploadImage,
 ) => {
-  form.append(
-    field,
-    {
-      uri: file.uri,
-      type: file.type,
-      name: file.name,
-    } as unknown as Blob,
-  );
+  form.append(field, {
+    uri: file.uri,
+    type: file.type,
+    name: file.name,
+  } as unknown as Blob);
 };

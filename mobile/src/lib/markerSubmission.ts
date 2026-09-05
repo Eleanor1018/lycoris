@@ -1,4 +1,6 @@
 import { ApiError, requestJson } from './http';
+import { getCurrentLanguage, type Language } from '../i18n/language';
+import { translate as t } from '../i18n/messages';
 import {
   appendUploadImageToFormData,
   type LocalUploadImage,
@@ -26,7 +28,7 @@ export const createMarkerRequestId = () =>
 
 export class MarkerImageUploadError extends Error {
   constructor() {
-    super('点位信息已提交审核，但图片上传失败。再次保存可补传图片。');
+    super(t('点位信息已提交审核，但图片上传失败。再次保存可补传图片。'));
     this.name = 'MarkerImageUploadError';
   }
 }
@@ -38,6 +40,7 @@ export const submitMarkerWithImage = async ({
   editingId,
   coordinates,
   fields,
+  language = getCurrentLanguage(),
   image,
   checkpoint,
   normalizeMarker,
@@ -47,12 +50,14 @@ export const submitMarkerWithImage = async ({
   editingId: number | null;
   coordinates: { lat: number; lng: number };
   fields: MarkerFields;
+  language?: Language;
   image: LocalUploadImage | null;
   checkpoint: MarkerSubmissionCheckpoint | null;
   normalizeMarker: (raw: unknown) => MapMarker | null;
   onMarkerSaved: (saved: MarkerSubmissionCheckpoint) => void;
 }): Promise<MapMarker> => {
-  const fieldsKey = JSON.stringify(fields);
+  const localizedFields = { ...fields, language };
+  const fieldsKey = JSON.stringify(localizedFields);
   let saved = checkpoint;
   if (!saved || saved.fieldsKey !== fieldsKey) {
     const markerId = saved?.marker.id ?? editingId;
@@ -60,15 +65,21 @@ export const submitMarkerWithImage = async ({
       markerId == null ? '/api/markers' : `/api/markers/${markerId}`,
       {
         method: markerId == null ? 'POST' : 'PATCH',
+        language,
         body: JSON.stringify(
           markerId == null
-            ? { ...coordinates, ...fields, clientRequestId, markImage: null }
-            : fields,
+            ? {
+                ...coordinates,
+                ...localizedFields,
+                clientRequestId,
+                markImage: null,
+              }
+            : localizedFields,
         ),
       },
     );
     const marker = normalizeMarker(payload);
-    if (!marker) throw new Error('保存成功，但返回数据格式异常。请重试。');
+    if (!marker) throw new Error(t('保存成功，但返回数据格式异常。请重试。'));
     saved = { marker, fieldsKey };
     onMarkerSaved(saved);
   }
@@ -79,7 +90,7 @@ export const submitMarkerWithImage = async ({
   try {
     const payload = await requestJson<unknown>(
       `/api/markers/${saved.marker.id}/image`,
-      { method: 'POST', body: form, timeoutMs: 20000 },
+      { method: 'POST', body: form, timeoutMs: 20000, language },
     );
     return normalizeMarker(payload) ?? saved.marker;
   } catch (error) {

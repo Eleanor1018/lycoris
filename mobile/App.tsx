@@ -1,27 +1,24 @@
 import React from 'react';
-import {StatusBar, StyleSheet} from 'react-native';
+import { StatusBar, StyleSheet } from 'react-native';
 import {
   NavigationContainer,
   type NavigatorScreenParams,
   useIsFocused,
 } from '@react-navigation/native';
-import {createBottomTabNavigator} from '@react-navigation/bottom-tabs';
-import {createNativeStackNavigator} from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
 } from 'react-native-safe-area-context';
-import {
-  Icon,
-  MD3LightTheme,
-  PaperProvider,
-  Text,
-} from 'react-native-paper';
-import {AuthProvider} from './src/auth/AuthProvider';
-import {DocsScreen} from './src/screens/DocsScreen';
-import {MapScreen} from './src/screens/MapScreen';
-import {MeScreen, type MePanel} from './src/screens/MeScreen';
-import {colors} from './src/theme/colors';
+import { Icon, MD3LightTheme, PaperProvider, Text } from 'react-native-paper';
+import { AuthProvider } from './src/auth/AuthProvider';
+import { DocsScreen } from './src/screens/DocsScreen';
+import { MapScreen } from './src/screens/MapScreen';
+import { MeScreen, type MePanel } from './src/screens/MeScreen';
+import { colors } from './src/theme/colors';
+import { useInitializeLanguage, useLanguage } from './src/i18n/useLanguage';
+import { translate as t } from './src/i18n/messages';
 
 type AppRoute = {
   key: keyof RootTabParamList;
@@ -123,7 +120,7 @@ const stackScreenOptions = {
 function MapsHomeRoute({
   route,
 }: {
-  route: {params?: {focusRequest?: MapFocusRequest | null}};
+  route: { params?: { focusRequest?: MapFocusRequest | null } };
 }) {
   const isFocused = useIsFocused();
   return (
@@ -140,7 +137,7 @@ function MapsStackNavigator() {
       <MapsStack.Screen
         name="MapsHome"
         component={MapsHomeRoute}
-        initialParams={{focusRequest: null}}
+        initialParams={{ focusRequest: null }}
       />
     </MapsStack.Navigator>
   );
@@ -247,31 +244,31 @@ function MeStackNavigator() {
       <MeStack.Screen name="MeRoot" component={MeRootRoute} />
       <MeStack.Screen
         name="MeAbout"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="about" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeRegister"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="register" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MePassword"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="password" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeCreated"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="created" navigation={navigation} />
         )}
       />
       <MeStack.Screen
         name="MeFavorites"
-        children={({navigation}) => (
+        children={({ navigation }) => (
           <MePanelRoute panel="favorites" navigation={navigation} />
         )}
       />
@@ -280,17 +277,19 @@ function MeStackNavigator() {
 }
 
 function AppTabs() {
+  useLanguage();
   const insets = useSafeAreaInsets();
 
   return (
     <Tab.Navigator
       initialRouteName="maps"
-      screenOptions={({route}) => {
-        const tab = tabRoutes.find(item => item.key === route.name) ?? tabRoutes[0];
+      screenOptions={({ route }) => {
+        const tab =
+          tabRoutes.find(item => item.key === route.name) ?? tabRoutes[0];
         return {
           headerShown: false,
           // eslint-disable-next-line react/no-unstable-nested-components
-          tabBarIcon: ({focused, color, size}) => (
+          tabBarIcon: ({ focused, color, size }) => (
             <Icon
               source={focused ? tab.focusedIcon : tab.unfocusedIcon}
               size={size}
@@ -298,14 +297,17 @@ function AppTabs() {
             />
           ),
           // eslint-disable-next-line react/no-unstable-nested-components
-          tabBarLabel: ({focused, color}) => (
+          tabBarLabel: ({ focused, color }) => (
             <Text
               style={[
                 styles.tabItemLabel,
-                focused ? styles.tabItemLabelActive : styles.tabItemLabelInactive,
-                {color},
-              ]}>
-              {tab.title}
+                focused
+                  ? styles.tabItemLabelActive
+                  : styles.tabItemLabelInactive,
+                { color },
+              ]}
+            >
+              {t(tab.title)}
             </Text>
           ),
           tabBarActiveTintColor: colors.primary,
@@ -319,7 +321,8 @@ function AppTabs() {
           ],
           tabBarHideOnKeyboard: false,
         };
-      }}>
+      }}
+    >
       <Tab.Screen name="maps" component={MapsStackNavigator} />
       <Tab.Screen name="docs" component={DocsStackNavigator} />
       <Tab.Screen name="me" component={MeStackNavigator} />
@@ -342,6 +345,7 @@ function AppShell() {
 }
 
 export default function App() {
+  useInitializeLanguage();
   return (
     <SafeAreaProvider>
       <PaperProvider theme={materialTheme}>
