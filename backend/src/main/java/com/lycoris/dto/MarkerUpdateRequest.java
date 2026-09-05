@@ -9,6 +9,7 @@ public class MarkerUpdateRequest {
     private String category;
     private String title;
     private String description;
+    private String language;
     private Boolean isPublic;
     private Boolean isActive;
     private String openTimeStart;

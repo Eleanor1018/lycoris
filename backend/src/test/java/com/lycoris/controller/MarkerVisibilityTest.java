@@ -73,11 +73,13 @@ class MarkerVisibilityTest {
         marker.setReviewStatus("PENDING");
         marker.setUserPublicId(viewer.getPublicId().toString());
         marker.setVersion(3L);
+        when(markers.resolveEditText(any(), any())).thenCallRealMethod();
         assertThat(controller.detail(42L, session).getStatusCode().value()).isEqualTo(200);
         assertThat(controller.updateMarker(42L, new MarkerUpdateRequest(), session).getStatusCode().value()).isEqualTo(200);
         var proposal = org.mockito.ArgumentCaptor.forClass(MarkerEditProposal.class);
         verify(edits).save(proposal.capture());
         assertThat(proposal.getValue().getBaseMarkerVersion()).isEqualTo(3L);
+        assertThat(proposal.getValue().getLanguage()).isEqualTo("zh");
     }
 
     @Test void publicApprovedMarkerRemainsReadableAndFavoritable() {

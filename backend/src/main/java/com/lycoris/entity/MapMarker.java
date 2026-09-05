@@ -47,6 +47,12 @@ public class MapMarker {
     @Column(columnDefinition = "text")
     private String description;
 
+    @Column(nullable = false, length = 2, columnDefinition = "varchar(2) not null default 'zh'")
+    private String sourceLanguage = "zh";
+
+    @Transient
+    private String contentLanguage;
+
     @Column(nullable = false)
     private Boolean isPublic = true;
 

@@ -81,6 +81,7 @@ public class AdminMarkerController {
                     item.put("category", p.getCategory());
                     item.put("title", p.getTitle());
                     item.put("description", p.getDescription());
+                    item.put("language", p.getLanguage());
                     item.put("isPublic", p.getIsPublic());
                     item.put("isActive", p.getIsActive());
                     item.put("openTimeStart", p.getOpenTimeStart());
@@ -112,8 +113,6 @@ public class AdminMarkerController {
                                     return ResponseEntity.status(409).body("点位已更新或提案缺少版本信息，请按最新内容重新提交后审核");
                                 }
                                 marker.setCategory(markerService.normalizeCategoryForWrite(p.getCategory()));
-                                marker.setTitle(p.getTitle());
-                                marker.setDescription(p.getDescription());
                                 marker.setIsPublic(p.getIsPublic());
                                 marker.setIsActive(p.getIsActive());
                                 markerService.applyOpenTimeWindow(marker, p.getOpenTimeStart(), p.getOpenTimeEnd());
@@ -121,7 +120,7 @@ public class AdminMarkerController {
                                 marker.setLastEditedBy(p.getProposerUsername());
                                 marker.setLastEditedByPublicId(p.getProposerPublicId());
                                 marker.setLastEditedByOwner(p.getProposerIsOwner());
-                                MapMarker updated = markerService.save(marker);
+                                MapMarker updated = markerService.saveLocalizedEdit(marker, p.getLanguage(), p.getTitle(), p.getDescription());
 
                                 p.setStatus("APPROVED");
                                 p.setReviewedBy(String.valueOf(session.getAttribute("username")));
@@ -238,6 +237,7 @@ public class AdminMarkerController {
     }
 
     @PatchMapping("/{id}")
+    @Transactional
     public ResponseEntity<?> adminUpdate(
             @PathVariable("id") Long id,
             @RequestBody MarkerUpdateRequest req,
@@ -251,8 +251,7 @@ public class AdminMarkerController {
                     if (req.getCategory() != null) {
                         marker.setCategory(markerService.normalizeCategoryForWrite(req.getCategory()));
                     }
-                    if (req.getTitle() != null) marker.setTitle(req.getTitle());
-                    if (req.getDescription() != null) marker.setDescription(req.getDescription());
+                    MapMarkerService.EditText text = markerService.resolveEditText(marker, req);
                     if (req.getIsPublic() != null) marker.setIsPublic(req.getIsPublic());
                     if (req.getOpenTimeStart() != null || req.getOpenTimeEnd() != null) {
                         markerService.applyOpenTimeWindow(marker, req.getOpenTimeStart(), req.getOpenTimeEnd());
@@ -260,7 +259,7 @@ public class AdminMarkerController {
                     if (req.getIsActive() != null) marker.setIsActive(req.getIsActive());
                     marker.setReviewStatus("APPROVED");
 
-                    MapMarker updated = markerService.save(marker);
+                    MapMarker updated = markerService.saveLocalizedEdit(marker, text.language(), text.title(), text.description());
                     return ResponseEntity.ok(updated);
                 })
                 .orElseGet(() -> ResponseEntity.status(404).body("点位不存在"));

@@ -241,8 +241,7 @@ public class MarkerController {
                 proposedCategory = markerService.normalizeCategoryForWrite(req.getCategory());
             }
 
-            String proposedTitle = req.getTitle() != null ? req.getTitle() : marker.getTitle();
-            String proposedDescription = req.getDescription() != null ? req.getDescription() : marker.getDescription();
+            MapMarkerService.EditText proposedText = markerService.resolveEditText(marker, req);
             Boolean proposedIsPublic = req.getIsPublic() != null ? req.getIsPublic() : marker.getIsPublic();
             Boolean proposedIsActive = req.getIsActive() != null ? req.getIsActive() : marker.getIsActive();
 
@@ -269,8 +268,9 @@ public class MarkerController {
             proposal.setProposerPublicId(userPublicId);
             proposal.setProposerIsOwner(isOwner);
             proposal.setCategory(proposedCategory);
-            proposal.setTitle(proposedTitle);
-            proposal.setDescription(proposedDescription);
+            proposal.setTitle(proposedText.title());
+            proposal.setDescription(proposedText.description());
+            proposal.setLanguage(proposedText.language());
             proposal.setIsPublic(proposedIsPublic);
             proposal.setIsActive(proposedIsActive);
             proposal.setOpenTimeStart(proposedOpenStart);
