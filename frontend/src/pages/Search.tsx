@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Box,
+    Alert,
     Button,
     Card,
     CardContent,
@@ -118,6 +119,7 @@ export default function Search() {
     const [markers, setMarkers] = useState<ApiMarker[]>([])
     const [docs, setDocs] = useState<DocItem[]>([])
     const [loadingMarkers, setLoadingMarkers] = useState(false)
+    const [markerError, setMarkerError] = useState('')
 
     useEffect(() => {
         setQuery(qParam)
@@ -143,24 +145,34 @@ export default function Search() {
     }, [])
 
     useEffect(() => {
+        const controller = new AbortController()
+        let active = true
+        const q = query.trim()
+        setMarkers([])
+        setMarkerError('')
+        setLoadingMarkers(Boolean(q))
+        if (!q) return () => controller.abort()
+
         const run = async () => {
-            const q = query.trim()
-            if (!q) {
-                setMarkers([])
-                return
-            }
-            setLoadingMarkers(true)
             try {
                 const res = await axios.get<ApiMarker[]>('/api/markers/search', {
                     params: { q },
                     withCredentials: true,
+                    signal: controller.signal,
                 })
-                setMarkers(res.data ?? [])
+                if (active) setMarkers(res.data ?? [])
+            } catch (error) {
+                if (active && !axios.isCancel(error)) setMarkerError('点位搜索失败，请稍后重试。')
             } finally {
-                setLoadingMarkers(false)
+                if (active) setLoadingMarkers(false)
             }
         }
-        void run()
+        const timer = window.setTimeout(() => void run(), 250)
+        return () => {
+            active = false
+            window.clearTimeout(timer)
+            controller.abort()
+        }
     }, [query])
 
     const matchedDocs = useMemo(() => {
@@ -354,6 +366,7 @@ export default function Search() {
                         </Stack>
 
                         <Stack spacing={1.5}>
+                            {markerError ? <Alert severity="error">{markerError}</Alert> : null}
                             {markers.map((m) => (
                                 <Card
                                     key={m.id}
@@ -406,7 +419,7 @@ export default function Search() {
                                     </CardContent>
                                 </Card>
                             ))}
-                            {!loadingMarkers && markers.length === 0 ? (
+                            {!loadingMarkers && !markerError && markers.length === 0 ? (
                                 <Box
                                     sx={{
                                         borderRadius: 4,

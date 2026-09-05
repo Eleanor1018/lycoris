@@ -21,7 +21,7 @@ describe('Mobile nav with logged-in user', () => {
         cy.intercept('POST', '/api/logout', { statusCode: 200, body: {} }).as('logout')
 
         cy.visit('/maps')
-        cy.get('button[aria-label="menu"]').click()
+        cy.get('button[aria-label="打开个人导航菜单"]').click()
 
         cy.contains('个人中心').should('be.visible')
         cy.contains('退出登录').should('be.visible')

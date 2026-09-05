@@ -75,7 +75,7 @@ export default function NavigationBar() {
                 color: 'var(--ly-color-ink)',
                 boxShadow: 'none',
                 pointerEvents: 'none',
-                zIndex: 9999,
+                zIndex: (theme) => theme.zIndex.appBar,
                 top: 0,
                 left: 0,
                 right: 0,

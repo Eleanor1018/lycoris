@@ -30,7 +30,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 're
 import axios from 'axios'
 import type { AxiosError } from 'axios'
 import L from 'leaflet'
-import type { Layer, LeafletMouseEvent, Map as LeafletMap } from 'leaflet'
+import type { LeafletMouseEvent, Map as LeafletMap } from 'leaflet'
 import type { MarkerCategory } from '../types/marker'
 import { useAuth } from '../auth/AuthProvider'
 import StarIcon from '@mui/icons-material/Star'
@@ -57,6 +57,7 @@ type ApiMarker = {
     description?: string
     isPublic: boolean
     isActive: boolean
+    reviewStatus?: string
     openTimeStart?: string | null
     openTimeEnd?: string | null
     markImage?: string | null
@@ -76,11 +77,8 @@ type SavedMapView = {
     zoom: number
 }
 
-type FocusTarget = {
-    lat: number
-    lng: number
-    title?: string
-}
+type ScopedMarkers = { userId: string | null; items: ApiMarker[] }
+type FocusedMarker = { userId: string | null; marker: ApiMarker }
 
 const coerceMarkerArray = (raw: unknown): ApiMarker[] => {
     if (Array.isArray(raw)) return raw as ApiMarker[]
@@ -369,9 +367,16 @@ export default function Maps() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'))
     const navigate = useNavigate()
     const [searchParams] = useSearchParams()
-    const { isLoggedIn, user } = useAuth()
+    const { isLoggedIn, user, loading: authLoading } = useAuth()
+    const userId = user?.publicId ?? null
     // 已保存点（来自后端）
     const [markers, setMarkers] = useState<ApiMarker[]>([])
+    const [ownedMarkers, setOwnedMarkers] = useState<ScopedMarkers>({ userId: null, items: [] })
+    const [focusedMarker, setFocusedMarker] = useState<FocusedMarker | null>(null)
+    const [pendingFocusId, setPendingFocusId] = useState<number | null>(null)
+    const markerRefs = useRef<Map<number, L.Marker>>(new Map())
+    const [popupTopPadding, setPopupTopPadding] = useState(120)
+    const [popupMaxHeight, setPopupMaxHeight] = useState(320)
     const [favoriteIds, setFavoriteIds] = useState<Set<number>>(new Set())
 
     // 新建草稿
@@ -450,7 +455,7 @@ export default function Maps() {
     const overlayBottomOffset = `calc(env(safe-area-inset-bottom, 0px) + var(${MAP_VISUAL_VIEWPORT_BOTTOM_VAR}, 0px) + 20px)`
     const markerViewportRequestSeq = useRef(0)
     const markerImageUrlRef = useRef<Map<number, string>>(new Map())
-    const targetFocusDoneRef = useRef<string | null>(null)
+    const currentUserIdRef = useRef(userId)
     const viewportMetaPrevRef = useRef<string | null>(null)
     const isIOSWebKit = useMemo(() => {
         if (typeof navigator === 'undefined') return false
@@ -462,11 +467,11 @@ export default function Maps() {
         return isIOS && hasWebKit
     }, [])
 
-    const showNotice = (text: string, severity: AlertColor = 'info') => {
+    const showNotice = useCallback((text: string, severity: AlertColor = 'info') => {
         setNoticeText(text)
         setNoticeSeverity(severity)
         setNoticeOpen(true)
-    }
+    }, [])
 
     const dismissAddHint = useCallback(() => {
         setAddHintOpen(false)
@@ -519,7 +524,7 @@ export default function Maps() {
     const targetMarkerId = useMemo(() => {
         const raw = searchParams.get('markerId')
         const id = raw ? Number(raw) : null
-        return Number.isFinite(id) ? id : null
+        return id != null && Number.isSafeInteger(id) && id > 0 ? id : null
     }, [searchParams])
     const targetLatLng = useMemo(() => {
         const latRaw = searchParams.get('lat')
@@ -528,15 +533,11 @@ export default function Maps() {
         const lat = Number(latRaw)
         const lng = Number(lngRaw)
         if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null
+        if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null
         return { lat, lng }
     }, [searchParams])
     const targetTitle = useMemo(() => searchParams.get('title') ?? '', [searchParams])
     const hasScaleResetFlag = useMemo(() => searchParams.get('__mapScaleReset') === '1', [searchParams])
-    const targetFocusKey = useMemo(() => {
-        if (targetMarkerId != null) return `id:${targetMarkerId}`
-        if (targetLatLng) return `latlng:${targetLatLng.lat.toFixed(6)},${targetLatLng.lng.toFixed(6)}`
-        return ''
-    }, [targetMarkerId, targetLatLng])
 
     const loadMarkersInCurrentViewport = async (
         mapInstance: LeafletMap,
@@ -583,11 +584,53 @@ export default function Maps() {
         }
         try {
             const res = await axios.get<number[]>('/api/markers/me/favorites', { withCredentials: true })
+            if (currentUserIdRef.current !== userId) return
             setFavoriteIds(new Set(res.data ?? []))
         } catch {
-            setFavoriteIds(new Set())
+            if (currentUserIdRef.current === userId) setFavoriteIds(new Set())
         }
-    }, [isLoggedIn])
+    }, [isLoggedIn, userId])
+
+    useEffect(() => {
+        currentUserIdRef.current = userId
+        setOwnedMarkers({ userId, items: [] })
+        setFocusedMarker(null)
+        setPendingFocusId(null)
+        setFavoriteIds(new Set())
+        setDraft(null)
+        setMarkImageFile(null)
+        setEditingId(null)
+        setOwnerFilter('all')
+    }, [userId])
+
+    useEffect(() => {
+        map?.closePopup()
+    }, [userId, map])
+
+    const loadOwnedMarkers = useCallback(async (signal?: AbortSignal) => {
+        if (!userId) return
+        try {
+            const res = await axios.get<ApiMarker[]>('/api/markers/me/created', {
+                withCredentials: true,
+                signal,
+            })
+            if (!signal?.aborted && currentUserIdRef.current === userId) {
+                setOwnedMarkers({ userId, items: coerceMarkerArray(res.data) })
+            }
+        } catch (error) {
+            if (!axios.isCancel(error) && !(axios.isAxiosError(error) && error.response?.status === 401)
+                && currentUserIdRef.current === userId) {
+                showNotice('我的点位加载失败，请稍后重试。', 'error')
+            }
+        }
+    }, [userId, showNotice])
+
+    useEffect(() => {
+        if (authLoading) return
+        const controller = new AbortController()
+        void loadOwnedMarkers(controller.signal)
+        return () => controller.abort()
+    }, [authLoading, loadOwnedMarkers])
 
     useEffect(() => {
         void loadFavorites()
@@ -625,8 +668,14 @@ export default function Maps() {
     )
 
     const filteredMarkers = useMemo(() => {
-        const markerList = Array.isArray(markers) ? markers : []
-        return markerList.filter((m) => {
+        const markerList = ownerFilter === 'mine'
+            ? (ownedMarkers.userId === userId && userId ? ownedMarkers.items : [])
+            : markers
+        const merged = new Map(markerList.map((m) => [m.id, m]))
+        if (nearbyOnly) nearbyResults.forEach((m) => merged.set(m.id, m))
+        // Detail responses may include private/pending points; retain their account scope.
+        if (focusedMarker?.userId === userId) merged.set(focusedMarker.marker.id, focusedMarker.marker)
+        return [...merged.values()].filter((m) => {
             if (!visibleCats[normalizeCategory(m.category)]) return false
             if (nearbyOnly && !nearbyIds.has(m.id)) return false
             if (ownerFilter === 'mine') {
@@ -637,57 +686,103 @@ export default function Maps() {
             }
             return true
         })
-    }, [markers, visibleCats, nearbyOnly, nearbyIds, ownerFilter, user?.publicId, favoriteIds])
+    }, [markers, ownedMarkers, focusedMarker, userId, nearbyResults, visibleCats, nearbyOnly, nearbyIds, ownerFilter, user?.publicId, favoriteIds])
+
+    const focusMarkerOnMap = useCallback((marker: ApiMarker) => {
+        setFocusedMarker({ userId, marker })
+        setVisibleCats((prev) => ({ ...prev, [normalizeCategory(marker.category)]: true }))
+        setOwnerFilter('all')
+        setPendingFocusId(marker.id)
+        setLegendOpen(false)
+        dismissAddHint()
+    }, [userId, dismissAddHint])
 
     useEffect(() => {
-        if (!map || (!targetLatLng && targetMarkerId == null)) return
-        if (targetFocusKey && targetFocusDoneRef.current === targetFocusKey) return
-        const byId = markers.find((m) => m.id === targetMarkerId) || null
-        const hasMarkerTarget = targetMarkerId != null
-
-        // If a markerId is provided, wait for real marker data so we can open
-        // the full popup instead of a title-only fallback popup.
-        if (hasMarkerTarget && !byId) {
-            if (targetLatLng) {
-                map.whenReady(() => {
-                    map.setView([targetLatLng.lat, targetLatLng.lng], Math.max(map.getZoom(), 14), { animate: true })
+        if (!map || authLoading) return
+        setFocusedMarker(null)
+        setPendingFocusId(null)
+        if (targetMarkerId == null) return
+        const controller = new AbortController()
+        let active = true
+        const loadTarget = async () => {
+            try {
+                const res = await axios.get<ApiMarker>(`/api/markers/${targetMarkerId}`, {
+                    withCredentials: true,
+                    signal: controller.signal,
                 })
-            }
-            return
-        }
-
-        const resolved: FocusTarget | null =
-            byId ?? (targetLatLng ? { lat: targetLatLng.lat, lng: targetLatLng.lng, title: targetTitle } : null)
-
-        if (!resolved) return
-
-        map.whenReady(() => {
-            map.setView([resolved.lat, resolved.lng], Math.max(map.getZoom(), 14), { animate: true })
-            if (targetFocusKey) targetFocusDoneRef.current = targetFocusKey
-
-            setTimeout(() => {
-                let opened = false
-                map.eachLayer((layer: Layer) => {
-                    if (layer instanceof L.Marker) {
-                        const ll = layer.getLatLng()
-                        const sameLat = Math.abs(ll.lat - resolved.lat) < 1e-6
-                        const sameLng = Math.abs(ll.lng - resolved.lng) < 1e-6
-                        if (sameLat && sameLng) {
-                            layer.openPopup()
-                            opened = true
-                        }
-                    }
-                })
-                if (!opened) {
-                    const title = resolved.title || targetTitle
-                    L.popup()
-                        .setLatLng([resolved.lat, resolved.lng])
-                        .setContent(title ? `<strong>${title}</strong>` : '点位')
-                        .openOn(map)
+                if (active) {
+                    setNearbyOnly(false)
+                    focusMarkerOnMap(res.data)
                 }
-            }, 200)
+            } catch (error) {
+                if (active && !axios.isCancel(error)) {
+                    showNotice('无法打开此点位，它可能已删除，或需要使用创建者账号登录。', 'warning')
+                }
+            }
+        }
+        void loadTarget()
+        return () => {
+            active = false
+            controller.abort()
+        }
+    }, [map, authLoading, targetMarkerId, focusMarkerOnMap, showNotice])
+
+    useEffect(() => {
+        if (!map || targetMarkerId != null || !targetLatLng) return
+        dismissAddHint()
+        map.setView([targetLatLng.lat, targetLatLng.lng], Math.max(map.getZoom(), 14), { animate: false })
+        const title = document.createElement('strong')
+        title.textContent = targetTitle || '点位'
+        const popup = L.popup({ autoPanPaddingTopLeft: [16, popupTopPadding], maxHeight: popupMaxHeight })
+            .setLatLng([targetLatLng.lat, targetLatLng.lng])
+            .setContent(title)
+            .openOn(map)
+        return () => { popup.remove() }
+    }, [map, targetMarkerId, targetLatLng, targetTitle, popupTopPadding, popupMaxHeight, dismissAddHint])
+
+    useEffect(() => {
+        if (!map || pendingFocusId == null) return
+        const marker = filteredMarkers.find((m) => m.id === pendingFocusId)
+        if (!marker) return
+        map.setView([marker.lat, marker.lng], Math.max(map.getZoom(), 15), { animate: false })
+        // React has mounted the marker refs before effects run; open by ID, even for co-located points.
+        const frame = window.requestAnimationFrame(() => {
+            const layer = markerRefs.current.get(pendingFocusId)
+            if (!layer) return
+            layer.openPopup()
+            setPendingFocusId(null)
         })
-    }, [map, markers, targetMarkerId, targetLatLng, targetTitle, targetFocusKey])
+        return () => window.cancelAnimationFrame(frame)
+    }, [map, pendingFocusId, filteredMarkers])
+
+    useEffect(() => {
+        const updatePadding = () => {
+            const header = document.querySelector('header')
+            const navBottom = header?.getBoundingClientRect().bottom ?? 100
+            // Leave room for the map control row as well as the fixed navigation.
+            setPopupTopPadding(Math.ceil(navBottom) + 80)
+            setPopupMaxHeight(Math.max(120, window.innerHeight - navBottom - 184))
+        }
+        updatePadding()
+        const header = document.querySelector('header')
+        const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updatePadding) : null
+        if (header) observer?.observe(header)
+        window.addEventListener('resize', updatePadding)
+        return () => {
+            observer?.disconnect()
+            window.removeEventListener('resize', updatePadding)
+        }
+    }, [])
+
+    useEffect(() => {
+        if (!map) return
+        const onPopupOpen = () => {
+            dismissAddHint()
+            setLegendOpen(false)
+        }
+        map.on('popupopen', onPopupOpen)
+        return () => { map.off('popupopen', onPopupOpen) }
+    }, [map, dismissAddHint])
 
     useEffect(() => {
         if (!map) return
@@ -955,21 +1050,6 @@ export default function Maps() {
         map.setView(userLocation, Math.max(map.getZoom(), 14), { animate: true })
     }
 
-    const focusMarkerOnMap = (m: ApiMarker) => {
-        if (!map) return
-        map.setView([m.lat, m.lng], Math.max(map.getZoom(), 15), { animate: true })
-        setTimeout(() => {
-            map.eachLayer((layer: Layer) => {
-                if (layer instanceof L.Marker) {
-                    const ll = layer.getLatLng()
-                    if (Math.abs(ll.lat - m.lat) < 1e-6 && Math.abs(ll.lng - m.lng) < 1e-6) {
-                        layer.openPopup()
-                    }
-                }
-            })
-        }, 180)
-    }
-
     const closeNearbyPanel = () => {
         setNearbyPanelOpen(false)
         setNearbyOnly(false)
@@ -1069,6 +1149,7 @@ export default function Maps() {
                 created = res.data
             }
 
+            if (currentUserIdRef.current !== userId) return
             if (markImageFile) {
                 setSaveDraftPhase('image')
                 const form = new FormData()
@@ -1088,10 +1169,19 @@ export default function Maps() {
                 }
             }
 
+            if (currentUserIdRef.current !== userId) return
             setMarkers((prev) => {
                 const safePrev = Array.isArray(prev) ? prev : []
-                return [created, ...safePrev.filter((m) => m.id !== created.id)]
+                const remaining = safePrev.filter((m) => m.id !== created.id)
+                return created.isPublic && created.reviewStatus === 'APPROVED' ? [created, ...remaining] : remaining
             })
+            if (created.userPublicId === userId) {
+                setOwnedMarkers((prev) => ({
+                    userId,
+                    items: [created, ...(prev.userId === userId ? prev.items : []).filter((m) => m.id !== created.id)],
+                }))
+            }
+            setFocusedMarker({ userId, marker: created })
             setDraft(null)
             setMarkImageFile(null)
             setEditingId(null)
@@ -1118,6 +1208,10 @@ export default function Maps() {
         setDeleting(true)
         try {
             await axios.delete(`/api/markers/${editingId}`, { withCredentials: true })
+            if (currentUserIdRef.current !== userId) return
+            setFocusedMarker((prev) => prev?.marker.id === editingId ? null : prev)
+            setOwnedMarkers((prev) => ({ ...prev, items: prev.items.filter((m) => m.id !== editingId) }))
+            setNearbyResults((prev) => prev.filter((m) => m.id !== editingId))
             setDeleteConfirmOpen(false)
             closeDraft()
             if (map) {
@@ -1469,7 +1563,10 @@ export default function Maps() {
                         <Box sx={{ display: 'flex', justifyContent: legendOpen ? 'flex-end' : 'flex-start' }}>
                             <Button
                                 size="small"
-                                onClick={() => setLegendOpen((v) => !v)}
+                                onClick={() => {
+                                    dismissAddHint()
+                                    setLegendOpen((v) => !v)
+                                }}
                                 sx={{
                                     borderRadius: 999,
                                     textTransform: 'none',
@@ -1629,10 +1726,14 @@ export default function Maps() {
                         {filteredMarkers.map((m) => (
                             <Marker
                                 key={m.id}
+                                ref={(layer) => {
+                                    if (layer) markerRefs.current.set(m.id, layer)
+                                    else markerRefs.current.delete(m.id)
+                                }}
                                 position={[m.lat, m.lng]}
                                 icon={getMarkerIcon(normalizeCategory(m.category), m.isActive)}
                             >
-                                <Popup>
+                                <Popup autoPanPaddingTopLeft={[16, popupTopPadding]} maxHeight={popupMaxHeight}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                         {isLoggedIn ? (
                                             <IconButton size="small" onClick={() => openEdit(m)} aria-label="编辑点位">
@@ -1659,8 +1760,11 @@ export default function Maps() {
                                                             withCredentials: true,
                                                         })
                                                     }
-                                                } finally {
                                                     await loadFavorites()
+                                                } catch (error) {
+                                                    if (!(axios.isAxiosError(error) && error.response?.status === 401)) {
+                                                        showNotice(extractApiErrorMessage(error, '收藏操作失败，请稍后重试。'), 'error')
+                                                    }
                                                 }
                                             }}
                                             aria-label={favoriteIds.has(m.id) ? '取消收藏点位' : '收藏点位'}
