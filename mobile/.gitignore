@@ -21,6 +21,8 @@ DerivedData
 *.ipa
 *.xcuserstate
 **/.xcode.env.local
+ios/RuntimeConfig.local.json
+ios/mobile/Images.xcassets/AppIcon.appiconset/AppIcon1024.png
 
 # Android/IntelliJ
 #

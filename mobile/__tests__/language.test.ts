@@ -85,6 +85,30 @@ test('a delayed persisted preference cannot overwrite a newer manual selection',
   expect(getLanguageSnapshot()).toEqual({ language: 'en', preference: 'en' });
 });
 
+test('iOS native constants reflect a changed system preference without overriding a manual language', async () => {
+  jest.replaceProperty(Platform, 'OS', 'ios');
+  const previous = NativeModules.SettingsManager;
+  let locale = 'en-US';
+  try {
+    NativeModules.SettingsManager = {
+      getConstants: () => ({ settings: { AppleLanguages: [locale] } }),
+    };
+    await setLanguagePreference('system');
+    expect(getLanguageSnapshot().language).toBe('en');
+    locale = 'zh-Hans';
+    refreshSystemLanguage();
+    expect(getLanguageSnapshot()).toEqual({
+      language: 'zh',
+      preference: 'system',
+    });
+    await setLanguagePreference('en');
+    refreshSystemLanguage();
+    expect(getLanguageSnapshot()).toEqual({ language: 'en', preference: 'en' });
+  } finally {
+    NativeModules.SettingsManager = previous;
+  }
+});
+
 test('marker URLs replace the language without corrupting encoded search terms or unrelated paths', () => {
   expect(
     localizeMarkerPath('/api/markers/search?q=A%26B%3D1&lang=zh', 'en'),

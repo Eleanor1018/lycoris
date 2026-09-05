@@ -8,6 +8,15 @@ require Pod::Executable.execute_command('node', ['-p',
 platform :ios, min_ios_version_supported
 prepare_react_native_project!
 
+icon_script = File.expand_path('../scripts/prepare-ios-icon.swift', __dir__)
+icon_source = File.expand_path('../src/images/LycorisIcon.png', __dir__)
+icon_output = File.expand_path('mobile/Images.xcassets/AppIcon.appiconset/AppIcon1024.png', __dir__)
+if !File.exist?(icon_output) || File.mtime(icon_output) < [File.mtime(icon_source), File.mtime(icon_script)].max
+  unless system('xcrun', 'swift', icon_script)
+    raise 'Unable to prepare the iOS AppIcon from the existing logo.'
+  end
+end
+
 linkage = ENV['USE_FRAMEWORKS']
 if linkage != nil
   Pod::UI.puts "Configuring Pod with #{linkage}ally linked Frameworks".green

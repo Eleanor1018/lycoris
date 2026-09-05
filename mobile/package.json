@@ -5,6 +5,8 @@
   "scripts": {
     "android": "react-native run-android",
     "ios": "react-native run-ios",
+    "ios:config:check": "node scripts/configure-ios.cjs --check",
+    "test:ios-config": "node --test scripts/configure-ios.test.cjs",
     "lint": "eslint .",
     "start": "react-native start",
     "test": "jest"
@@ -52,6 +54,6 @@
     "typescript": "^5.8.3"
   },
   "engines": {
-    "node": ">=20"
+    "node": ">=20.19.4"
   }
 }

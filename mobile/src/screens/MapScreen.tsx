@@ -47,6 +47,7 @@ import { buildDirectionsUrls, buildMarkerShareUrl } from '../lib/markerLinks';
 import { LEAFLET_MARKER_RENDERER_SCRIPT } from '../lib/leafletMarkerRenderer';
 import { pickUploadImage, type LocalUploadImage } from '../lib/imageUpload';
 import { getAndroidLocationAccess } from '../lib/locationPermissions';
+import { getIOSLocationAccess } from '../lib/iosLocationPermissions';
 import {
   createMarkerRequestId,
   MarkerImageUploadError,
@@ -757,6 +758,16 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
     }, 2600);
   }, []);
 
+  const clearLocationState = useCallback(() => {
+    setUserLocation(null);
+    ++nearbySeqRef.current;
+    nearbyAbortRef.current?.abort();
+    setNearbyLoading(false);
+    setNearbyResults([]);
+    setNearbyIds(new Set());
+    setNearbyOnly(false);
+  }, []);
+
   useEffect(() => {
     if (sessionNotice) showNotice(t(sessionNotice));
   }, [sessionNotice, showNotice]);
@@ -859,8 +870,9 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
           typeof (err as { code?: unknown }).code === 'string'
             ? (err as { code: string }).code
             : '';
-        if (nativeCode === 'LOCATION_PERMISSION_DENIED') {
+        if (nativeCode === 'LOCATION_PERMISSION_DENIED' || nativeCode === 'LOCATION_PROVIDER_DISABLED') {
           setLocationPermissionGranted(false);
+          clearLocationState();
         }
         if (!silent) {
           const message =
@@ -874,7 +886,7 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
         nativeLocateInFlightRef.current = false;
       }
     },
-    [locationPermissionGranted, showNotice],
+    [clearLocationState, locationPermissionGranted, showNotice],
   );
 
   const openDraftMenu = useCallback((nextDraft: DraftMarker) => {
@@ -944,13 +956,18 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
       requestIfMissing: boolean,
       recoverBlocked = false,
     ): Promise<boolean> => {
-      if (Platform.OS !== 'android') {
+      if (Platform.OS !== 'android' && Platform.OS !== 'ios') {
         setLocationPermissionGranted(true);
         return true;
       }
       try {
-        const access = await getAndroidLocationAccess(requestIfMissing);
-        const granted = access === 'precise' || access === 'approximate';
+        const access = Platform.OS === 'ios'
+          ? await getIOSLocationAccess()
+          : await getAndroidLocationAccess(requestIfMissing);
+        // iOS presents its authorization dialog from getCurrentPosition, not
+        // from this read-only status check.
+        const granted = access === 'precise' || access === 'approximate'
+          || access === 'notDetermined';
         setLocationPermissionGranted(granted);
         if (granted) {
           if (access === 'approximate' && requestIfMissing) {
@@ -958,9 +975,9 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
           }
           return true;
         }
-        setUserLocation(null);
+        clearLocationState();
         if (requestIfMissing) {
-          if (access === 'blocked' && recoverBlocked) {
+          if ((access === 'blocked' || access === 'unavailable') && recoverBlocked) {
             showNotice(
               t('请在系统设置中允许位置访问，返回后再点击定位或附近查询。'),
             );
@@ -976,12 +993,13 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
         return false;
       } catch {
         setLocationPermissionGranted(false);
+        clearLocationState();
         if (requestIfMissing)
           showNotice(t('无法读取定位权限，请在系统设置中检查位置访问。'));
         return false;
       }
     },
-    [showNotice],
+    [clearLocationState, showNotice],
   );
 
   const requestWebViewCurrentLocation = useCallback(() => {
@@ -1015,7 +1033,7 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
 
   useEffect(() => {
     if (!isActive) return;
-    if (Platform.OS === 'android') {
+    if (Platform.OS === 'android' || Platform.OS === 'ios') {
       syncLocationPermission(false)
         .then(ok => {
           if (ok) requestWebViewCurrentLocation();
@@ -1035,7 +1053,7 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
         (prev === 'inactive' || prev === 'background') &&
         nextState === 'active'
       ) {
-        if (Platform.OS === 'android') {
+        if (Platform.OS === 'android' || Platform.OS === 'ios') {
           syncLocationPermission(false)
             .then(ok => {
               if (ok) requestWebViewCurrentLocation();
@@ -1758,6 +1776,7 @@ export function MapScreen({ focusRequest, isActive = true }: MapScreenProps) {
       }
 
       if (msg.type === 'userLocation') {
+        if (!locationPermissionGranted) return;
         const lat = Number(msg.latitude);
         const lng = Number(msg.longitude);
         if (Number.isFinite(lat) && Number.isFinite(lng)) {
