@@ -1,3 +1,4 @@
+import { useLanguage } from '../i18n/LanguageProvider'
 import {
     Alert,
     Button,
@@ -18,6 +19,7 @@ import {
 } from '@mui/material'
 import { useEffect, useState } from 'react'
 import imageCompression from 'browser-image-compression'
+import type { Language } from '../i18n/LanguageProvider'
 import type { MarkerCategory } from '../types/marker'
 
 export type DraftMarker = {
@@ -31,6 +33,10 @@ export type DraftMarker = {
     openTimeStart: string
     openTimeEnd: string
     markImage?: string
+    language: Language
+    contentLanguage?: Language
+    originalTitle?: string
+    originalDescription?: string
 }
 
 type Props = {
@@ -64,8 +70,9 @@ export default function MarkerFormDialog({
     onMarkImageChange,
     canUploadImage = true,
     saving = false,
-    saveLabel = '保存',
+    saveLabel,
 }: Props) {
+    const { language, t } = useLanguage()
     const [imageError, setImageError] = useState('')
     const [imageHint, setImageHint] = useState('')
     const [processingImage, setProcessingImage] = useState(false)
@@ -74,7 +81,7 @@ export default function MarkerFormDialog({
     const [endHourInput, setEndHourInput] = useState('')
     const [endMinuteInput, setEndMinuteInput] = useState('')
     const saveDisabled = saving || processingImage
-    const displayedSaveLabel = processingImage ? '处理图片中...' : saveLabel
+    const displayedSaveLabel = processingImage ? t("处理图片中...") : saveLabel ?? t("保存")
 
     useEffect(() => {
         if (!open) {
@@ -244,7 +251,7 @@ export default function MarkerFormDialog({
                         'radial-gradient(circle at 50% 0%, rgba(252, 221, 236, 0.8), rgba(252, 221, 236, 0) 58%)',
                 }}
             >
-                {editingId ? '编辑点位' : '新增点位'}
+                {editingId ? t("编辑点位") : t("新增点位")}
             </DialogTitle>
             <DialogContent
                 sx={{
@@ -269,11 +276,19 @@ export default function MarkerFormDialog({
                 <Divider sx={{ my: 1.8, borderColor: 'rgba(236, 167, 206, 0.34)' }} />
 
                 <Stack spacing={2}>
+                    <Alert severity="info">
+                        <Typography variant="body2" fontWeight={700}>
+                            {t('编写语言：{language}', { language: t((draft?.language ?? language) === 'en' ? '英文' : '中文') })}
+                        </Typography>
+                        {t('标题和描述将保存为当前语言，其他语言内容会保留。')}
+                        {draft?.contentLanguage && draft.contentLanguage !== language &&
+                            <Typography variant="body2">{t('请将原文翻译为当前语言后保存。')}</Typography>}
+                    </Alert>
                     <FormControl fullWidth>
-                        <InputLabel id="cat-label">类别</InputLabel>
+                        <InputLabel id="cat-label">{t("类别")}</InputLabel>
                         <Select
                             labelId="cat-label"
-                            label="类别"
+                            label={t("类别")}
                             value={draft?.category ?? 'accessible_toilet'}
                             disabled={saving}
                             sx={fieldSx}
@@ -290,21 +305,21 @@ export default function MarkerFormDialog({
                     </FormControl>
 
                     <TextField
-                        label="标题"
+                        label={t("标题")}
                         value={draft?.title ?? ''}
                         disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, title: e.target.value } : d))}
-                        placeholder="例如：地铁站A口无障碍卫生间"
+                        placeholder={t("例如：地铁站A口无障碍卫生间")}
                         fullWidth
                         sx={fieldSx}
                     />
 
                     <TextField
-                        label="描述"
+                        label={t("描述")}
                         value={draft?.description ?? ''}
                         disabled={saving}
                         onChange={(e) => setDraft((d) => (d ? { ...d, description: e.target.value } : d))}
-                        placeholder="例如：入口在XX旁边，晚上关闭时间…"
+                        placeholder={t("例如：入口在XX旁边，晚上关闭时间…")}
                         fullWidth
                         multiline
                         minRows={4}
@@ -335,7 +350,7 @@ export default function MarkerFormDialog({
                             },
                         }}
                     >
-                        {canUploadImage ? '选择图片（可选）' : '仅创建者可上传图片'}
+                        {canUploadImage ? t("选择图片（可选）") : t("仅创建者可上传图片")}
                             <input
                                 type="file"
                                 accept="image/*"
@@ -389,18 +404,18 @@ export default function MarkerFormDialog({
                                         }
 
                                         if (nextFile.size > MAX_MARKER_IMAGE_SIZE) {
-                                            throw new Error('图片处理后仍超过 5MB')
+                                            throw new Error(t("图片处理后仍超过 5MB"))
                                         }
 
                                         if (nextFile !== f) {
                                             setImageHint(
-                                                `已自动处理图片（${(f.size / 1024 / 1024).toFixed(2)}MB → ${(nextFile.size / 1024 / 1024).toFixed(2)}MB）`
+                                                t("已自动处理图片（{0}MB → {1}MB）", { 0: (f.size / 1024 / 1024).toFixed(2), 1: (nextFile.size / 1024 / 1024).toFixed(2) })
                                             )
                                         }
 
                                         onMarkImageChange(nextFile)
                                     } catch (err: unknown) {
-                                        const message = err instanceof Error ? err.message : '图片处理失败，请换一张图片试试'
+                                        const message = err instanceof Error ? err.message : t("图片处理失败，请换一张图片试试")
                                         setImageError(message)
                                         onMarkImageChange(null)
                                         e.currentTarget.value = ''
@@ -416,8 +431,7 @@ export default function MarkerFormDialog({
                             icon={<CircularProgress size={16} color="inherit" />}
                             sx={{ borderRadius: 2 }}
                         >
-                            正在处理图片，请稍候...
-                        </Alert>
+                            {t("正在处理图片，请稍候...")}</Alert>
                     ) : null}
                     {imageHint ? (
                         <Alert severity="success" sx={{ borderRadius: 2 }}>
@@ -431,7 +445,7 @@ export default function MarkerFormDialog({
                     ) : null}
                     {markImageFile ? (
                         <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                            已选择：{markImageFile.name}
+                            {t("已选择：")}{markImageFile.name}
                         </Typography>
                     ) : null}
 
@@ -456,17 +470,16 @@ export default function MarkerFormDialog({
                                 }
                             />
                         }
-                        label="公开共享"
+                        label={t("公开共享")}
                     />
 
                     <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} alignItems="stretch">
                         <Stack spacing={1} sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                可用开始时间
-                            </Typography>
+                                {t("可用开始时间")}</Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TextField
-                                    label="时"
+                                    label={t("时")}
                                     value={startHourInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'hour', e.target.value)}
@@ -477,7 +490,7 @@ export default function MarkerFormDialog({
                                 />
                                 <Typography sx={{ opacity: 0.7 }}>:</Typography>
                                 <TextField
-                                    label="分"
+                                    label={t("分")}
                                     value={startMinuteInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeStart', 'minute', e.target.value)}
@@ -491,11 +504,10 @@ export default function MarkerFormDialog({
 
                         <Stack spacing={1} sx={{ flex: 1 }}>
                             <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                                可用结束时间
-                            </Typography>
+                                {t("可用结束时间")}</Typography>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 <TextField
-                                    label="时"
+                                    label={t("时")}
                                     value={endHourInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'hour', e.target.value)}
@@ -506,7 +518,7 @@ export default function MarkerFormDialog({
                                 />
                                 <Typography sx={{ opacity: 0.7 }}>:</Typography>
                                 <TextField
-                                    label="分"
+                                    label={t("分")}
                                     value={endMinuteInput}
                                     disabled={saving}
                                     onChange={(e) => handlePartChange('openTimeEnd', 'minute', e.target.value)}
@@ -519,8 +531,7 @@ export default function MarkerFormDialog({
                         </Stack>
                     </Stack>
                     <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                        两项都留空表示全天可用；若填写需同时填写开始和结束时间（每日重复）。
-                    </Typography>
+                        {t("两项都留空表示全天可用；若填写需同时填写开始和结束时间（每日重复）。")}</Typography>
 
                     <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ pt: 0.5 }}>
                         <Button
@@ -534,8 +545,7 @@ export default function MarkerFormDialog({
                                 '&:hover': { bgcolor: 'rgba(252, 221, 236, 0.38)' },
                             }}
                         >
-                            取消
-                        </Button>
+                            {t("取消")}</Button>
                         {editingId && canDelete ? (
                             <Button
                                 color="error"
@@ -549,8 +559,7 @@ export default function MarkerFormDialog({
                                     '&:hover': { bgcolor: 'rgba(255, 205, 210, 0.86)' },
                                 }}
                             >
-                                删除
-                            </Button>
+                                {t("删除")}</Button>
                         ) : null}
                         <Button
                             variant="contained"
@@ -566,7 +575,7 @@ export default function MarkerFormDialog({
                                 '&:hover': { bgcolor: '#c8afff', boxShadow: '0 14px 28px rgba(208, 188, 255, 0.44)' },
                             }}
                         >
-                            {saveDisabled ? displayedSaveLabel : '保存'}
+                            {saveDisabled ? displayedSaveLabel : t("保存")}
                         </Button>
                     </Stack>
                 </Stack>

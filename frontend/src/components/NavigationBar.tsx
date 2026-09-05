@@ -1,6 +1,8 @@
+import { useLanguage } from '../i18n/LanguageProvider'
 import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import AuthButtons from './AuthButtons.tsx'
+import LanguageSelector from './LanguageSelector'
 import {
     AppBar,
     Toolbar,
@@ -26,6 +28,7 @@ import chisatoAvatar from '../../chisato.png'
 type NavItem = { label: string; to: string }
 
 export default function NavigationBar() {
+    const { t } = useLanguage()
     const location = useLocation()
     const navigate = useNavigate()
     const { isLoggedIn, user, logout } = useAuth()
@@ -34,11 +37,11 @@ export default function NavigationBar() {
 
     const navItems: NavItem[] = useMemo(
         () => [
-            { label: '地图', to: '/maps' },
-            { label: '文档', to: '/documents' },
-            { label: '关于', to: '/about' },
+            { label: t("地图"), to: '/maps' },
+            { label: t("文档"), to: '/documents' },
+            { label: t("关于"), to: '/about' },
         ],
-        []
+        [t]
     )
 
     const mobileAvatarUrl = isLoggedIn ? user?.avatarUrl || chisatoAvatar : undefined
@@ -130,7 +133,7 @@ export default function NavigationBar() {
                             color: '#1d1b20',
                             '&:hover': { bgcolor: '#c8afff' },
                         }}
-                        aria-label={isLoggedIn ? '打开个人导航菜单' : '打开登录导航菜单'}
+                        aria-label={isLoggedIn ? t("打开个人导航菜单") : t("打开登录导航菜单")}
                         aria-expanded={navOpen}
                     >
                         <Avatar
@@ -150,7 +153,7 @@ export default function NavigationBar() {
                     <Box
                         component={RouterLink}
                         to="/"
-                        aria-label="返回首页"
+                        aria-label={t("返回首页")}
                         sx={{
                             display: 'inline-flex',
                             alignItems: 'center',
@@ -223,8 +226,9 @@ export default function NavigationBar() {
 
                     <Box sx={{ display: { xs: 'none', md: 'block' }, flex: 1 }} />
 
+                    <Box sx={{ display: { xs: 'none', md: 'flex' } }}><LanguageSelector /></Box>
                     <IconButton
-                        aria-label="打开搜索页"
+                        aria-label={t("打开搜索页")}
                         onClick={() => navigate('/search')}
                         sx={{
                             display: { xs: navOpen ? 'none' : 'inline-flex', md: 'inline-flex' },
@@ -281,7 +285,8 @@ export default function NavigationBar() {
                     >
                         Lycoris
                     </Typography>
-                    <IconButton onClick={closeNavMenu} aria-label="关闭导航菜单">
+                    <LanguageSelector />
+                    <IconButton onClick={closeNavMenu} aria-label={t("关闭导航菜单")}>
                         <CloseIcon />
                     </IconButton>
                 </Box>
@@ -295,7 +300,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={t("登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={() => {
@@ -304,7 +309,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="注册" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={t("注册")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 ) : (
@@ -316,7 +321,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="个人中心" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={t("个人中心")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                         <ListItemButton
                             onClick={async () => {
@@ -326,7 +331,7 @@ export default function NavigationBar() {
                             }}
                             sx={{ borderRadius: 999 }}
                         >
-                            <ListItemText primary="退出登录" primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            <ListItemText primary={t("退出登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
                         </ListItemButton>
                     </List>
                 )}

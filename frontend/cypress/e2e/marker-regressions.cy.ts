@@ -25,7 +25,7 @@ describe('Marker detail and privacy regressions', () => {
     beforeEach(() => {
         cy.intercept('GET', '/api/me', { body: { data: null } })
         cy.intercept('GET', '/api/markers/viewport*', { body: [] }).as('viewport')
-        cy.intercept('GET', '/api/markers/me/created', { body: [] })
+        cy.intercept({ method: 'GET', pathname: '/api/markers/me/created' }, { body: [] })
         cy.intercept('GET', '/api/markers/me/favorites', { body: [] })
     })
 
@@ -41,8 +41,8 @@ describe('Marker detail and privacy regressions', () => {
         cy.viewport(390, 844)
         let loggedIn = true
         cy.intercept('GET', '/api/me', (req) => req.reply({ data: loggedIn ? user : null }))
-        cy.intercept('GET', '/api/markers/me/created', { body: [privateMarker] })
-        cy.intercept('GET', '/api/markers/201', (req) => req.reply(loggedIn
+        cy.intercept({ method: 'GET', pathname: '/api/markers/me/created' }, { body: [privateMarker] })
+        cy.intercept({ method: 'GET', pathname: '/api/markers/201' }, (req) => req.reply(loggedIn
             ? { statusCode: 200, body: privateMarker }
             : { statusCode: 404, body: '点位不存在' })).as('detail')
         cy.intercept('POST', '/api/logout', (req) => {
@@ -62,7 +62,7 @@ describe('Marker detail and privacy regressions', () => {
 
     it('loads private and pending points for the My points filter', () => {
         cy.intercept('GET', '/api/me', { body: { data: user } })
-        cy.intercept('GET', '/api/markers/me/created', { body: [privateMarker] }).as('created')
+        cy.intercept({ method: 'GET', pathname: '/api/markers/me/created' }, { body: [privateMarker] }).as('created')
         cy.visit('/maps', { onBeforeLoad: disableLocation })
         cy.wait('@created')
         cy.contains('筛选点位').click()
@@ -75,7 +75,7 @@ describe('Marker detail and privacy regressions', () => {
         let loggedIn = true
         let detailStarted = false
         cy.intercept('GET', '/api/me', (req) => req.reply({ data: loggedIn ? user : null }))
-        cy.intercept('GET', '/api/markers/201', (req) => {
+        cy.intercept({ method: 'GET', pathname: '/api/markers/201' }, (req) => {
             detailStarted = true
             req.reply(loggedIn
                 ? { delay: 800, body: privateMarker }
@@ -94,7 +94,7 @@ describe('Marker detail and privacy regressions', () => {
     })
 
     it('shows an unavailable detail message for a denied private point', () => {
-        cy.intercept('GET', '/api/markers/201', { statusCode: 404, body: '点位不存在' })
+        cy.intercept({ method: 'GET', pathname: '/api/markers/201' }, { statusCode: 404, body: '点位不存在' })
         cy.visit('/maps?markerId=201', { onBeforeLoad: disableLocation })
         cy.contains('无法打开此点位').should('be.visible')
         cy.get('.leaflet-popup-content').should('not.exist')
@@ -128,7 +128,7 @@ describe('Marker detail and privacy regressions', () => {
     ;[375, 768, 1280, 1920].forEach((width) => {
         it(`keeps focused details clear of the navigation at ${width}px`, () => {
             cy.viewport(width, 844)
-            cy.intercept('GET', '/api/markers/201', { body: marker })
+            cy.intercept({ method: 'GET', pathname: '/api/markers/201' }, { body: marker })
             cy.visit('/maps?markerId=201', { onBeforeLoad: disableLocation })
             cy.get('.leaflet-popup-content').should('contain.text', marker.title)
             cy.contains('我知道了').should('not.exist')

@@ -32,9 +32,9 @@ describe('Revoked session handling', () => {
         cy.viewport(390, 844)
         cy.intercept('GET', '/api/me', { body: { data: initialUser } })
         cy.intercept('GET', '/api/markers/viewport*', { body: [] })
-        cy.intercept('GET', '/api/markers/me/created', { body: [] })
+        cy.intercept({ method: 'GET', pathname: '/api/markers/me/created' }, { body: [] })
         cy.intercept('GET', '/api/markers/me/favorites', { body: [] })
-        cy.intercept('GET', '/api/markers/301', { body: marker })
+        cy.intercept({ method: 'GET', pathname: '/api/markers/301' }, { body: marker })
     })
 
     it('clears auth and offers login when a favorite request returns 401', () => {
@@ -48,7 +48,7 @@ describe('Revoked session handling', () => {
     })
 
     it('clears auth and closes the editor when saving returns 401', () => {
-        cy.intercept('PATCH', '/api/markers/301', { statusCode: 401, body: '请先登录' }).as('save')
+        cy.intercept({ method: 'PATCH', pathname: '/api/markers/301' }, { statusCode: 401, body: '请先登录' }).as('save')
         cy.visit('/maps?markerId=301', { onBeforeLoad: seedUser })
         cy.get('button[aria-label="编辑点位"]').click({ scrollBehavior: false })
         cy.get('[role="dialog"]').contains('button', '保存').click()
