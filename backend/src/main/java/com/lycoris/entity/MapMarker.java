@@ -26,6 +26,10 @@ public class MapMarker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private Long version = 0L;
+
     // 坐标
     @Column(nullable = false)
     private Double lat;

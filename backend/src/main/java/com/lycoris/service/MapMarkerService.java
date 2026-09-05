@@ -6,6 +6,7 @@ import com.lycoris.dto.MarkerCreateRequest;
 import com.lycoris.entity.MapMarker;
 import com.lycoris.repository.MapMarkerRepository;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
@@ -134,7 +135,7 @@ public class MapMarkerService {
         String cacheKey = buildNearbyCacheKey(lat, lng, safeRadius, normalizedCategory);
         List<MapMarker> cached = readMarkerListFromCache(cacheKey);
         if (cached != null) {
-            return normalizeForRead(cached);
+            return refreshPublicCacheEntries(cached);
         }
         List<MapMarker> computed = normalizeForRead(repo.findNearbyByCategory(lat, lng, safeRadius, normalizedCategory));
         writeMarkerListToCache(cacheKey, computed, nearbyCacheTtlSeconds);
@@ -158,7 +159,7 @@ public class MapMarkerService {
         String cacheKey = buildViewportCacheKey(minLat, maxLat, minLng, maxLng, categories);
         List<MapMarker> cached = readMarkerListFromCache(cacheKey);
         if (cached != null) {
-            return normalizeForRead(cached);
+            return refreshPublicCacheEntries(cached);
         }
 
         List<MapMarker> result;
@@ -279,6 +280,10 @@ public class MapMarkerService {
 
     private MapMarker normalizeOneForRead(MapMarker marker) {
         if (marker == null) return null;
+        // Read-time availability must not dirty a managed entity or advance its version.
+        MapMarker copy = new MapMarker();
+        BeanUtils.copyProperties(marker, copy);
+        marker = copy;
         String raw = marker.getCategory();
         String normalized = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
         if (!SUPPORTED_CATEGORIES.contains(normalized)) {
@@ -288,6 +293,17 @@ public class MapMarkerService {
         }
         applyAvailabilityStatus(marker);
         return marker;
+    }
+
+    private List<MapMarker> refreshPublicCacheEntries(List<MapMarker> cached) {
+        List<Long> ids = cached.stream().map(MapMarker::getId).toList();
+        if (ids.isEmpty()) return List.of();
+        Map<Long, MapMarker> current = new LinkedHashMap<>();
+        for (MapMarker marker : repo.findByIdIn(ids)) {
+            if (MarkerAccess.isPublic(marker)) current.put(marker.getId(), marker);
+        }
+        // Preserve nearby distance ordering, but never trust cached visibility or contents.
+        return normalizeForRead(ids.stream().filter(current::containsKey).map(current::get).toList());
     }
 
     private Optional<double[]> parseLatLng(String query) {

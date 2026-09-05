@@ -9,6 +9,7 @@ import com.lycoris.dto.RegisterRequest;
 import com.lycoris.dto.UserResponse;
 import com.lycoris.service.RegisterRateLimitService;
 import com.lycoris.service.UserService;
+import com.lycoris.service.ImageUploadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,13 +21,11 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.IOException;
 import java.time.Duration;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 
@@ -37,14 +36,17 @@ public class AuthController {
 
     private final UserService userService;
     private final RegisterRateLimitService registerRateLimitService;
+    private final ImageUploadService imageUploadService;
     @Value("${app.upload-dir}")
     private String uploadDir;
     @Value("${server.servlet.session.timeout:30d}")
     private String sessionTimeout;
 
-    public AuthController(UserService userService, RegisterRateLimitService registerRateLimitService) {
+    public AuthController(UserService userService, RegisterRateLimitService registerRateLimitService,
+                          ImageUploadService imageUploadService) {
         this.userService = userService;
         this.registerRateLimitService = registerRateLimitService;
+        this.imageUploadService = imageUploadService;
     }
 
     private Integer resolveSessionUserId(HttpSession session) {
@@ -119,9 +121,6 @@ public class AuthController {
                 created.getPronouns(),
                 created.getSignature()
         );
-        System.out.println("LOGIN sessionId=" + session.getId()
-                + " userId=" + session.getAttribute("userId")
-                + " username=" + session.getAttribute("username"));
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
@@ -227,15 +226,7 @@ public class AuthController {
 
         return userService.findById(userId).map(user -> {
             try {
-                String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
-                String safeExt = (ext == null || ext.isBlank()) ? "png" : ext.toLowerCase();
-                String filename = user.getPublicId() + "-" + UUID.randomUUID() + "." + safeExt;
-                Path avatarDir = Paths.get(uploadDir, "avatars");
-                Files.createDirectories(avatarDir);
-                Path target = avatarDir.resolve(filename);
-                Files.copy(file.getInputStream(), target);
-
-                String avatarUrl = "/uploads/avatars/" + filename;
+                String avatarUrl = imageUploadService.storeImage(file, "avatars", "avatar-" + user.getPublicId());
                 user.setAvatarUrl(avatarUrl);
                 User updated = userService.save(user);
 
@@ -249,6 +240,8 @@ public class AuthController {
                         updated.getSignature()
                 );
                 return ResponseEntity.ok(ApiResponse.success(data));
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(ApiResponse.<UserResponse>error(400, e.getMessage()));
             } catch (Exception e) {
                 return ResponseEntity.status(500).body(ApiResponse.<UserResponse>error(500, "上传失败"));
             }
@@ -271,6 +264,9 @@ public class AuthController {
                     if (!ok) {
                         return ResponseEntity.status(400).body(ApiResponse.<Void>error(400, "原密码错误或新密码不合法"));
                     }
+                    session.setAttribute("sessionVersion", user.getSessionVersion());
+                    session.removeAttribute("adminSecondVerified");
+                    session.removeAttribute("adminSecondVerifiedAt");
                     return ResponseEntity.ok(ApiResponse.<Void>success(null));
                 })
                 .orElseGet(() -> ResponseEntity.status(404).body(ApiResponse.<Void>error(404, "用户不存在")));
@@ -300,6 +296,9 @@ public class AuthController {
         session.setAttribute("username", user.getUsername());
         session.setAttribute("email", user.getEmail());
         session.setAttribute("role", user.getRole());
+        session.setAttribute("sessionVersion", user.getSessionVersion());
+        session.removeAttribute("adminSecondVerified");
+        session.removeAttribute("adminSecondVerifiedAt");
     }
 
     private static void rotateSessionId(HttpServletRequest request) {

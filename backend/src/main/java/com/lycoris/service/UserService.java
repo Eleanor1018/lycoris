@@ -100,6 +100,7 @@ public class UserService {
         return userRepository.searchForAdmin(keyword, pageable);
     }
 
+    @Transactional
     public boolean deleteById(Integer id) {
         if (id == null) {
             return false;
@@ -111,29 +112,36 @@ public class UserService {
         User user = userOpt.get();
         user.setDeleted(true);
         user.setDeletedAt(Instant.now());
+        revokeSessions(user);
         userRepository.save(user);
         return true;
     }
 
+    @Transactional
     public User restore(User user) {
         if (user == null) {
             return null;
         }
         user.setDeleted(false);
         user.setDeletedAt(null);
+        revokeSessions(user);
         return userRepository.save(user);
     }
 
+    @Transactional
     public User resetPassword(User user, String rawPassword) {
         user.setPassword(passwordEncoder.encode(rawPassword));
+        revokeSessions(user);
         return userRepository.save(user);
     }
 
+    @Transactional
     public boolean changePassword(User user, String oldPassword, String newPassword) {
         if (user == null) return false;
         if (newPassword == null || newPassword.length() < 4) return false;
         if (!matchesPasswordSafely(oldPassword, user.getPassword())) return false;
         user.setPassword(passwordEncoder.encode(newPassword));
+        revokeSessions(user);
         userRepository.save(user);
         return true;
     }
@@ -142,14 +150,19 @@ public class UserService {
         if (rawPassword == null || storedPassword == null || storedPassword.isBlank()) {
             return false;
         }
-        try {
-            if (passwordEncoder.matches(rawPassword, storedPassword)) {
-                return true;
+        // Encoded credentials must never fall back to literal equality.
+        if (looksLikeBcryptHash(storedPassword) || storedPassword.startsWith("{")) {
+            try {
+                return passwordEncoder.matches(rawPassword, storedPassword);
+            } catch (IllegalArgumentException ignored) {
+                return false;
             }
-        } catch (IllegalArgumentException ignored) {
-            // Legacy plaintext passwords are handled by the fallback below.
         }
         return rawPassword.equals(storedPassword);
+    }
+
+    private void revokeSessions(User user) {
+        user.setSessionVersion(Math.addExact(user.getSessionVersion() == null ? 0L : user.getSessionVersion(), 1L));
     }
 
     private void migrateLegacyPasswordIfNeeded(User user, String rawPassword) {

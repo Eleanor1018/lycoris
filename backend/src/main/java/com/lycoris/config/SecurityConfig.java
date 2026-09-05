@@ -5,6 +5,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import com.lycoris.security.SessionAuthFilter;
+import com.lycoris.service.UserService;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -27,7 +28,7 @@ public class SecurityConfig {
     private String allowedOriginsCsv;
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, UserService userService) throws Exception {
         http.csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> {})
                 .authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -44,6 +45,9 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.POST, "/api/markers").authenticated()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         .requestMatchers(HttpMethod.GET, "/api/markers/all").hasRole("ADMIN")
+                        .requestMatchers(request -> "GET".equals(request.getMethod())
+                                && request.getRequestURI().substring(request.getContextPath().length())
+                                    .matches("/api/markers/[0-9]+")).permitAll()
                         .requestMatchers(HttpMethod.GET, "/uploads/**").permitAll()
                         .requestMatchers("/api/me").authenticated()
                         .anyRequest().authenticated())
@@ -54,7 +58,7 @@ public class SecurityConfig {
                     response.getWriter().write("{\"message\":\"Spring Security Error\"}");
                 }))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .addFilterBefore(new SessionAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new SessionAuthFilter(userService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

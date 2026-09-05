@@ -20,6 +20,8 @@ public interface MapMarkerRepository extends JpaRepository<MapMarker, Long> {
 
     List<MapMarker> findByIdIn(List<Long> ids);
 
+    List<MapMarker> findByMarkImage(String markImage);
+
     @Query("""
             select m from MapMarker m
             where m.isPublic = true

@@ -6,6 +6,7 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import jakarta.persistence.Version;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -22,6 +23,14 @@ public class MarkerEditProposal {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private Long version = 0L;
+
+    // Null means a proposal predates version tracking and must be resubmitted.
+    @Column
+    private Long baseMarkerVersion;
 
     @Column(nullable = false)
     private Long markerId;

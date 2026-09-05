@@ -44,7 +44,7 @@ class MapMarkerServiceTest {
 
         assertThat(first.getId()).isEqualTo(42L);
         assertThat(second.getId()).isEqualTo(42L);
-        assertThat(second).isSameAs(first);
+        assertThat(second.getTitle()).isEqualTo(first.getTitle());
         assertThat(first.getClientRequestId()).isEqualTo("draft-123");
         verify(repo, times(1)).save(any(MapMarker.class));
     }

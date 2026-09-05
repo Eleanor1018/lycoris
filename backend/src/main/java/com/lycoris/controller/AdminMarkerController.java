@@ -11,6 +11,8 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.Objects;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -94,6 +96,7 @@ public class AdminMarkerController {
     }
 
     @PostMapping("/edit-proposals/{id}/approve")
+    @Transactional
     public ResponseEntity<?> approveEditProposal(@PathVariable("id") Long id, HttpSession session) {
         ResponseEntity<?> blocked = requireSecondFactor(session);
         if (blocked != null) return blocked;
@@ -105,6 +108,9 @@ public class AdminMarkerController {
 
                     return markerService.findById(p.getMarkerId())
                             .<ResponseEntity<?>>map(marker -> {
+                                if (p.getBaseMarkerVersion() == null || !Objects.equals(p.getBaseMarkerVersion(), marker.getVersion())) {
+                                    return ResponseEntity.status(409).body("点位已更新或提案缺少版本信息，请按最新内容重新提交后审核");
+                                }
                                 marker.setCategory(markerService.normalizeCategoryForWrite(p.getCategory()));
                                 marker.setTitle(p.getTitle());
                                 marker.setDescription(p.getDescription());
@@ -115,13 +121,13 @@ public class AdminMarkerController {
                                 marker.setLastEditedBy(p.getProposerUsername());
                                 marker.setLastEditedByPublicId(p.getProposerPublicId());
                                 marker.setLastEditedByOwner(p.getProposerIsOwner());
-                                markerService.save(marker);
+                                MapMarker updated = markerService.save(marker);
 
                                 p.setStatus("APPROVED");
                                 p.setReviewedBy(String.valueOf(session.getAttribute("username")));
                                 p.setReviewedAt(Instant.now());
                                 editProposalRepo.save(p);
-                                return ResponseEntity.ok(marker);
+                                return ResponseEntity.ok(updated);
                             })
                             .orElseGet(() -> ResponseEntity.status(404).body("关联点位不存在"));
                 })
@@ -129,6 +135,7 @@ public class AdminMarkerController {
     }
 
     @PostMapping("/edit-proposals/{id}/reject")
+    @Transactional
     public ResponseEntity<?> rejectEditProposal(@PathVariable("id") Long id, HttpSession session) {
         ResponseEntity<?> blocked = requireSecondFactor(session);
         if (blocked != null) return blocked;
