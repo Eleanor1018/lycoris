@@ -148,8 +148,8 @@ android {
         applicationId "com.mobile"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 1
-        versionName "1.0"
+        versionCode 2
+        versionName "1.0.3"
         buildConfigField "String", "LY_API_BASE_URL", quoteForBuildConfig(apiBaseUrl)
         buildConfigField "String", "LY_THUNDERFOREST_API_KEY", quoteForBuildConfig(thunderforestApiKey)
         buildConfigField "String", "LY_TIANDITU_API_KEY", quoteForBuildConfig(tiandituApiKey)

@@ -84,7 +84,11 @@ npm run android
 
 ## Android 正式签名（Release）
 
-1. 生成正式 keystore（示例）：
+从 2026-09-06 的 Android 1.0.3 测试发布开始使用新的 Release 证书，SHA-256 指纹为 `e0468f0e26aa5560b9e8869ed9ba9c2cb7bd76831f1e246aaa8b222decb7a757`。后续更新必须沿用这份密钥；旧 v1.0 和开发包签名不同，不能直接覆盖安装。
+
+已有签名时，恢复原来的 `android/keystore/lycoris-upload.jks` 和 `android/keystore.properties`，不要重新生成。二者均被 Git 忽略，需要另外安全备份；不要上传到 GitHub Release。
+
+1. 仅在首次建立新的签名身份时生成 keystore（示例，已有应用更新跳过此步）：
 
 ```sh
 cd android
@@ -102,15 +106,17 @@ keytool -genkeypair -v \
 cp keystore.properties.example keystore.properties
 ```
 
-3. 构建 release apk：
+3. 确认签名配置完整，再显式指定生产 API 构建 release APK，避免沿用本地 `.env.mobile` 的开发地址：
 
 ```sh
-./gradlew assembleRelease
+./gradlew assembleRelease -PLY_API_BASE_URL=https://api.lycoris.online '-PreactNativeArchitectures=arm64-v8a,x86_64'
 ```
 
 产物路径：
 
 `android/app/build/outputs/apk/release/app-release.apk`
+
+当前 Gradle 在缺少正式签名配置时会警告并退回开发签名。发布前用 Android SDK 的 `apksigner verify --verbose --print-certs` 检查 APK，确认签名指纹与上面一致，并检查版本号递增。
 
 ## 本地检查
 
