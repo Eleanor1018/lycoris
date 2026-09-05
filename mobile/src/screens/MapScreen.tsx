@@ -6,7 +6,6 @@ import {
   Linking,
   Modal,
   NativeModules,
-  PermissionsAndroid,
   Platform,
   Pressable,
   ScrollView,
@@ -30,10 +29,16 @@ import {
 } from '../config/runtime';
 import {ApiError, requestJson} from '../lib/http';
 import {
-  appendUploadImageToFormData,
   pickUploadImage,
   type LocalUploadImage,
 } from '../lib/imageUpload';
+import {getAndroidLocationAccess} from '../lib/locationPermissions';
+import {
+  createMarkerRequestId,
+  MarkerImageUploadError,
+  submitMarkerWithImage,
+  type MarkerSubmissionCheckpoint,
+} from '../lib/markerSubmission';
 import {colors} from '../theme/colors';
 import type {MapMarker, MarkerCategory} from '../types/marker';
 
@@ -83,6 +88,7 @@ type WebMapMessage =
   | {type: 'leafletLoadFailed'; message?: string};
 
 type DraftMarker = {
+  clientRequestId: string;
   lat: number;
   lng: number;
   category: MarkerCategory;
@@ -631,7 +637,7 @@ type MapScreenProps = {
 
 export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const insets = useSafeAreaInsets();
-  const {user, isLoggedIn} = useAuth();
+  const {user, isLoggedIn, sessionNotice} = useAuth();
 
   const webViewRef = useRef<WebView>(null);
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -663,6 +669,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const [draft, setDraft] = useState<DraftMarker | null>(null);
   const [categorySelectOpen, setCategorySelectOpen] = useState(false);
   const [savingDraft, setSavingDraft] = useState(false);
+  const [submissionCheckpoint, setSubmissionCheckpoint] =
+    useState<MarkerSubmissionCheckpoint | null>(null);
   const [draftImageFile, setDraftImageFile] = useState<LocalUploadImage | null>(
     null,
   );
@@ -727,6 +735,10 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     }, 2600);
   }, []);
 
+  useEffect(() => {
+    if (sessionNotice) showNotice(sessionNotice);
+  }, [sessionNotice, showNotice]);
+
   const showTimeFixHint = useCallback((text: string) => {
     setTimeFixHint(text);
     if (timeFixHintTimerRef.current) clearTimeout(timeFixHintTimerRef.current);
@@ -774,19 +786,21 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     async ({
       recenter = false,
       silent = false,
+      permissionConfirmed = false,
     }: {
       recenter?: boolean;
       silent?: boolean;
-    } = {}): Promise<boolean> => {
-      if (!supportsNativeLocation) return false;
-      if (!locationPermissionGranted) return false;
+      permissionConfirmed?: boolean;
+    } = {}): Promise<{latitude: number; longitude: number} | null> => {
+      if (!supportsNativeLocation) return null;
+      if (!locationPermissionGranted && !permissionConfirmed) return null;
       if (
         !nativeLocationModule ||
         typeof nativeLocationModule.getCurrentPosition !== 'function'
       ) {
-        return false;
+        return null;
       }
-      if (nativeLocateInFlightRef.current) return false;
+      if (nativeLocateInFlightRef.current) return null;
 
       nativeLocateInFlightRef.current = true;
       try {
@@ -814,7 +828,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               : 'native';
           showNotice(`已使用原生定位（${provider}）。`);
         }
-        return true;
+        return {latitude, longitude};
       } catch (err) {
         const nativeCode =
           typeof err === 'object' &&
@@ -833,7 +847,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
               : '定位失败，请稍后重试。';
           showNotice(`原生定位失败：${message}`);
         }
-        return false;
+        return null;
       } finally {
         nativeLocateInFlightRef.current = false;
       }
@@ -842,6 +856,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   );
 
   const openDraftMenu = useCallback((nextDraft: DraftMarker) => {
+    setSubmissionCheckpoint(null);
     setCategorySelectOpen(false);
     setTimeFixHint('');
     setDraftImageFile(null);
@@ -901,40 +916,38 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, [showAddModeHint]);
 
   const syncLocationPermission = useCallback(
-    async (requestIfMissing: boolean): Promise<boolean> => {
+    async (requestIfMissing: boolean, recoverBlocked = false): Promise<boolean> => {
       if (Platform.OS !== 'android') {
         setLocationPermissionGranted(true);
         return true;
       }
       try {
-        const granted = await PermissionsAndroid.check(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        );
+        const access = await getAndroidLocationAccess(requestIfMissing);
+        const granted = access === 'precise' || access === 'approximate';
+        setLocationPermissionGranted(granted);
         if (granted) {
-          setLocationPermissionGranted(true);
+          if (access === 'approximate' && requestIfMissing) {
+            showNotice('已允许大致位置，附近距离可能存在偏差。');
+          }
           return true;
         }
-
-        if (!requestIfMissing) {
-          setLocationPermissionGranted(false);
-          return false;
+        setUserLocation(null);
+        if (requestIfMissing) {
+          if (access === 'blocked' && recoverBlocked) {
+            showNotice('请在系统设置中允许位置访问，返回后再点击定位或附近查询。');
+            await Linking.openSettings();
+          } else {
+            showNotice(
+              access === 'blocked'
+                ? '定位权限已关闭，点击定位按钮可前往系统设置。'
+                : '定位权限未开启，点击定位或附近查询可重新申请。',
+            );
+          }
         }
-
-        const asked = await PermissionsAndroid.request(
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-          {
-            title: '定位权限',
-            message: '用于查询附近点位与快速定位当前位置。',
-            buttonPositive: '允许',
-            buttonNegative: '拒绝',
-          },
-        );
-        const ok = asked === PermissionsAndroid.RESULTS.GRANTED;
-        setLocationPermissionGranted(ok);
-        if (!ok) showNotice('定位权限未开启，附近查询功能不可用。');
-        return ok;
+        return false;
       } catch {
         setLocationPermissionGranted(false);
+        if (requestIfMissing) showNotice('无法读取定位权限，请在系统设置中检查位置访问。');
         return false;
       }
     },
@@ -1455,6 +1468,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   const openDraftAt = useCallback(
     (lat: number, lng: number) => {
       openDraftMenu({
+        clientRequestId: createMarkerRequestId(),
         lat,
         lng,
         category: 'accessible_toilet',
@@ -1484,6 +1498,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       const start = splitHHMM(marker.openTimeStart);
       const end = splitHHMM(marker.openTimeEnd);
       openDraftMenu({
+        clientRequestId: createMarkerRequestId(),
         lat: marker.lat,
         lng: marker.lng,
         category: marker.category,
@@ -1678,13 +1693,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   );
 
   const recenterToUserLocation = useCallback(async () => {
-    if (!locationPermissionGranted) {
-      showNotice('请先开启定位权限。');
-      return;
-    }
+    const granted = await syncLocationPermission(true, true);
+    if (!granted) return;
 
     if (!userLocation) {
-      const ok = await requestNativeCurrentLocation({recenter: true, silent: true});
+      const ok = await requestNativeCurrentLocation({
+        recenter: true,
+        silent: true,
+        permissionConfirmed: true,
+      });
       if (!ok) {
         showNotice('暂时无法获取定位，请稍后重试。');
       }
@@ -1696,9 +1713,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     );
   }, [
     injectJs,
-    locationPermissionGranted,
     requestNativeCurrentLocation,
     showNotice,
+    syncLocationPermission,
     userLocation,
   ]);
 
@@ -1719,6 +1736,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   );
 
   const resetDraftState = useCallback(() => {
+    setSubmissionCheckpoint(null);
     setCategorySelectOpen(false);
     setTimeFixHint('');
     setDraftImageFile(null);
@@ -1829,7 +1847,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   );
 
   const saveDraft = useCallback(async () => {
-    if (!draft) return;
+    if (!draft || savingDraft) return;
     if (!isLoggedIn) {
       showNotice('请先登录后再标点。');
       resetDraftState();
@@ -1875,50 +1893,25 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     }
 
     setSavingDraft(true);
+    setDraftImageError('');
     try {
-      let payload = editingId
-        ? await requestJson<unknown>(`/api/markers/${editingId}`, {
-            method: 'PATCH',
-            body: JSON.stringify({
-              category: draft.category,
-              title,
-              description: draft.description.trim(),
-              isPublic: draft.isPublic,
-              openTimeStart: start || '',
-              openTimeEnd: end || '',
-            }),
-          })
-        : await requestJson<unknown>('/api/markers', {
-            method: 'POST',
-            body: JSON.stringify({
-              lat: draft.lat,
-              lng: draft.lng,
-              category: draft.category,
-              title,
-              description: draft.description.trim(),
-              isPublic: draft.isPublic,
-              openTimeStart: start || '',
-              openTimeEnd: end || '',
-              markImage: null,
-            }),
-          });
-
-      let created = normalizeSingleMarker(payload);
-      if (!created) {
-        throw new Error('保存成功，但返回数据格式异常。');
-      }
-
-      if (draftImageFile) {
-        const form = new FormData();
-        appendUploadImageToFormData(form, 'file', draftImageFile);
-        payload = await requestJson<unknown>(`/api/markers/${created.id}/image`, {
-          method: 'POST',
-          body: form,
-          timeoutMs: 20000,
-        });
-        const withImage = normalizeSingleMarker(payload);
-        if (withImage) created = withImage;
-      }
+      const created = await submitMarkerWithImage({
+        clientRequestId: draft.clientRequestId,
+        editingId,
+        coordinates: {lat: draft.lat, lng: draft.lng},
+        fields: {
+          category: draft.category,
+          title,
+          description: draft.description.trim(),
+          isPublic: draft.isPublic,
+          openTimeStart: start || '',
+          openTimeEnd: end || '',
+        },
+        image: draftImageFile,
+        checkpoint: submissionCheckpoint,
+        normalizeMarker: normalizeSingleMarker,
+        onMarkerSaved: setSubmissionCheckpoint,
+      });
 
       setMarkers(prev => [created, ...prev.filter(marker => marker.id !== created.id)]);
       setSelectedMarkerId(created.id);
@@ -1927,6 +1920,7 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
       injectJs(`window.__rnSetView(${created.lat}, ${created.lng}, 15);`);
     } catch (e) {
       const message = e instanceof Error ? e.message : '保存失败';
+      if (e instanceof MarkerImageUploadError) setDraftImageError(message);
       showNotice(message);
     } finally {
       setSavingDraft(false);
@@ -1938,7 +1932,9 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     injectJs,
     isLoggedIn,
     resetDraftState,
+    savingDraft,
     showNotice,
+    submissionCheckpoint,
   ]);
 
   const confirmDeleteDraft = useCallback(async () => {
@@ -1985,19 +1981,25 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
   }, []);
 
   const searchNearby = useCallback(async () => {
-    if (!userLocation) {
-      showNotice('请先允许定位，再查询附近点位。');
-      return;
-    }
+    if (nearbyLoading) return;
+    const granted = await syncLocationPermission(true, true);
+    if (!granted) return;
     setNearbyLoading(true);
-    const params = new URLSearchParams({
-      lat: String(userLocation.latitude),
-      lng: String(userLocation.longitude),
-      radius: String(nearbyRadius),
-      category: nearbyCategory,
-    });
-
     try {
+      const location = userLocation ?? await requestNativeCurrentLocation({
+        silent: true,
+        permissionConfirmed: true,
+      });
+      if (!location) {
+        showNotice('暂时无法获取定位，请稍后重试。');
+        return;
+      }
+      const params = new URLSearchParams({
+        lat: String(location.latitude),
+        lng: String(location.longitude),
+        radius: String(nearbyRadius),
+        category: nearbyCategory,
+      });
       const payload = await requestJson<unknown>(
         `/api/markers/nearby?${params.toString()}`,
       );
@@ -2006,8 +2008,8 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
         .map(marker => ({
           ...marker,
           distanceMeters: haversineMeters(
-            userLocation.latitude,
-            userLocation.longitude,
+            location.latitude,
+            location.longitude,
             marker.lat,
             marker.lng,
           ),
@@ -2037,7 +2039,15 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
     } finally {
       setNearbyLoading(false);
     }
-  }, [nearbyCategory, nearbyRadius, showNotice, userLocation]);
+  }, [
+    nearbyCategory,
+    nearbyLoading,
+    nearbyRadius,
+    requestNativeCurrentLocation,
+    showNotice,
+    syncLocationPermission,
+    userLocation,
+  ]);
 
   const applyNearbyRadiusInput = useCallback(() => {
     const parsed = Number(nearbyRadiusInput.trim());
@@ -2224,12 +2234,18 @@ export function MapScreen({focusRequest, isActive = true}: MapScreenProps) {
             <Text style={styles.exitNearbyText}>退出附近筛选</Text>
           </Pressable>
         ) : null}
-        <Pressable style={styles.circleFab} onPress={recenterToUserLocation}>
+        <Pressable
+          accessibilityLabel="定位到当前位置"
+          accessibilityRole="button"
+          style={styles.circleFab}
+          onPress={recenterToUserLocation}>
           <Icon source="crosshairs-gps" size={21} color="#fff" />
         </Pressable>
       </View>
 
       <Pressable
+        accessibilityLabel="查询附近点位"
+        accessibilityRole="button"
         style={[
           styles.nearbyFab,
           {

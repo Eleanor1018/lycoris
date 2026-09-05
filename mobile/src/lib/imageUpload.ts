@@ -106,11 +106,11 @@ export const pickUploadImage = async (
       };
     }
 
-    if (options.mode === 'avatar' && looksLikeHeic(normalized)) {
+    if (looksLikeHeic(normalized)) {
       return {
         cancelled: false,
         file: null,
-        error: '当前头像仍是 HEIC 格式，地图中可能无法显示。请在相册中导出为 JPG/PNG 后再上传。',
+        error: '当前图片仍是 HEIC/HEIF 格式，请在相册中导出为 JPG/PNG 后再上传。',
       };
     }
 

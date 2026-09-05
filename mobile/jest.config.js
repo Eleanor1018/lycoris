@@ -1,6 +1,8 @@
 module.exports = {
   preset: 'react-native',
+  setupFiles: ['react-native-gesture-handler/jestSetup'],
+  setupFilesAfterEnv: ['<rootDir>/jest.setup.js'],
   transformIgnorePatterns: [
-    'node_modules/(?!((jest-)?react-native|@react-native(-community)?|react-native-vector-icons|react-native-paper|react-native-tab-view|react-native-pager-view|react-native-markdown-display|react-native-svg)/)',
+    'node_modules/(?!((jest-)?react-native(?:-[^/]+)?|@react-native(-community)?|@react-navigation)/)',
   ],
 };

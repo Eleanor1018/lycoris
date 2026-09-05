@@ -1,4 +1,9 @@
 import {buildApiUrl} from '../config/runtime';
+import {
+  getSessionGeneration,
+  notifySessionExpired,
+  SESSION_EXPIRED_MESSAGE,
+} from './session';
 
 export class ApiError extends Error {
   status: number;
@@ -32,11 +37,20 @@ type RequestJsonInit = RequestInit & {
   timeoutMs?: number;
 };
 
+const requiresSession = (path: string, method = 'GET') => {
+  const pathname = `/${path.replace(/^\/+/, '')}`.split(/[?#]/)[0].replace(/\/+$/, '');
+  if (/^\/api\/me(?:\/|$)/.test(pathname)) return true;
+  if (/^\/api\/markers\/me(?:\/|$)/.test(pathname)) return true;
+  return ['POST', 'PATCH', 'DELETE'].includes(method.toUpperCase()) &&
+    /^\/api\/markers(?:\/\d+(?:\/(?:image|favorite))?)?$/.test(pathname);
+};
+
 export const requestJson = async <T>(
   path: string,
   init: RequestJsonInit = {},
 ): Promise<T> => {
   const {timeoutMs = 12000, ...requestInit} = init;
+  const requestGeneration = getSessionGeneration();
   const headers = new Headers(requestInit.headers ?? {});
   if (!headers.has('Accept')) headers.set('Accept', 'application/json');
   const isFormDataBody =
@@ -68,6 +82,11 @@ export const requestJson = async <T>(
     throw error;
   }
   clearTimeout(timeout);
+
+  if (response.status === 401 && requiresSession(path, requestInit.method)) {
+    notifySessionExpired(requestGeneration);
+    throw new ApiError(401, SESSION_EXPIRED_MESSAGE);
+  }
 
   const raw = await parseMaybeJson(response);
   if (!response.ok) {

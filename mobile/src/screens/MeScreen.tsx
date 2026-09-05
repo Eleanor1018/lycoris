@@ -144,7 +144,7 @@ export function MeScreen({
   onNavigatePanel,
   onBack,
 }: MeScreenProps) {
-  const {loading, user, isLoggedIn, login, register, logout, refresh} = useAuth();
+  const {loading, user, isLoggedIn, sessionNotice, login, register, logout, refresh} = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [registerForm, setRegisterForm] = useState({
@@ -268,7 +268,8 @@ export function MeScreen({
       setCreatedPage(0);
       setFavoritePage(0);
       setMarkerListError('');
-      if (panel === 'created' || panel === 'favorites') {
+      setProfileEditOpen(false);
+      if (panel === 'created' || panel === 'favorites' || panel === 'password') {
         goPanel('root');
       }
     }
@@ -854,6 +855,7 @@ export function MeScreen({
           <>
             <View style={[styles.card, styles.rootPrimaryCardSpacing]}>
               <Text style={styles.title}>登录</Text>
+              {sessionNotice ? <Text style={styles.errorText}>{sessionNotice}</Text> : null}
               <Text style={styles.label}>用户名</Text>
               <TextInput
                 autoCapitalize="none"
