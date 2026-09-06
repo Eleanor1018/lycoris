@@ -57,7 +57,11 @@ public class SecurityConfig {
                     response.setContentType("application/json; charset=UTF-8");
                     response.getWriter().write("{\"message\":\"Spring Security Error\"}");
                 }))
-                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                        // AuthController rotates the ID on login and registration. Rotating again
+                        // when SessionAuthFilter restores identity invalidates in-flight requests.
+                        .sessionFixation(fixation -> fixation.none()))
                 .addFilterBefore(new SessionAuthFilter(userService), UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
