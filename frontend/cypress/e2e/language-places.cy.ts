@@ -14,8 +14,13 @@ const setupWindow = (win: Window, preference = 'en', systemLanguage = 'en-US') =
     })
 }
 const selectLanguage = (label: string) => {
-    cy.get('header button[aria-label="Language"], header button[aria-label="语言"]').filter(':visible').click()
-    cy.get('[role="menu"]').contains('[role="menuitem"]', label).click()
+    const targetLanguage = label === 'English' ? 'en' : 'zh-CN'
+    cy.get('html').then(($html) => {
+        if ($html.attr('lang') === targetLanguage) return
+        const action = label === 'English' ? '切换到英文' : 'Switch to Chinese'
+        cy.get(`header button[aria-label="${action}"]`).filter(':visible').click()
+    })
+    cy.get('html').should('have.attr', 'lang', targetLanguage)
 }
 
 describe('Localized places and shared navigation', () => {

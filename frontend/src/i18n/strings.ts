@@ -1,6 +1,7 @@
 // Chinese source strings are stable keys; marker content comes from the localized API.
 export const english: Record<string, string> = {
     '语言': 'Language', '跟随系统': 'System language',
+    '切换到英文': 'Switch to English', '切换到中文': 'Switch to Chinese',
     '地图': 'Map', '文档': 'Documents', '关于': 'About', '登录': 'Log in', '注册': 'Sign up',
     '个人中心': 'My profile', '退出登录': 'Log out', '返回首页': 'Home',
     '打开个人导航菜单': 'Open profile menu', '打开登录导航菜单': 'Open navigation menu',

@@ -26,6 +26,7 @@ import { useAuth } from '../auth/AuthProvider.tsx'
 import chisatoAvatar from '../../chisato.png'
 
 type NavItem = { label: string; to: string }
+const drawerEdgePadding = 'calc(16px + max(env(safe-area-inset-top, 0px), env(safe-area-inset-bottom, 0px)))'
 
 export default function NavigationBar() {
     const { t } = useLanguage()
@@ -259,6 +260,8 @@ export default function NavigationBar() {
                 PaperProps={{
                     sx: {
                         width: 'min(360px, 100vw)',
+                        display: 'flex',
+                        flexDirection: 'column',
                         borderRadius: 0,
                         background: 'linear-gradient(180deg, #f6f6f6 0%, #f8ebff 100%)',
                     },
@@ -269,8 +272,10 @@ export default function NavigationBar() {
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
+                        flexShrink: 0,
                         px: 2.5,
-                        py: 2,
+                        pt: drawerEdgePadding,
+                        pb: 2,
                         borderBottom: '1px solid rgba(221, 165, 196, 0.36)',
                     }}
                 >
@@ -285,80 +290,91 @@ export default function NavigationBar() {
                     >
                         Lycoris
                     </Typography>
-                    <LanguageSelector />
                     <IconButton onClick={closeNavMenu} aria-label={t("关闭导航菜单")}>
                         <CloseIcon />
                     </IconButton>
                 </Box>
 
-                {!isLoggedIn ? (
-                    <List sx={{ px: 2, py: 1.5 }}>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/login')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary={t("登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
-                        </ListItemButton>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/register')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary={t("注册")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
-                        </ListItemButton>
-                    </List>
-                ) : (
-                    <List sx={{ px: 2, py: 1.5 }}>
-                        <ListItemButton
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate('/me')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary={t("个人中心")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
-                        </ListItemButton>
-                        <ListItemButton
-                            onClick={async () => {
-                                closeNavMenu()
-                                await logout()
-                                navigate('/maps')
-                            }}
-                            sx={{ borderRadius: 999 }}
-                        >
-                            <ListItemText primary={t("退出登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
-                        </ListItemButton>
-                    </List>
-                )}
+                <Box sx={{ flex: 1, minHeight: 0, overflowY: 'auto' }}>
+                    {!isLoggedIn ? (
+                        <List sx={{ px: 2, py: 1.5 }}>
+                            <ListItemButton
+                                onClick={() => {
+                                    closeNavMenu()
+                                    navigate('/login')
+                                }}
+                                sx={{ borderRadius: 999 }}
+                            >
+                                <ListItemText primary={t("登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            </ListItemButton>
+                            <ListItemButton
+                                onClick={() => {
+                                    closeNavMenu()
+                                    navigate('/register')
+                                }}
+                                sx={{ borderRadius: 999 }}
+                            >
+                                <ListItemText primary={t("注册")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            </ListItemButton>
+                        </List>
+                    ) : (
+                        <List sx={{ px: 2, py: 1.5 }}>
+                            <ListItemButton
+                                onClick={() => {
+                                    closeNavMenu()
+                                    navigate('/me')
+                                }}
+                                sx={{ borderRadius: 999 }}
+                            >
+                                <ListItemText primary={t("个人中心")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            </ListItemButton>
+                            <ListItemButton
+                                onClick={async () => {
+                                    closeNavMenu()
+                                    await logout()
+                                    navigate('/maps')
+                                }}
+                                sx={{ borderRadius: 999 }}
+                            >
+                                <ListItemText primary={t("退出登录")} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            </ListItemButton>
+                        </List>
+                    )}
 
-                <Divider />
+                    <Divider />
 
-                <List sx={{ px: 2, py: 1.5 }}>
-                    {navItems.map((item) => (
-                        <ListItemButton
-                            key={item.to}
-                            selected={isActive(item.to)}
-                            onClick={() => {
-                                closeNavMenu()
-                                navigate(item.to)
-                            }}
-                            sx={{
-                                borderRadius: 999,
-                                color: 'var(--ly-color-ink)',
-                                '&.Mui-selected': {
-                                    bgcolor: 'rgba(208, 188, 255, 0.52)',
-                                },
-                            }}
-                        >
-                            <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
-                        </ListItemButton>
-                    ))}
-                </List>
+                    <List sx={{ px: 2, py: 1.5 }}>
+                        {navItems.map((item) => (
+                            <ListItemButton
+                                key={item.to}
+                                selected={isActive(item.to)}
+                                onClick={() => {
+                                    closeNavMenu()
+                                    navigate(item.to)
+                                }}
+                                sx={{
+                                    borderRadius: 999,
+                                    color: 'var(--ly-color-ink)',
+                                    '&.Mui-selected': {
+                                        bgcolor: 'rgba(208, 188, 255, 0.52)',
+                                    },
+                                }}
+                            >
+                                <ListItemText primary={item.label} primaryTypographyProps={{ fontWeight: 700, fontSize: 15 }} />
+                            </ListItemButton>
+                        ))}
+                    </List>
+                </Box>
+
+                <Box sx={{
+                    display: 'flex',
+                    flexShrink: 0,
+                    px: 2.5,
+                    pt: 2,
+                    pb: drawerEdgePadding,
+                }}>
+                    <LanguageSelector />
+                </Box>
             </Drawer>
         </AppBar>
         </>
