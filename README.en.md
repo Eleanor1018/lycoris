@@ -48,6 +48,8 @@ If this small light helps someone through a difficult night, everything we have 
 
 ## Technology
 
+Developer overview: [Architecture (Chinese)](./docs/architecture.md).
+
 - `frontend`: React and TypeScript
 - `backend`: Spring Boot and Java
 - `mobile`: React Native and TypeScript, with Android / iOS native bridges

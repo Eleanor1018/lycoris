@@ -49,6 +49,8 @@ APK 包含运行所需的 JavaScript 和文档资源，**不需要启动 Metro**
 
 ## 技术栈
 
+开发者快速了解项目：[程序架构](./docs/architecture.md)。
+
 - frontend： React(Typescript)
 - backend: Spring-Boot(Java)
 - mobile: React Native（TypeScript，包含 Android / iOS 原生桥接）
