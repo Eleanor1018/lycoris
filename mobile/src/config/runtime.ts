@@ -1,8 +1,26 @@
-import {NativeModules} from 'react-native';
+import { NativeModules, Platform } from 'react-native';
 
 const trimTrailingSlash = (value: string) => value.replace(/\/+$/, '');
 
-const defaultDevBaseUrl = 'http://10.0.2.2:8080';
+const defaultDevBaseUrl = () => {
+  if (Platform.OS !== 'ios') return 'http://10.0.2.2:8080';
+  // A physical iPhone cannot reach the Mac through localhost. Reuse Metro's
+  // host when available; explicit runtime configuration still takes priority.
+  try {
+    const sourceCode = NativeModules.SourceCode;
+    const scriptURL =
+      sourceCode?.scriptURL ?? sourceCode?.getConstants?.()?.scriptURL;
+    const host =
+      typeof scriptURL === 'string'
+        ? /^https?:\/\/(\[[0-9a-f:.]+\]|[a-z0-9.-]+)(?::\d+)?(?:[/?#]|$)/i.exec(
+            scriptURL,
+          )?.[1]
+        : undefined;
+    return `http://${host || 'localhost'}:8080`;
+  } catch {
+    return 'http://localhost:8080';
+  }
+};
 const defaultProdBaseUrl = 'https://api.lycoris.online';
 
 type LyRuntimeGlobals = {
@@ -33,7 +51,7 @@ const apiBaseOverride = pickConfigValue(
 );
 
 export const API_BASE_URL = trimTrailingSlash(
-  apiBaseOverride || (__DEV__ ? defaultDevBaseUrl : defaultProdBaseUrl),
+  apiBaseOverride || (__DEV__ ? defaultDevBaseUrl() : defaultProdBaseUrl),
 );
 
 export const WEB_BASE_URL = 'https://lycoris.online';
@@ -56,7 +74,9 @@ const isAbsoluteUrl = (value: string) =>
   value.startsWith('data:') ||
   value.startsWith('blob:');
 
-export const toBackendAssetUrl = (value?: string | null): string | undefined => {
+export const toBackendAssetUrl = (
+  value?: string | null,
+): string | undefined => {
   if (!value) return undefined;
   if (isAbsoluteUrl(value)) return value;
   if (!API_BASE_URL) return value;

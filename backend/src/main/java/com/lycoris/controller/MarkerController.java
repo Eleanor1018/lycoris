@@ -6,26 +6,24 @@ import com.lycoris.entity.MapMarker;
 import com.lycoris.entity.MarkerEditProposal;
 import com.lycoris.entity.MarkerImageProposal;
 import com.lycoris.entity.MarkerFavorite;
+import com.lycoris.entity.User;
 import com.lycoris.repository.MarkerEditProposalRepository;
 import com.lycoris.repository.MarkerImageProposalRepository;
 import com.lycoris.service.MapMarkerService;
 import com.lycoris.service.UserService;
+import com.lycoris.service.MarkerAccess;
+import com.lycoris.service.ImageUploadService;
 import com.lycoris.repository.MarkerFavoriteRepository;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/markers")
@@ -36,21 +34,39 @@ public class MarkerController {
     private final MarkerFavoriteRepository favoriteRepo;
     private final MarkerImageProposalRepository imageProposalRepo;
     private final MarkerEditProposalRepository editProposalRepo;
-    @Value("${app.upload-dir}")
-    private String uploadDir;
+    private final ImageUploadService imageUploadService;
 
     public MarkerController(
             MapMarkerService markerService,
             UserService userService,
             MarkerFavoriteRepository favoriteRepo,
             MarkerImageProposalRepository imageProposalRepo,
-            MarkerEditProposalRepository editProposalRepo
+            MarkerEditProposalRepository editProposalRepo,
+            ImageUploadService imageUploadService
     ) {
         this.markerService = markerService;
         this.userService = userService;
         this.favoriteRepo = favoriteRepo;
         this.imageProposalRepo = imageProposalRepo;
         this.editProposalRepo = editProposalRepo;
+        this.imageUploadService = imageUploadService;
+    }
+
+    private User currentUser(HttpSession session) {
+        if (session == null || session.getAttribute("userId") == null) return null;
+        try {
+            return userService.findById(Integer.valueOf(String.valueOf(session.getAttribute("userId")))).orElse(null);
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<?> detail(@PathVariable("id") Long id, HttpSession session) {
+        User viewer = currentUser(session);
+        return markerService.findById(id).filter(marker -> MarkerAccess.canView(marker, viewer))
+                .<ResponseEntity<?>>map(ResponseEntity::ok)
+                .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
     // 创建点（必须登录：靠 session）
@@ -169,6 +185,9 @@ public class MarkerController {
         }
 
         return markerService.findById(id).map(marker -> {
+            if (!MarkerAccess.canView(marker, currentUser(session))) {
+                return ResponseEntity.status(404).body("点位不存在");
+            }
             String userPublicId = userService.findById(userId)
                     .map(user -> String.valueOf(user.getPublicId()))
                     .orElse(null);
@@ -176,15 +195,7 @@ public class MarkerController {
                 return ResponseEntity.status(401).body("请先登录");
             }
             try {
-                String ext = StringUtils.getFilenameExtension(file.getOriginalFilename());
-                String safeExt = (ext == null || ext.isBlank()) ? "png" : ext.toLowerCase();
-                String filename = "proposal-marker-" + id + "-" + UUID.randomUUID() + "." + safeExt;
-                Path imageDir = Paths.get(uploadDir, "markers");
-                Files.createDirectories(imageDir);
-                Path target = imageDir.resolve(filename);
-                Files.copy(file.getInputStream(), target);
-
-                String url = "/uploads/markers/" + filename;
+                String url = imageUploadService.storeImage(file, "markers", "proposal-marker-" + id);
                 MarkerImageProposal proposal = new MarkerImageProposal();
                 proposal.setMarkerId(marker.getId());
                 proposal.setMarkerTitle(marker.getTitle());
@@ -195,6 +206,8 @@ public class MarkerController {
                 imageProposalRepo.save(proposal);
 
                 return ResponseEntity.ok(marker);
+            } catch (IllegalArgumentException e) {
+                return ResponseEntity.badRequest().body(e.getMessage());
             } catch (Exception e) {
                 return ResponseEntity.status(500).body("上传失败");
             }
@@ -220,13 +233,15 @@ public class MarkerController {
 
         return markerService.findById(id)
                 .<ResponseEntity<?>>map(marker -> {
+            if (!MarkerAccess.canView(marker, currentUser(session))) {
+                return ResponseEntity.status(404).body("点位不存在");
+            }
             String proposedCategory = marker.getCategory();
             if (req.getCategory() != null) {
                 proposedCategory = markerService.normalizeCategoryForWrite(req.getCategory());
             }
 
-            String proposedTitle = req.getTitle() != null ? req.getTitle() : marker.getTitle();
-            String proposedDescription = req.getDescription() != null ? req.getDescription() : marker.getDescription();
+            MapMarkerService.EditText proposedText = markerService.resolveEditText(marker, req);
             Boolean proposedIsPublic = req.getIsPublic() != null ? req.getIsPublic() : marker.getIsPublic();
             Boolean proposedIsActive = req.getIsActive() != null ? req.getIsActive() : marker.getIsActive();
 
@@ -244,6 +259,7 @@ public class MarkerController {
             boolean isOwner = marker.getUserPublicId() != null && marker.getUserPublicId().equals(userPublicId);
 
             MarkerEditProposal proposal = new MarkerEditProposal();
+            proposal.setBaseMarkerVersion(marker.getVersion());
             proposal.setMarkerId(marker.getId());
             proposal.setMarkerTitle(marker.getTitle());
             proposal.setMarkerLat(marker.getLat());
@@ -252,8 +268,9 @@ public class MarkerController {
             proposal.setProposerPublicId(userPublicId);
             proposal.setProposerIsOwner(isOwner);
             proposal.setCategory(proposedCategory);
-            proposal.setTitle(proposedTitle);
-            proposal.setDescription(proposedDescription);
+            proposal.setTitle(proposedText.title());
+            proposal.setDescription(proposedText.description());
+            proposal.setLanguage(proposedText.language());
             proposal.setIsPublic(proposedIsPublic);
             proposal.setIsActive(proposedIsActive);
             proposal.setOpenTimeStart(proposedOpenStart);
@@ -307,7 +324,7 @@ public class MarkerController {
             return ResponseEntity.status(401).body("请先登录");
         }
 
-        if (!markerService.findById(id).isPresent()) {
+        if (markerService.findById(id).filter(marker -> MarkerAccess.canView(marker, currentUser(session))).isEmpty()) {
             return ResponseEntity.status(404).body("点位不存在");
         }
         if (!favoriteRepo.existsByUserPublicIdAndMarkerId(userPublicId, id)) {
@@ -351,7 +368,9 @@ public class MarkerController {
 
         List<MarkerFavorite> favs = favoriteRepo.findByUserPublicId(userPublicId);
         List<Long> ids = favs.stream().map(MarkerFavorite::getMarkerId).toList();
-        return ResponseEntity.ok(ids);
+        User viewer = currentUser(session);
+        return ResponseEntity.ok(markerService.listByIds(ids).stream()
+                .filter(marker -> MarkerAccess.canView(marker, viewer)).map(MapMarker::getId).toList());
     }
 
     @GetMapping("/me/created")
@@ -387,6 +406,8 @@ public class MarkerController {
                 .map(MarkerFavorite::getMarkerId)
                 .toList();
         if (ids.isEmpty()) return ResponseEntity.ok(List.of());
-        return ResponseEntity.ok(markerService.listByIds(ids));
+        User viewer = currentUser(session);
+        return ResponseEntity.ok(markerService.listByIds(ids).stream()
+                .filter(marker -> MarkerAccess.canView(marker, viewer)).toList());
     }
 }

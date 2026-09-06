@@ -26,6 +26,10 @@ public class MapMarker {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private Long version = 0L;
+
     // 坐标
     @Column(nullable = false)
     private Double lat;
@@ -42,6 +46,12 @@ public class MapMarker {
 
     @Column(columnDefinition = "text")
     private String description;
+
+    @Column(nullable = false, length = 2, columnDefinition = "varchar(2) not null default 'zh'")
+    private String sourceLanguage = "zh";
+
+    @Transient
+    private String contentLanguage;
 
     @Column(nullable = false)
     private Boolean isPublic = true;

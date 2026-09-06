@@ -47,7 +47,7 @@ spring:
         format_sql: true
   web:
     resources:
-      static-locations: file:${app.upload-dir}/, classpath:/static/
+      static-locations: classpath:/static/
 
 app:
   upload-dir: ${user.dir}/uploads

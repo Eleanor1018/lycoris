@@ -7,4 +7,6 @@ import java.util.List;
 
 public interface MarkerImageProposalRepository extends JpaRepository<MarkerImageProposal, Long> {
     List<MarkerImageProposal> findByStatusOrderByCreatedAtDesc(String status);
+
+    List<MarkerImageProposal> findByImageUrl(String imageUrl);
 }

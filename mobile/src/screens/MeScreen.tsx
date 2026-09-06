@@ -1,4 +1,10 @@
-import React, {useCallback, useEffect, useMemo, useState} from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -13,16 +19,18 @@ import {
   View,
 } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import {Icon} from 'react-native-paper';
-import {ApiError, requestJson} from '../lib/http';
+import { Icon } from 'react-native-paper';
+import { ApiError, isAbortError, requestJson } from '../lib/http';
+import { useLanguage } from '../i18n/useLanguage';
+import { translate as t } from '../i18n/messages';
 import {
   appendUploadImageToFormData,
   pickUploadImage,
   type LocalUploadImage,
 } from '../lib/imageUpload';
-import {colors} from '../theme/colors';
-import {useAuth} from '../auth/AuthProvider';
-import {PageBackground} from '../components/PageBackground';
+import { colors } from '../theme/colors';
+import { useAuth } from '../auth/AuthProvider';
+import { PageBackground } from '../components/PageBackground';
 import aboutMarkdownRaw from '../docs/about.md';
 
 export type MePanel =
@@ -71,7 +79,7 @@ const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
     const row = item as MarkerApiRow;
     const id = Number(row.id);
     if (!Number.isFinite(id)) continue;
-    const title = row.title?.trim() || '未命名点位';
+    const title = row.title?.trim() || t('未命名点位');
     const categoryRaw = row.category || 'self_definition';
     const category = categoryLabelMap[categoryRaw] ?? categoryRaw;
     const updatedAtRaw = (row.updatedAt ?? row.createdAt ?? '').toString();
@@ -90,14 +98,14 @@ const normalizeMarkerRows = (raw: unknown): MarkerRow[] => {
   return rows;
 };
 
-function AboutEntryCard({onPress}: {onPress: () => void}) {
+function AboutEntryCard({ onPress }: { onPress: () => void }) {
   return (
     <Pressable onPress={onPress} style={styles.menuEntryCard}>
       <View style={styles.menuEntryIconWrap}>
         <Icon source="information-outline" size={22} color={colors.primary} />
       </View>
       <View style={styles.menuEntryTextWrap}>
-        <Text style={styles.menuEntryTitle}>关于夏水仙</Text>
+        <Text style={styles.menuEntryTitle}>{t('关于夏水仙')}</Text>
       </View>
       <Icon source="chevron-right" size={20} color={colors.textSecondary} />
     </Pressable>
@@ -144,7 +152,19 @@ export function MeScreen({
   onNavigatePanel,
   onBack,
 }: MeScreenProps) {
-  const {loading, user, isLoggedIn, login, register, logout, refresh} = useAuth();
+  const { language } = useLanguage();
+  const markerListAbortRef = useRef<AbortController | null>(null);
+  const markerListSeqRef = useRef(0);
+  const {
+    loading,
+    user,
+    isLoggedIn,
+    sessionNotice,
+    login,
+    register,
+    logout,
+    refresh,
+  } = useAuth();
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [registerForm, setRegisterForm] = useState({
@@ -169,9 +189,8 @@ export function MeScreen({
   const [profileEditOpen, setProfileEditOpen] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
   const [profileError, setProfileError] = useState('');
-  const [avatarDraftFile, setAvatarDraftFile] = useState<LocalUploadImage | null>(
-    null,
-  );
+  const [avatarDraftFile, setAvatarDraftFile] =
+    useState<LocalUploadImage | null>(null);
   const [avatarPicking, setAvatarPicking] = useState(false);
   const [avatarHint, setAvatarHint] = useState('');
   const [avatarError, setAvatarError] = useState('');
@@ -219,7 +238,10 @@ export function MeScreen({
 
   const createdSlice = useMemo(
     () =>
-      createdRows.slice(createdPage * rowsPerPage, (createdPage + 1) * rowsPerPage),
+      createdRows.slice(
+        createdPage * rowsPerPage,
+        (createdPage + 1) * rowsPerPage,
+      ),
     [createdPage, createdRows],
   );
   const favoriteSlice = useMemo(
@@ -232,19 +254,36 @@ export function MeScreen({
   );
 
   const loadMarkerLists = useCallback(async () => {
+    const seq = ++markerListSeqRef.current;
+    markerListAbortRef.current?.abort();
+    const controller = new AbortController();
+    markerListAbortRef.current = controller;
     if (!isLoggedIn) return;
     try {
       setMarkerListLoading(true);
       setMarkerListError('');
       const [createdRes, favoriteRes] = await Promise.all([
-        requestJson<unknown>('/api/markers/me/created'),
-        requestJson<unknown>('/api/markers/me/favorites/details'),
+        requestJson<unknown>('/api/markers/me/created', {
+          language,
+          signal: controller.signal,
+        }),
+        requestJson<unknown>('/api/markers/me/favorites/details', {
+          language,
+          signal: controller.signal,
+        }),
       ]);
+      if (seq !== markerListSeqRef.current || controller.signal.aborted) return;
       setCreatedRows(normalizeMarkerRows(createdRes));
       setFavoriteRows(normalizeMarkerRows(favoriteRes));
       setCreatedPage(0);
       setFavoritePage(0);
     } catch (e) {
+      if (
+        seq !== markerListSeqRef.current ||
+        controller.signal.aborted ||
+        isAbortError(e)
+      )
+        return;
       setCreatedRows([]);
       setFavoriteRows([]);
       setCreatedPage(0);
@@ -254,12 +293,22 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setMarkerListError(e.message);
       } else {
-        setMarkerListError('加载点位列表失败，请稍后重试。');
+        setMarkerListError(t('加载点位列表失败，请稍后重试。'));
       }
     } finally {
-      setMarkerListLoading(false);
+      if (seq === markerListSeqRef.current) setMarkerListLoading(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, language]);
+
+  useEffect(() => {
+    setCreatedRows([]);
+    setFavoriteRows([]);
+    setMarkerListError('');
+    setMarkerListLoading(false);
+    return () => {
+      markerListAbortRef.current?.abort();
+    };
+  }, [language, user?.publicId]);
 
   useEffect(() => {
     if (!isLoggedIn) {
@@ -268,7 +317,12 @@ export function MeScreen({
       setCreatedPage(0);
       setFavoritePage(0);
       setMarkerListError('');
-      if (panel === 'created' || panel === 'favorites') {
+      setProfileEditOpen(false);
+      if (
+        panel === 'created' ||
+        panel === 'favorites' ||
+        panel === 'password'
+      ) {
         goPanel('root');
       }
     }
@@ -279,12 +333,12 @@ export function MeScreen({
     if (panel === 'created' || panel === 'favorites') {
       loadMarkerLists().catch(() => {});
     }
-  }, [isLoggedIn, loadMarkerLists, panel]);
+  }, [isLoggedIn, loadMarkerLists, panel, user?.publicId]);
 
   const doLogin = async () => {
     const uname = username.trim();
     if (!uname || !password) {
-      setError('请输入用户名和密码');
+      setError(t('请输入用户名和密码'));
       return;
     }
     try {
@@ -300,7 +354,7 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setError(e.message);
       } else {
-        setError('登录失败，请稍后再试');
+        setError(t('登录失败，请稍后再试'));
       }
     } finally {
       setBusy(false);
@@ -316,12 +370,17 @@ export function MeScreen({
       website: registerForm.website,
     };
 
-    if (!payload.username || !payload.nickname || !payload.email || !payload.password) {
-      setRegisterError('请完整填写注册信息');
+    if (
+      !payload.username ||
+      !payload.nickname ||
+      !payload.email ||
+      !payload.password
+    ) {
+      setRegisterError(t('请完整填写注册信息'));
       return;
     }
     if (payload.password !== password2) {
-      setRegisterError('两次密码输入不一致');
+      setRegisterError(t('两次密码输入不一致'));
       return;
     }
 
@@ -345,7 +404,7 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setRegisterError(e.message);
       } else {
-        setRegisterError('注册失败，请稍后再试');
+        setRegisterError(t('注册失败，请稍后再试'));
       }
     } finally {
       setBusy(false);
@@ -380,7 +439,7 @@ export function MeScreen({
     if (profileSaving || avatarPicking) return;
     setAvatarPicking(true);
     setAvatarError('');
-    const result = await pickUploadImage({mode: 'avatar'});
+    const result = await pickUploadImage({ mode: 'avatar' });
     setAvatarPicking(false);
 
     if (result.cancelled) return;
@@ -427,7 +486,7 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setProfileError(e.message);
       } else {
-        setProfileError('保存失败，请稍后再试');
+        setProfileError(t('保存失败，请稍后再试'));
       }
     } finally {
       setProfileSaving(false);
@@ -436,11 +495,11 @@ export function MeScreen({
 
   const doChangePassword = async () => {
     if (!passwordForm.oldPassword || !passwordForm.newPassword) {
-      setPasswordError('请填写完整');
+      setPasswordError(t('请填写完整'));
       return;
     }
     if (passwordForm.newPassword !== passwordForm.confirm) {
-      setPasswordError('两次新密码不一致');
+      setPasswordError(t('两次新密码不一致'));
       return;
     }
     try {
@@ -454,8 +513,8 @@ export function MeScreen({
           newPassword: passwordForm.newPassword,
         }),
       });
-      setPasswordForm({oldPassword: '', newPassword: '', confirm: ''});
-      setPasswordSuccess('修改成功');
+      setPasswordForm({ oldPassword: '', newPassword: '', confirm: '' });
+      setPasswordSuccess(t('修改成功'));
       setTimeout(() => {
         setPasswordSuccess('');
         goPanel('root');
@@ -466,7 +525,7 @@ export function MeScreen({
       } else if (e instanceof Error) {
         setPasswordError(e.message);
       } else {
-        setPasswordError('修改失败');
+        setPasswordError(t('修改失败'));
       }
     } finally {
       setPasswordBusy(false);
@@ -488,7 +547,7 @@ export function MeScreen({
       <View style={styles.loadingWrap}>
         <PageBackground />
         <ActivityIndicator color={colors.primary} />
-        <Text style={styles.loadingText}>正在读取登录状态...</Text>
+        <Text style={styles.loadingText}>{t('正在读取登录状态...')}</Text>
       </View>
     );
   }
@@ -506,13 +565,15 @@ export function MeScreen({
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.aboutContent}
-          showsVerticalScrollIndicator={false}>
+          showsVerticalScrollIndicator={false}
+        >
           <Markdown
             style={aboutMarkdownStyles}
             onLinkPress={url => {
               Linking.openURL(url).catch(() => {});
               return false;
-            }}>
+            }}
+          >
             {aboutMarkdown}
           </Markdown>
         </ScrollView>
@@ -522,15 +583,16 @@ export function MeScreen({
 
   if (panel === 'created' || panel === 'favorites') {
     const isCreatedPanel = panel === 'created';
-    const title = isCreatedPanel ? '我创建的点位' : '我收藏的点位';
+    const title = isCreatedPanel ? t('我创建的点位') : t('我收藏的点位');
     const rows = isCreatedPanel ? createdRows : favoriteRows;
     const page = isCreatedPanel ? createdPage : favoritePage;
     const setPage = isCreatedPanel ? setCreatedPage : setFavoritePage;
     const slice = isCreatedPanel ? createdSlice : favoriteSlice;
-    const emptyText = isCreatedPanel ? '暂无创建点位' : '暂无收藏点位';
+    const emptyText = isCreatedPanel ? t('暂无创建点位') : t('暂无收藏点位');
     const pageCount = Math.max(1, Math.ceil(rows.length / rowsPerPage));
     const rangeStart = rows.length === 0 ? 0 : page * rowsPerPage + 1;
-    const rangeEnd = rows.length === 0 ? 0 : Math.min((page + 1) * rowsPerPage, rows.length);
+    const rangeEnd =
+      rows.length === 0 ? 0 : Math.min((page + 1) * rowsPerPage, rows.length);
 
     return (
       <View style={styles.page}>
@@ -544,15 +606,21 @@ export function MeScreen({
 
         <View style={styles.card}>
           <View style={styles.markerListHeaderRow}>
-            <Text style={[styles.markerListHeaderText, styles.markerTitleCol]}>名称</Text>
-            <Text style={[styles.markerListHeaderText, styles.markerTypeCol]}>类型</Text>
-            <Text style={[styles.markerListHeaderText, styles.markerDateCol]}>更新</Text>
+            <Text style={[styles.markerListHeaderText, styles.markerTitleCol]}>
+              {t('名称')}
+            </Text>
+            <Text style={[styles.markerListHeaderText, styles.markerTypeCol]}>
+              {t('类型')}
+            </Text>
+            <Text style={[styles.markerListHeaderText, styles.markerDateCol]}>
+              {t('更新')}
+            </Text>
           </View>
 
           {markerListLoading ? (
             <View style={styles.markerListLoadingWrap}>
               <ActivityIndicator color={colors.primary} />
-              <Text style={styles.menuEntrySubtitle}>正在加载...</Text>
+              <Text style={styles.menuEntrySubtitle}>{t('正在加载...')}</Text>
             </View>
           ) : slice.length === 0 ? (
             <Text style={styles.markerListEmptyText}>{emptyText}</Text>
@@ -561,14 +629,24 @@ export function MeScreen({
               <Pressable
                 key={`${panel}-${row.id}`}
                 onPress={() => openMarkerOnMap(row)}
-                style={styles.markerListRow}>
-                <Text style={[styles.markerListCellText, styles.markerTitleCol]} numberOfLines={3}>
+                style={styles.markerListRow}
+              >
+                <Text
+                  style={[styles.markerListCellText, styles.markerTitleCol]}
+                  numberOfLines={3}
+                >
                   {row.title}
                 </Text>
-                <Text style={[styles.markerListCellText, styles.markerTypeCol]} numberOfLines={1}>
-                  {row.category}
+                <Text
+                  style={[styles.markerListCellText, styles.markerTypeCol]}
+                  numberOfLines={1}
+                >
+                  {t(row.category)}
                 </Text>
-                <Text style={[styles.markerListCellText, styles.markerDateCol]} numberOfLines={1}>
+                <Text
+                  style={[styles.markerListCellText, styles.markerDateCol]}
+                  numberOfLines={1}
+                >
                   {row.updatedAt}
                 </Text>
               </Pressable>
@@ -586,7 +664,8 @@ export function MeScreen({
                   page <= 0 && styles.markerPagerBtnDisabled,
                 ]}
                 disabled={page <= 0}
-                onPress={() => setPage(prev => Math.max(0, prev - 1))}>
+                onPress={() => setPage(prev => Math.max(0, prev - 1))}
+              >
                 <Icon source="chevron-left" size={20} color={colors.primary} />
               </Pressable>
               <Pressable
@@ -596,23 +675,29 @@ export function MeScreen({
                 ]}
                 disabled={page >= pageCount - 1}
                 onPress={() =>
-                  setPage(prev => Math.min(Math.max(0, pageCount - 1), prev + 1))
-                }>
+                  setPage(prev =>
+                    Math.min(Math.max(0, pageCount - 1), prev + 1),
+                  )
+                }
+              >
                 <Icon source="chevron-right" size={20} color={colors.primary} />
               </Pressable>
             </View>
           </View>
 
-          {markerListError ? <Text style={styles.errorText}>{markerListError}</Text> : null}
+          {markerListError ? (
+            <Text style={styles.errorText}>{markerListError}</Text>
+          ) : null}
 
           <Pressable
             style={styles.markerReloadBtn}
             disabled={markerListLoading}
             onPress={() => {
               loadMarkerLists().catch(() => {});
-            }}>
+            }}
+          >
             <Text style={styles.markerReloadBtnText}>
-              {markerListLoading ? '刷新中...' : '刷新列表'}
+              {markerListLoading ? t('刷新中...') : t('刷新列表')}
             </Text>
           </Pressable>
         </View>
@@ -628,72 +713,75 @@ export function MeScreen({
           <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
             <Icon source="arrow-left" size={18} color={colors.primary} />
           </Pressable>
-          <Text style={styles.title}>注册</Text>
-          <Text style={styles.subtitle}>创建账号后可同步收藏与个人资料</Text>
+          <Text style={styles.title}>{t('注册')}</Text>
+          <Text style={styles.subtitle}>
+            {t('创建账号后可同步收藏与个人资料')}
+          </Text>
         </View>
 
         <ScrollView
           style={styles.scroll}
           contentContainerStyle={styles.formScrollContent}
-          keyboardShouldPersistTaps="handled">
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={styles.card}>
-            <Text style={styles.label}>用户名</Text>
+            <Text style={styles.label}>{t('用户名')}</Text>
             <TextInput
               autoCapitalize="none"
               value={registerForm.username}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, username: value}))
+                setRegisterForm(prev => ({ ...prev, username: value }))
               }
               style={styles.input}
-              placeholder="请输入用户名"
+              placeholder={t('请输入用户名')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>昵称</Text>
+            <Text style={styles.label}>{t('昵称')}</Text>
             <TextInput
               value={registerForm.nickname}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, nickname: value}))
+                setRegisterForm(prev => ({ ...prev, nickname: value }))
               }
               style={styles.input}
-              placeholder="请输入昵称"
+              placeholder={t('请输入昵称')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>邮箱</Text>
+            <Text style={styles.label}>{t('邮箱')}</Text>
             <TextInput
               autoCapitalize="none"
               keyboardType="email-address"
               value={registerForm.email}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, email: value}))
+                setRegisterForm(prev => ({ ...prev, email: value }))
               }
               style={styles.input}
-              placeholder="请输入邮箱"
+              placeholder={t('请输入邮箱')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>密码</Text>
+            <Text style={styles.label}>{t('密码')}</Text>
             <TextInput
               autoCapitalize="none"
               secureTextEntry
               value={registerForm.password}
               onChangeText={value =>
-                setRegisterForm(prev => ({...prev, password: value}))
+                setRegisterForm(prev => ({ ...prev, password: value }))
               }
               style={styles.input}
-              placeholder="请输入密码"
+              placeholder={t('请输入密码')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>再次输入密码</Text>
+            <Text style={styles.label}>{t('再次输入密码')}</Text>
             <TextInput
               autoCapitalize="none"
               secureTextEntry
               value={password2}
               onChangeText={setPassword2}
               style={styles.input}
-              placeholder="请再次输入密码"
+              placeholder={t('请再次输入密码')}
               placeholderTextColor="#8a7fa6"
             />
 
@@ -701,18 +789,25 @@ export function MeScreen({
               <Text style={styles.errorText}>{registerError}</Text>
             ) : null}
 
-            <Pressable onPress={doRegister} style={styles.loginBtn} disabled={busy}>
-              <Text style={styles.loginBtnText}>{busy ? '注册中...' : '注册'}</Text>
+            <Pressable
+              onPress={doRegister}
+              style={styles.loginBtn}
+              disabled={busy}
+            >
+              <Text style={styles.loginBtnText}>
+                {busy ? t('注册中...') : t('注册')}
+              </Text>
             </Pressable>
 
             <View style={styles.formLinkRow}>
-              <Text style={styles.formLinkHint}>已经有账号？</Text>
+              <Text style={styles.formLinkHint}>{t('已经有账号？')}</Text>
               <Pressable
                 onPress={() => {
                   setError('');
                   goPanel('root');
-                }}>
-                <Text style={styles.formLinkText}>去登录</Text>
+                }}
+              >
+                <Text style={styles.formLinkText}>{t('去登录')}</Text>
               </Pressable>
             </View>
           </View>
@@ -729,57 +824,63 @@ export function MeScreen({
           <Pressable style={styles.backRow} onPress={() => goPanel('root')}>
             <Icon source="arrow-left" size={18} color={colors.primary} />
           </Pressable>
-          <Text style={styles.title}>修改密码</Text>
-          <Text style={styles.subtitle}>用于保护你的账号安全</Text>
+          <Text style={styles.title}>{t('修改密码')}</Text>
+          <Text style={styles.subtitle}>{t('用于保护你的账号安全')}</Text>
         </View>
         <View style={styles.card}>
-          <Text style={styles.label}>原密码</Text>
+          <Text style={styles.label}>{t('原密码')}</Text>
           <TextInput
             autoCapitalize="none"
             secureTextEntry
             value={passwordForm.oldPassword}
             onChangeText={value =>
-              setPasswordForm(prev => ({...prev, oldPassword: value}))
+              setPasswordForm(prev => ({ ...prev, oldPassword: value }))
             }
             style={styles.input}
-            placeholder="请输入原密码"
+            placeholder={t('请输入原密码')}
             placeholderTextColor="#8a7fa6"
           />
 
-          <Text style={styles.label}>新密码</Text>
+          <Text style={styles.label}>{t('新密码')}</Text>
           <TextInput
             autoCapitalize="none"
             secureTextEntry
             value={passwordForm.newPassword}
             onChangeText={value =>
-              setPasswordForm(prev => ({...prev, newPassword: value}))
+              setPasswordForm(prev => ({ ...prev, newPassword: value }))
             }
             style={styles.input}
-            placeholder="请输入新密码"
+            placeholder={t('请输入新密码')}
             placeholderTextColor="#8a7fa6"
           />
 
-          <Text style={styles.label}>确认新密码</Text>
+          <Text style={styles.label}>{t('确认新密码')}</Text>
           <TextInput
             autoCapitalize="none"
             secureTextEntry
             value={passwordForm.confirm}
             onChangeText={value =>
-              setPasswordForm(prev => ({...prev, confirm: value}))
+              setPasswordForm(prev => ({ ...prev, confirm: value }))
             }
             style={styles.input}
-            placeholder="请再次输入新密码"
+            placeholder={t('请再次输入新密码')}
             placeholderTextColor="#8a7fa6"
           />
 
-          {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+          {passwordError ? (
+            <Text style={styles.errorText}>{passwordError}</Text>
+          ) : null}
           {passwordSuccess ? (
             <Text style={styles.successText}>{passwordSuccess}</Text>
           ) : null}
 
-          <Pressable onPress={doChangePassword} style={styles.loginBtn} disabled={passwordBusy}>
+          <Pressable
+            onPress={doChangePassword}
+            style={styles.loginBtn}
+            disabled={passwordBusy}
+          >
             <Text style={styles.loginBtnText}>
-              {passwordBusy ? '保存中...' : '保存'}
+              {passwordBusy ? t('保存中...') : t('保存')}
             </Text>
           </Pressable>
         </View>
@@ -794,19 +895,32 @@ export function MeScreen({
         style={styles.scroll}
         contentContainerStyle={styles.rootScrollContent}
         showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled">
+        keyboardShouldPersistTaps="handled"
+      >
         {isLoggedIn && user ? (
           <>
-            <View style={[styles.profileMainCard, styles.rootPrimaryCardSpacing]}>
-              <Pressable style={styles.profileEditFab} onPress={openProfileEdit}>
+            <View
+              style={[styles.profileMainCard, styles.rootPrimaryCardSpacing]}
+            >
+              <Pressable
+                style={styles.profileEditFab}
+                onPress={openProfileEdit}
+              >
                 <Icon source="pencil" size={18} color={colors.primary} />
               </Pressable>
 
               {user.avatarUrl ? (
-                <Image source={{uri: user.avatarUrl}} style={styles.profileAvatarLarge} />
+                <Image
+                  source={{ uri: user.avatarUrl }}
+                  style={styles.profileAvatarLarge}
+                />
               ) : (
                 <View style={styles.profileAvatarFallbackLarge}>
-                  <Icon source="account-outline" size={44} color={colors.primary} />
+                  <Icon
+                    source="account-outline"
+                    size={44}
+                    color={colors.primary}
+                  />
                 </View>
               )}
 
@@ -825,27 +939,31 @@ export function MeScreen({
                   setPasswordError('');
                   setPasswordSuccess('');
                   goPanel('password');
-                }}>
-                <Text style={styles.profileOutlineBtnText}>修改密码</Text>
+                }}
+              >
+                <Text style={styles.profileOutlineBtnText}>
+                  {t('修改密码')}
+                </Text>
               </Pressable>
 
               <Pressable
                 style={styles.profileLogoutBtn}
                 onPress={doLogout}
-                disabled={busy}>
+                disabled={busy}
+              >
                 <Text style={styles.profileLogoutBtnText}>
-                  {busy ? '处理中...' : '退出登录'}
+                  {busy ? t('处理中...') : t('退出登录')}
                 </Text>
               </Pressable>
             </View>
 
             <MarkerListEntryCard
-              title="我创建的点位"
+              title={t('我创建的点位')}
               icon="map-marker-plus-outline"
               onPress={() => goPanel('created')}
             />
             <MarkerListEntryCard
-              title="我收藏的点位"
+              title={t('我收藏的点位')}
               icon="star-outline"
               onPress={() => goPanel('favorites')}
             />
@@ -853,42 +971,52 @@ export function MeScreen({
         ) : (
           <>
             <View style={[styles.card, styles.rootPrimaryCardSpacing]}>
-              <Text style={styles.title}>登录</Text>
-              <Text style={styles.label}>用户名</Text>
+              <Text style={styles.title}>{t('登录')}</Text>
+              {sessionNotice ? (
+                <Text style={styles.errorText}>{t(sessionNotice)}</Text>
+              ) : null}
+              <Text style={styles.label}>{t('用户名')}</Text>
               <TextInput
                 autoCapitalize="none"
                 value={username}
                 onChangeText={setUsername}
                 style={styles.input}
-                placeholder="请输入用户名"
+                placeholder={t('请输入用户名')}
                 placeholderTextColor="#8a7fa6"
               />
 
-              <Text style={styles.label}>密码</Text>
+              <Text style={styles.label}>{t('密码')}</Text>
               <TextInput
                 autoCapitalize="none"
                 secureTextEntry
                 value={password}
                 onChangeText={setPassword}
                 style={styles.input}
-                placeholder="请输入密码"
+                placeholder={t('请输入密码')}
                 placeholderTextColor="#8a7fa6"
               />
 
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-              <Pressable onPress={doLogin} style={styles.loginBtn} disabled={busy}>
-                <Text style={styles.loginBtnText}>{busy ? '登录中...' : '登录'}</Text>
+              <Pressable
+                onPress={doLogin}
+                style={styles.loginBtn}
+                disabled={busy}
+              >
+                <Text style={styles.loginBtnText}>
+                  {busy ? t('登录中...') : t('登录')}
+                </Text>
               </Pressable>
 
               <View style={styles.formLinkRow}>
-                <Text style={styles.formLinkHint}>没有账号？</Text>
+                <Text style={styles.formLinkHint}>{t('没有账号？')}</Text>
                 <Pressable
                   onPress={() => {
                     setRegisterError('');
                     goPanel('register');
-                  }}>
-                  <Text style={styles.formLinkText}>去注册</Text>
+                  }}
+                >
+                  <Text style={styles.formLinkText}>{t('去注册')}</Text>
                 </Pressable>
               </View>
             </View>
@@ -904,7 +1032,8 @@ export function MeScreen({
         animationType="fade"
         onRequestClose={() => {
           if (!profileSaving) setProfileEditOpen(false);
-        }}>
+        }}
+      >
         <View style={styles.modalCenterWrap}>
           <Pressable
             style={styles.modalOverlay}
@@ -913,51 +1042,52 @@ export function MeScreen({
             }}
           />
           <View style={styles.editCard}>
-            <Text style={styles.editTitle}>编辑资料</Text>
+            <Text style={styles.editTitle}>{t('编辑资料')}</Text>
 
-            <Text style={styles.label}>昵称</Text>
+            <Text style={styles.label}>{t('昵称')}</Text>
             <TextInput
               value={profileDraft.nickname}
               onChangeText={value =>
-                setProfileDraft(prev => ({...prev, nickname: value}))
+                setProfileDraft(prev => ({ ...prev, nickname: value }))
               }
               style={styles.input}
-              placeholder="请输入昵称"
+              placeholder={t('请输入昵称')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>代词</Text>
+            <Text style={styles.label}>{t('代词')}</Text>
             <TextInput
               value={profileDraft.pronouns}
               onChangeText={value =>
-                setProfileDraft(prev => ({...prev, pronouns: value}))
+                setProfileDraft(prev => ({ ...prev, pronouns: value }))
               }
               style={styles.input}
-              placeholder="例如 she/her"
+              placeholder={t('例如 she/her')}
               placeholderTextColor="#8a7fa6"
             />
 
-            <Text style={styles.label}>签名</Text>
+            <Text style={styles.label}>{t('签名')}</Text>
             <TextInput
               value={profileDraft.signature}
               onChangeText={value =>
-                setProfileDraft(prev => ({...prev, signature: value}))
+                setProfileDraft(prev => ({ ...prev, signature: value }))
               }
               style={[styles.input, styles.editSignatureInput]}
-              placeholder="写点你想说的话"
+              placeholder={t('写点你想说的话')}
               placeholderTextColor="#8a7fa6"
               multiline
               textAlignVertical="top"
             />
 
-            <Text style={styles.label}>头像（可选）</Text>
+            <Text style={styles.label}>{t('头像（可选）')}</Text>
             <View style={styles.uploadRow}>
               <Pressable
                 style={styles.uploadPickBtn}
                 onPress={pickAvatarImage}
-                disabled={profileSaving || avatarPicking}>
+                disabled={profileSaving || avatarPicking}
+              >
                 <Text style={styles.uploadPickBtnText}>
-                  {avatarPicking ? '处理中...' : '选择图片'}
+                  {avatarPicking ? t('处理中...') : t('选择图片')}
                 </Text>
               </Pressable>
               {avatarDraftFile ? (
@@ -968,33 +1098,45 @@ export function MeScreen({
                     setAvatarHint('');
                     setAvatarError('');
                   }}
-                  disabled={profileSaving || avatarPicking}>
-                  <Text style={styles.uploadClearBtnText}>清除</Text>
+                  disabled={profileSaving || avatarPicking}
+                >
+                  <Text style={styles.uploadClearBtnText}>{t('清除')}</Text>
                 </Pressable>
               ) : null}
             </View>
 
-            {avatarHint ? <Text style={styles.uploadHintText}>{avatarHint}</Text> : null}
-            {avatarError ? <Text style={styles.errorText}>{avatarError}</Text> : null}
+            {avatarHint ? (
+              <Text style={styles.uploadHintText}>{avatarHint}</Text>
+            ) : null}
+            {avatarError ? (
+              <Text style={styles.errorText}>{avatarError}</Text>
+            ) : null}
             {avatarDraftFile ? (
-              <Text style={styles.uploadPickedText}>已选择：{avatarDraftFile.name}</Text>
+              <Text style={styles.uploadPickedText}>
+                {t('已选择：')}
+                {avatarDraftFile.name}
+              </Text>
             ) : null}
 
-            {profileError ? <Text style={styles.errorText}>{profileError}</Text> : null}
+            {profileError ? (
+              <Text style={styles.errorText}>{profileError}</Text>
+            ) : null}
 
             <View style={styles.editActionRow}>
               <Pressable
                 style={styles.editCancelBtn}
                 disabled={profileSaving}
-                onPress={() => setProfileEditOpen(false)}>
-                <Text style={styles.editCancelBtnText}>取消</Text>
+                onPress={() => setProfileEditOpen(false)}
+              >
+                <Text style={styles.editCancelBtnText}>{t('取消')}</Text>
               </Pressable>
               <Pressable
                 style={styles.editSaveBtn}
                 disabled={profileSaving || avatarPicking}
-                onPress={saveProfileEdit}>
+                onPress={saveProfileEdit}
+              >
                 <Text style={styles.editSaveBtnText}>
-                  {profileSaving ? '保存中...' : '保存'}
+                  {profileSaving ? t('保存中...') : t('保存')}
                 </Text>
               </Pressable>
             </View>
@@ -1143,7 +1285,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.border,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 28,
     elevation: 3,
@@ -1189,7 +1331,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 10,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 28,
     elevation: 3,
@@ -1252,7 +1394,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 8,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 28,
     elevation: 3,
@@ -1365,7 +1507,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 28,
     elevation: 3,
@@ -1391,7 +1533,7 @@ const styles = StyleSheet.create({
     borderColor: '#f2e6f7',
     backgroundColor: colors.surface,
     shadowColor: 'rgba(116, 73, 136, 0.18)',
-    shadowOffset: {width: 0, height: 8},
+    shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 1,
     shadowRadius: 18,
     elevation: 3,
@@ -1454,7 +1596,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 28,
     backgroundColor: '#e07a7a',
     shadowColor: 'rgba(182, 90, 90, 0.28)',
-    shadowOffset: {width: 0, height: 6},
+    shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 1,
     shadowRadius: 14,
     elevation: 3,
@@ -1576,7 +1718,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     padding: 14,
     shadowColor: colors.shadow,
-    shadowOffset: {width: 0, height: 10},
+    shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 1,
     shadowRadius: 28,
     elevation: 3,

@@ -4,17 +4,26 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {toBackendAssetUrl} from '../config/runtime';
 import {ApiError, requestJson} from '../lib/http';
+import {
+  advanceSessionGeneration,
+  clearNativeSessionCookies,
+  getSessionGeneration,
+  SESSION_EXPIRED_MESSAGE,
+  subscribeSessionExpired,
+} from '../lib/session';
 import type {ApiResponse, Me} from '../types/auth';
 
 type AuthContextValue = {
   user: Me | null;
   loading: boolean;
   isLoggedIn: boolean;
+  sessionNotice: string;
   refresh: () => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   register: (payload: {
@@ -70,26 +79,38 @@ const getPayloadData = <T,>(payload: ApiResponse<T> | T): T | null => {
 export function AuthProvider({children}: {children: React.ReactNode}) {
   const [user, setUser] = useState<Me | null>(null);
   const [loading, setLoading] = useState(true);
+  const [sessionNotice, setSessionNotice] = useState('');
+  const userRef = useRef<Me | null>(null);
+  const pendingSessionClearRef = useRef<Promise<void>>(Promise.resolve());
 
   const setAuthUser = useCallback((next: Me | null) => {
     const normalized = next ? normalizeUser(next) : null;
+    userRef.current = normalized;
     setUser(normalized);
     writeCachedUser(normalized).catch(() => undefined);
   }, []);
 
+  useEffect(() => subscribeSessionExpired(() => {
+    const hadUser = userRef.current !== null;
+    setAuthUser(null);
+    if (hadUser) setSessionNotice(SESSION_EXPIRED_MESSAGE);
+    pendingSessionClearRef.current = clearNativeSessionCookies().catch(() => undefined);
+  }), [setAuthUser]);
+
   const refresh = useCallback(async () => {
+    const requestGeneration = getSessionGeneration();
     try {
       const payload = await requestJson<ApiResponse<Me>>('/api/me');
       const me = getPayloadData(payload);
-      setAuthUser(me ?? null);
-    } catch (error) {
-      if (error instanceof ApiError && error.status === 401) {
-        setAuthUser(null);
-      }
+      if (requestGeneration === getSessionGeneration()) setAuthUser(me ?? null);
+    } catch {
+      // The HTTP layer handles expired sessions; network failures keep the cache.
     }
   }, [setAuthUser]);
 
   const login = useCallback(async (username: string, password: string) => {
+    await pendingSessionClearRef.current;
+    advanceSessionGeneration();
     const payload = await requestJson<ApiResponse<Me>>('/api/login', {
       method: 'POST',
       body: JSON.stringify({username, password}),
@@ -98,6 +119,8 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
     if (!me) {
       throw new ApiError(500, 'Login succeeded but user payload is empty');
     }
+    advanceSessionGeneration();
+    setSessionNotice('');
     setAuthUser(me);
   }, [setAuthUser]);
 
@@ -109,6 +132,8 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       password: string;
       website?: string;
     }) => {
+      await pendingSessionClearRef.current;
+      advanceSessionGeneration();
       const result = await requestJson<ApiResponse<Me>>('/api/register', {
         method: 'POST',
         body: JSON.stringify({
@@ -123,12 +148,15 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       if (!me) {
         throw new ApiError(500, 'Register succeeded but user payload is empty');
       }
+      advanceSessionGeneration();
+      setSessionNotice('');
       setAuthUser(me);
     },
     [setAuthUser],
   );
 
   const logout = useCallback(async () => {
+    advanceSessionGeneration();
     try {
       await requestJson<ApiResponse<null>>('/api/logout', {
         method: 'POST',
@@ -137,6 +165,9 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       // Ignore backend logout failure and always clear local auth state.
     }
     setAuthUser(null);
+    setSessionNotice('');
+    pendingSessionClearRef.current = clearNativeSessionCookies().catch(() => undefined);
+    await pendingSessionClearRef.current;
   }, [setAuthUser]);
 
   useEffect(() => {
@@ -145,6 +176,7 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       setLoading(true);
       const cached = await readCachedUser();
       if (alive && cached) {
+        userRef.current = cached;
         setUser(cached);
       }
       await refresh();
@@ -162,12 +194,13 @@ export function AuthProvider({children}: {children: React.ReactNode}) {
       user,
       loading,
       isLoggedIn: Boolean(user),
+      sessionNotice,
       refresh,
       login,
       register,
       logout,
     }),
-    [user, loading, refresh, login, register, logout],
+    [user, loading, sessionNotice, refresh, login, register, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

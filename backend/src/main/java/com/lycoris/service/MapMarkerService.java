@@ -3,15 +3,20 @@ package com.lycoris.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lycoris.dto.MarkerCreateRequest;
+import com.lycoris.dto.MarkerUpdateRequest;
 import com.lycoris.entity.MapMarker;
 import com.lycoris.repository.MapMarkerRepository;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalTime;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeParseException;
 import java.util.List;
@@ -34,6 +39,7 @@ public class MapMarkerService {
     private final boolean markerCacheRedisEnabled;
     private final long nearbyCacheTtlSeconds;
     private final long viewportCacheTtlSeconds;
+    private MarkerLocalizationService localization;
     private static final Set<String> SUPPORTED_CATEGORIES = Set.of(
             "accessible_toilet",
             "friendly_clinic",
@@ -67,6 +73,12 @@ public class MapMarkerService {
         this.viewportCacheTtlSeconds = Math.max(1, viewportCacheTtlSeconds);
     }
 
+    // Optional for existing focused service tests; present in the complete application.
+    @Autowired(required = false)
+    public void setLocalizationService(MarkerLocalizationService localization) {
+        this.localization = localization;
+    }
+
     public MapMarker create(String username, String userPublicId, MarkerCreateRequest req) {
         String clientRequestId = normalizeClientRequestId(req.getClientRequestId());
         if (clientRequestId != null) {
@@ -82,6 +94,7 @@ public class MapMarkerService {
         m.setCategory(normalizeCategoryForWrite(req.getCategory()));
         m.setTitle(req.getTitle());
         m.setDescription(req.getDescription());
+        m.setSourceLanguage(MarkerLanguage.forWrite(req.getLanguage()));
         m.setIsPublic(req.getIsPublic() != null ? req.getIsPublic() : true);
         m.setIsActive(req.getIsActive() != null ? req.getIsActive() : true);
         applyOpenTimeWindow(m, req.getOpenTimeStart(), req.getOpenTimeEnd());
@@ -118,6 +131,9 @@ public class MapMarkerService {
         for (MapMarker m : repo.searchPublicActive(query)) {
             merged.put(m.getId(), m);
         }
+        if (localization != null) {
+            for (MapMarker m : localization.searchPublic(query)) merged.put(m.getId(), m);
+        }
         Optional<double[]> coords = parseLatLng(query);
         if (coords.isPresent()) {
             double[] c = coords.get();
@@ -134,7 +150,7 @@ public class MapMarkerService {
         String cacheKey = buildNearbyCacheKey(lat, lng, safeRadius, normalizedCategory);
         List<MapMarker> cached = readMarkerListFromCache(cacheKey);
         if (cached != null) {
-            return normalizeForRead(cached);
+            return refreshPublicCacheEntries(cached);
         }
         List<MapMarker> computed = normalizeForRead(repo.findNearbyByCategory(lat, lng, safeRadius, normalizedCategory));
         writeMarkerListToCache(cacheKey, computed, nearbyCacheTtlSeconds);
@@ -158,7 +174,7 @@ public class MapMarkerService {
         String cacheKey = buildViewportCacheKey(minLat, maxLat, minLng, maxLng, categories);
         List<MapMarker> cached = readMarkerListFromCache(cacheKey);
         if (cached != null) {
-            return normalizeForRead(cached);
+            return refreshPublicCacheEntries(cached);
         }
 
         List<MapMarker> result;
@@ -197,7 +213,52 @@ public class MapMarkerService {
         return repo.save(marker);
     }
 
+    public record EditText(String language, String title, String description) {}
+
+    public EditText resolveEditText(MapMarker source, MarkerUpdateRequest request) {
+        String sourceLanguage = MarkerLanguage.normalize(source.getSourceLanguage());
+        if (request.getTitle() == null && request.getDescription() == null) {
+            return new EditText(sourceLanguage, source.getTitle(), source.getDescription());
+        }
+        String language = MarkerLanguage.forWrite(request.getLanguage());
+        MapMarker baseline = source;
+        if (!language.equals(sourceLanguage)) {
+            baseline = localization == null ? null : localization.localize(source, language);
+            if (baseline == null || !language.equals(baseline.getContentLanguage())) {
+                if (request.getTitle() == null || request.getDescription() == null) {
+                    throw new IllegalArgumentException("该语言尚无有效译文，请同时填写标题和描述（描述可为空）");
+                }
+                baseline = source;
+            }
+        }
+        return new EditText(language,
+                request.getTitle() != null ? request.getTitle() : baseline.getTitle(),
+                request.getDescription() != null ? request.getDescription() : baseline.getDescription());
+    }
+
+    /** A shared marker version serializes source edits and translation edits alike. */
+    @Transactional
+    public MapMarker saveLocalizedEdit(MapMarker marker, String language, String title, String description) {
+        String target = MarkerLanguage.normalize(language);
+        boolean sourceEdit = target.equals(MarkerLanguage.normalize(marker.getSourceLanguage()));
+        if (sourceEdit) {
+            marker.setTitle(title);
+            marker.setDescription(description);
+        } else if (localization == null) {
+            throw new IllegalStateException("点位翻译服务不可用");
+        }
+        // Flush the shared version before upserting translations, so concurrent edits
+        // fail optimistically and roll back both the marker and translation transaction.
+        marker.setUpdatedAt(Instant.now());
+        applyAvailabilityStatus(marker);
+        MapMarker updated = repo.saveAndFlush(marker);
+        if (!sourceEdit) localization.saveManual(updated, target, title, description);
+        return updated;
+    }
+
+    @Transactional
     public void delete(MapMarker marker) {
+        if (localization != null) localization.deleteForMarker(marker.getId());
         repo.delete(marker);
     }
 
@@ -279,6 +340,10 @@ public class MapMarkerService {
 
     private MapMarker normalizeOneForRead(MapMarker marker) {
         if (marker == null) return null;
+        // Read-time availability must not dirty a managed entity or advance its version.
+        MapMarker copy = new MapMarker();
+        BeanUtils.copyProperties(marker, copy);
+        marker = copy;
         String raw = marker.getCategory();
         String normalized = raw == null ? "" : raw.trim().toLowerCase(Locale.ROOT);
         if (!SUPPORTED_CATEGORIES.contains(normalized)) {
@@ -288,6 +353,17 @@ public class MapMarkerService {
         }
         applyAvailabilityStatus(marker);
         return marker;
+    }
+
+    private List<MapMarker> refreshPublicCacheEntries(List<MapMarker> cached) {
+        List<Long> ids = cached.stream().map(MapMarker::getId).toList();
+        if (ids.isEmpty()) return List.of();
+        Map<Long, MapMarker> current = new LinkedHashMap<>();
+        for (MapMarker marker : repo.findByIdIn(ids)) {
+            if (MarkerAccess.isPublic(marker)) current.put(marker.getId(), marker);
+        }
+        // Preserve nearby distance ordering, but never trust cached visibility or contents.
+        return normalizeForRead(ids.stream().filter(current::containsKey).map(current::get).toList());
     }
 
     private Optional<double[]> parseLatLng(String query) {

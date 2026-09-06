@@ -2,6 +2,9 @@
 
 @interface RCT_EXTERN_MODULE(NativeLocation, NSObject)
 
+RCT_EXTERN_METHOD(getPermissionStatus:(RCTPromiseResolveBlock)resolve
+                  withRejecter:(RCTPromiseRejectBlock)reject)
+
 RCT_EXTERN_METHOD(getCurrentPosition:(NSDictionary *)options
                   withResolver:(RCTPromiseResolveBlock)resolve
                   withRejecter:(RCTPromiseRejectBlock)reject)

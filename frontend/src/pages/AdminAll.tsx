@@ -23,6 +23,7 @@ type AdminMarker = {
     category: string
     title: string
     description?: string
+    sourceLanguage?: 'zh' | 'en'
     isPublic: boolean
     isActive: boolean
     openTimeStart?: string | null
@@ -43,6 +44,7 @@ const categoryLabel: Record<string, string> = {
 }
 
 const toDraft = (marker: AdminMarker): DraftMarker => ({
+    language: marker.sourceLanguage ?? 'zh',
     tempId: String(marker.id),
     lat: marker.lat,
     lng: marker.lng,
@@ -122,6 +124,7 @@ export default function AdminAll() {
                     category: draft.category,
                     title: draft.title,
                     description: draft.description,
+                    language: draft.language,
                     isPublic: draft.isPublic,
                     openTimeStart: draft.openTimeStart || '',
                     openTimeEnd: draft.openTimeEnd || '',

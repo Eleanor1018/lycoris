@@ -1,3 +1,4 @@
+import { useLanguage } from '../i18n/LanguageProvider'
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
@@ -58,6 +59,7 @@ const categoryLabelMap: Record<string, string> = {
 }
 //560px, 68vh, 700px
 export default function Profile() {
+    const { language, t } = useLanguage()
     const desktopCardHeight = 'clamp(560px, 68vh, 68vh)'
     const rowsPerPage = 3
     const { user, logout, refresh } = useAuth()
@@ -85,17 +87,19 @@ export default function Profile() {
 
     useEffect(() => {
         if (!user) return
+        const controller = new AbortController()
         const loadMarkers = async () => {
             try {
                 const [createdRes, favRes] = await Promise.all([
-                    axios.get('/api/markers/me/created', { withCredentials: true }),
-                    axios.get('/api/markers/me/favorites/details', { withCredentials: true }),
+                    axios.get('/api/markers/me/created', { withCredentials: true, params: { lang: language }, signal: controller.signal }),
+                    axios.get('/api/markers/me/favorites/details', { withCredentials: true, params: { lang: language }, signal: controller.signal }),
                 ])
 
+                if (controller.signal.aborted) return
                 const created = ((createdRes.data ?? []) as MarkerApiRow[]).map((m) => ({
                     id: m.id,
                     title: m.title,
-                    category: categoryLabelMap[m.category] ?? m.category,
+                    category: t(categoryLabelMap[m.category] ?? m.category),
                     updatedAt: (m.updatedAt ?? m.createdAt ?? '').toString().slice(0, 10),
                     lat: typeof m.lat === 'number' ? m.lat : undefined,
                     lng: typeof m.lng === 'number' ? m.lng : undefined,
@@ -103,7 +107,7 @@ export default function Profile() {
                 const favorites = ((favRes.data ?? []) as MarkerApiRow[]).map((m) => ({
                     id: m.id,
                     title: m.title,
-                    category: categoryLabelMap[m.category] ?? m.category,
+                    category: t(categoryLabelMap[m.category] ?? m.category),
                     updatedAt: (m.updatedAt ?? m.createdAt ?? '').toString().slice(0, 10),
                     lat: typeof m.lat === 'number' ? m.lat : undefined,
                     lng: typeof m.lng === 'number' ? m.lng : undefined,
@@ -113,6 +117,7 @@ export default function Profile() {
                 setCreatedPage(0)
                 setFavoritePage(0)
             } catch {
+                if (controller.signal.aborted) return
                 setCreatedRows([])
                 setFavoriteRows([])
                 setCreatedPage(0)
@@ -121,17 +126,14 @@ export default function Profile() {
         }
 
         void loadMarkers()
-    }, [user])
+        return () => controller.abort()
+    }, [user, language, t])
 
     const goToMapMarker = (row: MarkerRow) => {
         const params = new URLSearchParams({
             markerId: String(row.id),
-            title: row.title,
+            lang: language,
         })
-        if (typeof row.lat === 'number' && typeof row.lng === 'number') {
-            params.set('lat', String(row.lat))
-            params.set('lng', String(row.lng))
-        }
         navigate(`/maps?${params.toString()}`)
     }
 
@@ -184,7 +186,7 @@ export default function Profile() {
     }
 
     const getRowAriaLabel = (row: MarkerRow) =>
-        `点位 ${row.title}，类型 ${row.category}，更新于 ${row.updatedAt || '未知'}。按回车键查看地图位置。`
+        t("点位 {0}，类型 {1}，更新于 {2}。按回车键查看地图位置。", { 0: row.title, 1: row.category, 2: row.updatedAt || t("未知") })
 
     useEffect(() => {
         return () => {
@@ -221,7 +223,7 @@ export default function Profile() {
                     }}
                 >
                     <IconButton
-                        aria-label="编辑资料"
+                        aria-label={t("编辑资料")}
                         onClick={() => {
                             setNickname(user?.nickname || user?.username || '')
                             setPronouns(user?.pronouns || '')
@@ -278,8 +280,7 @@ export default function Profile() {
                                 '&:hover': { borderColor: '#744988', bgcolor: 'rgba(116, 73, 136, 0.08)' },
                             }}
                         >
-                            修改密码
-                        </Button>
+                            {t("修改密码")}</Button>
                         <Button
                             onClick={async () => {
                                 await logout()
@@ -293,8 +294,7 @@ export default function Profile() {
                                 '&:hover': { bgcolor: '#d86a6a' },
                             }}
                         >
-                            退出登录
-                        </Button>
+                            {t("退出登录")}</Button>
                     </Stack>
                 </Paper>
 
@@ -311,29 +311,26 @@ export default function Profile() {
                     }}
                 >
                     <Typography variant="h6" fontWeight={800}>
-                        点位列表
-                    </Typography>
+                        {t("点位列表")}</Typography>
                     <Typography variant="body2" sx={{ opacity: 0.7, mt: 0.5 }}>
-                        点位按“创建 / 收藏”分开展示
-                    </Typography>
+                        {t("点位按“创建 / 收藏”分开展示")}</Typography>
                     <Stack spacing={2} sx={{ mt: 2, flex: 1 }}>
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                我创建的点位
-                            </Typography>
+                                {t("我创建的点位")}</Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>名称</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>类型</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>更新</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>{t("名称")}</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>{t("类型")}</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{t("更新")}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {createdRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">暂无创建点位</TableCell>
+                                                <TableCell colSpan={3} align="center">{t("暂无创建点位")}</TableCell>
                                             </TableRow>
                                         ) : (
                                             createdSlice.map((row) => (
@@ -382,21 +379,20 @@ export default function Profile() {
 
                         <Box>
                             <Typography variant="subtitle2" fontWeight={700} sx={{ mb: 1 }}>
-                                我收藏的点位
-                            </Typography>
+                                {t("我收藏的点位")}</Typography>
                             <TableContainer sx={{ maxHeight: { xs: 180, md: 205 } }}>
                                 <Table size="small" stickyHeader sx={{ tableLayout: 'fixed' }}>
                                     <TableHead>
                                         <TableRow>
-                                            <TableCell sx={{ width: '58%' }}>名称</TableCell>
-                                            <TableCell sx={{ width: '22%' }}>类型</TableCell>
-                                            <TableCell align="right" sx={{ width: '20%' }}>更新</TableCell>
+                                            <TableCell sx={{ width: '58%' }}>{t("名称")}</TableCell>
+                                            <TableCell sx={{ width: '22%' }}>{t("类型")}</TableCell>
+                                            <TableCell align="right" sx={{ width: '20%' }}>{t("更新")}</TableCell>
                                         </TableRow>
                                     </TableHead>
                                     <TableBody>
                                         {favoriteRows.length === 0 ? (
                                             <TableRow>
-                                                <TableCell colSpan={3} align="center">暂无收藏点位</TableCell>
+                                                <TableCell colSpan={3} align="center">{t("暂无收藏点位")}</TableCell>
                                             </TableRow>
                                         ) : (
                                             favoriteSlice.map((row) => (
@@ -473,11 +469,10 @@ export default function Profile() {
                 }}
             />
             <Dialog open={jumpDialogOpen} onClose={() => setJumpDialogOpen(false)} maxWidth="xs" fullWidth>
-                <DialogTitle sx={{ fontWeight: 800 }}>跳转到地图上？</DialogTitle>
+                <DialogTitle sx={{ fontWeight: 800 }}>{t("跳转到地图上？")}</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" sx={{ opacity: 0.85 }}>
-                        将定位到“{pendingJumpMarker?.title ?? '该点位'}”，并尝试自动打开详情。
-                    </Typography>
+                        {t("将定位到“")}{pendingJumpMarker?.title ?? t("该点位")}{t("”，并尝试自动打开详情。")}</Typography>
                     <Stack direction="row" alignItems="center" spacing={1} sx={{ mt: 1.5 }}>
                         <Checkbox
                             checked={jumpNoPrompt}
@@ -485,13 +480,12 @@ export default function Profile() {
                             size="small"
                             sx={{ p: 0.5 }}
                         />
-                        <Typography variant="body2">下次不再提示</Typography>
+                        <Typography variant="body2">{t("下次不再提示")}</Typography>
                     </Stack>
                 </DialogContent>
                 <DialogActions sx={{ px: 2, pb: 1.5 }}>
                     <Button onClick={() => setJumpDialogOpen(false)} sx={{ borderRadius: 999, textTransform: 'none' }}>
-                        取消
-                    </Button>
+                        {t("取消")}</Button>
                     <Button
                         variant="contained"
                         onClick={handleJumpConfirm}
@@ -502,8 +496,7 @@ export default function Profile() {
                             '&:hover': { bgcolor: '#a77597' },
                         }}
                     >
-                        确定
-                    </Button>
+                        {t("确定")}</Button>
                 </DialogActions>
             </Dialog>
             <Snackbar
@@ -513,8 +506,7 @@ export default function Profile() {
                 anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
             >
                 <Alert severity="success" variant="filled" onClose={() => setSaveOpen(false)}>
-                    保存成功
-                </Alert>
+                    {t("保存成功")}</Alert>
             </Snackbar>
         </Box>
     )

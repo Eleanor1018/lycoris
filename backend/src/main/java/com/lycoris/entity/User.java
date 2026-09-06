@@ -39,6 +39,13 @@ public class User {
     @Column(name = "deleted_at")
     private Instant deletedAt;
 
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private Long sessionVersion = 0L;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint not null default 0")
+    private Long rowVersion = 0L;
+
     @PrePersist
     public void ensurePublicId() {
         if (publicId == null) {

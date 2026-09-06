@@ -1,7 +1,9 @@
+import { useLanguage } from '../i18n/LanguageProvider'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import {
     Box,
+    Alert,
     Button,
     Card,
     CardContent,
@@ -37,6 +39,9 @@ type DocItem = {
     slug: string
     title: string
     content: string
+    normalizedContent: string
+    plainText: string
+    normalizedPlainText: string
 }
 
 const mdModules = import.meta.glob<string>('../docs/*.md', { query: '?raw', import: 'default' })
@@ -72,11 +77,10 @@ const getDocTitle = (slug: string, content: string) => {
 const normalize = (s: string) => s.toLowerCase()
 const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-const snippetFrom = (content: string, q: string) => {
+const snippetFrom = (doc: DocItem, q: string, normalizedQuery: string) => {
     if (!q) return ''
-    const raw = cleanDocText(content)
-    const lower = normalize(raw)
-    const idx = lower.indexOf(normalize(q))
+    const raw = doc.plainText
+    const idx = doc.normalizedPlainText.indexOf(normalizedQuery)
     if (idx < 0) return ''
     const start = Math.max(0, idx - 30)
     const end = Math.min(raw.length, idx + q.length + 30)
@@ -111,6 +115,7 @@ const highlightText = (text: string, q: string) => {
 }
 
 export default function Search() {
+    const { language, t } = useLanguage()
     const navigate = useNavigate()
     const [params] = useSearchParams()
     const qParam = params.get('q') ?? ''
@@ -118,6 +123,7 @@ export default function Search() {
     const [markers, setMarkers] = useState<ApiMarker[]>([])
     const [docs, setDocs] = useState<DocItem[]>([])
     const [loadingMarkers, setLoadingMarkers] = useState(false)
+    const [markerError, setMarkerError] = useState('')
 
     useEffect(() => {
         setQuery(qParam)
@@ -130,10 +136,14 @@ export default function Search() {
                 entries.map(async ([key, loader]) => {
                     const slug = key.split('/').pop()?.replace('.md', '') ?? key
                     const content = await loader()
+                    const plainText = cleanDocText(content)
                     return {
                         slug,
                         title: getDocTitle(slug, content),
                         content,
+                        normalizedContent: normalize(content),
+                        plainText,
+                        normalizedPlainText: normalize(plainText),
                     } as DocItem
                 })
             )
@@ -143,35 +153,47 @@ export default function Search() {
     }, [])
 
     useEffect(() => {
+        const controller = new AbortController()
+        let active = true
+        const q = query.trim()
+        setMarkers([])
+        setMarkerError('')
+        setLoadingMarkers(Boolean(q))
+        if (!q) return () => controller.abort()
+
         const run = async () => {
-            const q = query.trim()
-            if (!q) {
-                setMarkers([])
-                return
-            }
-            setLoadingMarkers(true)
             try {
                 const res = await axios.get<ApiMarker[]>('/api/markers/search', {
-                    params: { q },
+                    params: { q, lang: language },
                     withCredentials: true,
+                    signal: controller.signal,
                 })
-                setMarkers(res.data ?? [])
+                if (active) setMarkers(res.data ?? [])
+            } catch (error) {
+                if (active && !axios.isCancel(error)) setMarkerError(t("点位搜索失败，请稍后重试。"))
             } finally {
-                setLoadingMarkers(false)
+                if (active) setLoadingMarkers(false)
             }
         }
-        void run()
-    }, [query])
+        const timer = window.setTimeout(() => void run(), 250)
+        return () => {
+            active = false
+            window.clearTimeout(timer)
+            controller.abort()
+        }
+    }, [query, language, t])
 
     const matchedDocs = useMemo(() => {
         const q = query.trim()
         if (!q) return []
+        const normalizedQuery = normalize(q)
         return docs
+            // Match the original Markdown, including URLs, just as before.
+            .filter((d) => d.normalizedContent.includes(normalizedQuery))
             .map((d) => ({
                 ...d,
-                snippet: snippetFrom(d.content, q),
+                snippet: snippetFrom(d, q, normalizedQuery),
             }))
-            .filter((d) => normalize(d.content).includes(normalize(q)))
     }, [docs, query])
 
     return (
@@ -237,8 +259,7 @@ export default function Search() {
                                     color: '#000',
                                 }}
                             >
-                                搜索
-                            </Typography>
+                                {t("搜索")}</Typography>
                             <Typography
                                 sx={{
                                     mt: 1,
@@ -248,11 +269,10 @@ export default function Search() {
                                     color: 'var(--ly-color-muted)',
                                 }}
                             >
-                                搜索点位与文档内容，找到有用的信息
-                            </Typography>
+                                {t("搜索点位与文档内容，找到有用的信息")}</Typography>
                         </Box>
                         <Chip
-                            label={query.trim() ? `关键词：${query.trim()}` : '输入关键词开始搜索'}
+                            label={query.trim() ? t("关键词：{0}", { 0: query.trim() }) : t("输入关键词开始搜索")}
                             sx={{
                                 maxWidth: '100%',
                                 borderRadius: 999,
@@ -266,10 +286,10 @@ export default function Search() {
                     <TextField
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
-                        placeholder="输入关键词"
+                        placeholder={t("输入关键词")}
                         fullWidth
                         inputProps={{
-                            'aria-label': '搜索关键词',
+                            'aria-label': t("搜索关键词"),
                         }}
                         sx={{
                             '& .MuiOutlinedInput-root': {
@@ -299,7 +319,7 @@ export default function Search() {
                                 <IconButton
                                     onClick={() => navigate(`/search?q=${encodeURIComponent(query.trim())}`)}
                                     disabled={!query.trim()}
-                                    aria-label="执行搜索"
+                                    aria-label={t("执行搜索")}
                                     sx={{
                                         width: 46,
                                         height: 46,
@@ -340,10 +360,9 @@ export default function Search() {
                     >
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                             <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#000' }}>
-                                点位结果
-                            </Typography>
+                                {t("点位结果")}</Typography>
                             <Chip
-                                label={loadingMarkers ? '加载中…' : `${markers.length} 条`}
+                                label={loadingMarkers ? t("加载中…") : t("{0} 条", { 0: markers.length })}
                                 size="small"
                                 sx={{
                                     bgcolor: 'rgba(252, 221, 236, 0.72)',
@@ -354,6 +373,7 @@ export default function Search() {
                         </Stack>
 
                         <Stack spacing={1.5}>
+                            {markerError ? <Alert severity="error">{markerError}</Alert> : null}
                             {markers.map((m) => (
                                 <Card
                                     key={m.id}
@@ -372,9 +392,7 @@ export default function Search() {
                                     }}
                                     onClick={() =>
                                         navigate(
-                                            `/maps?markerId=${m.id}&lat=${encodeURIComponent(
-                                                m.lat
-                                            )}&lng=${encodeURIComponent(m.lng)}&title=${encodeURIComponent(m.title)}`
+                                            `/maps?markerId=${m.id}&lang=${language}`
                                         )
                                     }
                                 >
@@ -383,11 +401,11 @@ export default function Search() {
                                             {highlightText(m.title, query)}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'rgba(17, 24, 39, 0.76)', mt: 0.75 }}>
-                                            {m.description ? highlightText(m.description, query) : '暂无描述'}
+                                            {m.description ? highlightText(m.description, query) : t("暂无描述")}
                                         </Typography>
                                         <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap sx={{ mt: 1.5 }}>
                                             <Chip
-                                                label={markerCategoryLabel[m.category] ?? m.category}
+                                                label={t(markerCategoryLabel[m.category] ?? m.category)}
                                                 size="small"
                                                 sx={{
                                                     bgcolor: 'rgba(208, 188, 255, 0.38)',
@@ -406,7 +424,7 @@ export default function Search() {
                                     </CardContent>
                                 </Card>
                             ))}
-                            {!loadingMarkers && markers.length === 0 ? (
+                            {!loadingMarkers && !markerError && markers.length === 0 ? (
                                 <Box
                                     sx={{
                                         borderRadius: 4,
@@ -417,7 +435,7 @@ export default function Search() {
                                     }}
                                 >
                                     <Typography variant="body2">
-                                        {query.trim() ? '暂无点位匹配' : '输入关键词后会在这里显示点位结果'}
+                                        {query.trim() ? t("暂无点位匹配") : t("输入关键词后会在这里显示点位结果")}
                                     </Typography>
                                 </Box>
                             ) : null}
@@ -437,10 +455,9 @@ export default function Search() {
                     >
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                             <Typography sx={{ fontSize: 20, fontWeight: 800, color: '#000' }}>
-                                文档结果
-                            </Typography>
+                                {t("文档结果")}</Typography>
                             <Chip
-                                label={`${matchedDocs.length} 条`}
+                                label={t("{0} 条", { 0: matchedDocs.length })}
                                 size="small"
                                 sx={{
                                     bgcolor: 'rgba(252, 221, 236, 0.72)',
@@ -472,7 +489,7 @@ export default function Search() {
                                             {highlightText(d.title, query)}
                                         </Typography>
                                         <Typography variant="body2" sx={{ color: 'rgba(17, 24, 39, 0.76)', mt: 0.75 }}>
-                                            {d.snippet ? highlightText(d.snippet, query) : '已命中关键词'}
+                                            {d.snippet ? highlightText(d.snippet, query) : t("已命中关键词")}
                                         </Typography>
                                         <Button
                                             size="small"
@@ -486,8 +503,7 @@ export default function Search() {
                                             }}
                                             onClick={() => navigate(`/documents/${d.slug}`)}
                                         >
-                                            打开文档
-                                        </Button>
+                                            {t("打开文档")}</Button>
                                     </CardContent>
                                 </Card>
                             ))}
@@ -502,7 +518,7 @@ export default function Search() {
                                     }}
                                 >
                                     <Typography variant="body2">
-                                        {query.trim() ? '暂无文档匹配' : '输入关键词后会在这里显示文档结果'}
+                                        {query.trim() ? t("暂无文档匹配") : t("输入关键词后会在这里显示文档结果")}
                                     </Typography>
                                 </Box>
                             ) : null}

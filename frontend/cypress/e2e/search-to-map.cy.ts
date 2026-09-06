@@ -30,6 +30,7 @@ describe('Search to map focus flow', () => {
             statusCode: 200,
             body: [marker],
         }).as('viewportMarkers')
+        cy.intercept({ method: 'GET', pathname: '/api/markers/101' }, { statusCode: 200, body: marker }).as('markerDetails')
 
         cy.visit('/search?q=Search%20Marker')
         cy.wait('@searchMarkers')

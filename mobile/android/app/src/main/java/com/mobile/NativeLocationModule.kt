@@ -84,7 +84,10 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
   }
 
   private fun pickProvider(locationManager: LocationManager): String? {
-    if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
+    val hasFinePermission =
+        appContext.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
+    if (hasFinePermission && locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {
       return LocationManager.GPS_PROVIDER
     }
     if (locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER)) {
@@ -128,85 +131,69 @@ class NativeLocationModule(private val appContext: ReactApplicationContext) :
   ) {
     val handled = AtomicBoolean(false)
     val handler = Handler(Looper.getMainLooper())
+    var cancellation: CancellationSignal? = null
+    var listener: LocationListener? = null
+    lateinit var timeoutRunnable: Runnable
 
-    val timeoutRunnable =
-        Runnable {
-          if (handled.compareAndSet(false, true)) {
-            promise.reject("LOCATION_TIMEOUT", "定位超时，请稍后重试。")
-          }
+    fun finish(deliver: () -> Unit) {
+      if (!handled.compareAndSet(false, true)) return
+      handler.removeCallbacks(timeoutRunnable)
+      cancellation?.cancel()
+      listener?.let {
+        // Permission can be revoked while a location request is in flight.
+        try {
+          locationManager.removeUpdates(it)
+        } catch (_: SecurityException) {
         }
-
-    handler.postDelayed(timeoutRunnable, timeoutMs.toLong())
-
-    try {
-      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-        val cancellation = CancellationSignal()
-        locationManager.getCurrentLocation(
-            provider,
-            cancellation,
-            appContext.mainExecutor,
-        ) { location ->
-          handler.removeCallbacks(timeoutRunnable)
-          if (!handled.compareAndSet(false, true)) {
-            return@getCurrentLocation
-          }
-          if (location == null) {
-            promise.reject("LOCATION_UNAVAILABLE", "无法获取当前位置。")
-          } else {
-            promise.resolve(toWritableMap(location, provider))
-          }
-        }
-        handler.postDelayed(
-            {
-              if (!handled.get()) {
-                cancellation.cancel()
-              }
-            },
-            timeoutMs.toLong(),
-        )
-        return
       }
+      deliver()
+    }
 
-      @Suppress("DEPRECATION")
-      val listener =
-          object : LocationListener {
+    timeoutRunnable = Runnable {
+      finish { promise.reject("LOCATION_TIMEOUT", "定位超时，请稍后重试。") }
+    }
+
+    // Start, callbacks and timeout share one looper: cleanup cannot race with
+    // installing the listener or cancellation signal.
+    handler.post {
+      handler.postDelayed(timeoutRunnable, timeoutMs.toLong())
+      try {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+          cancellation = CancellationSignal()
+          locationManager.getCurrentLocation(
+              provider,
+              cancellation,
+              appContext.mainExecutor,
+          ) { location ->
+            finish {
+              if (location == null) {
+                promise.reject("LOCATION_UNAVAILABLE", "无法获取当前位置。")
+              } else {
+                promise.resolve(toWritableMap(location, provider))
+              }
+            }
+          }
+        } else {
+          @Suppress("DEPRECATION")
+          val singleListener = object : LocationListener {
             override fun onLocationChanged(location: Location) {
-              handler.removeCallbacks(timeoutRunnable)
-              if (!handled.compareAndSet(false, true)) return
-              locationManager.removeUpdates(this)
-              promise.resolve(toWritableMap(location, provider))
+              finish { promise.resolve(toWritableMap(location, provider)) }
             }
 
             override fun onProviderDisabled(disabledProvider: String) {
-              if (disabledProvider != provider) return
-              handler.removeCallbacks(timeoutRunnable)
-              if (!handled.compareAndSet(false, true)) return
-              locationManager.removeUpdates(this)
-              promise.reject("LOCATION_PROVIDER_DISABLED", "定位服务未开启。")
+              if (disabledProvider == provider) {
+                finish { promise.reject("LOCATION_PROVIDER_DISABLED", "定位服务未开启。") }
+              }
             }
           }
-
-      @Suppress("DEPRECATION")
-      locationManager.requestSingleUpdate(provider, listener, Looper.getMainLooper())
-
-      handler.postDelayed(
-          {
-            if (handled.compareAndSet(false, true)) {
-              locationManager.removeUpdates(listener)
-              promise.reject("LOCATION_TIMEOUT", "定位超时，请稍后重试。")
-            }
-          },
-          timeoutMs.toLong(),
-      )
-    } catch (security: SecurityException) {
-      handler.removeCallbacks(timeoutRunnable)
-      if (handled.compareAndSet(false, true)) {
-        promise.reject("LOCATION_PERMISSION_DENIED", "定位权限未授予。", security)
-      }
-    } catch (error: Throwable) {
-      handler.removeCallbacks(timeoutRunnable)
-      if (handled.compareAndSet(false, true)) {
-        promise.reject("LOCATION_INTERNAL_ERROR", "原生定位失败。", error)
+          listener = singleListener
+          @Suppress("DEPRECATION")
+          locationManager.requestSingleUpdate(provider, singleListener, Looper.getMainLooper())
+        }
+      } catch (security: SecurityException) {
+        finish { promise.reject("LOCATION_PERMISSION_DENIED", "定位权限未授予。", security) }
+      } catch (error: Throwable) {
+        finish { promise.reject("LOCATION_INTERNAL_ERROR", "原生定位失败。", error) }
       }
     }
   }

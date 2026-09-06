@@ -11,6 +11,7 @@ public class MarkerCreateRequest {
     private String category;
     private String title;
     private String description;
+    private String language;
     private Boolean isPublic = true;
     private Boolean isActive = true;
     private String openTimeStart;
