@@ -14,11 +14,13 @@
 
 ## Android APK 下载
 
-[下载 Lycoris 1.0.3 Android 测试 APK](https://github.com/Eleanor1018/lycoris/releases/download/android-20260906/Lycoris-production-20260906.apk) · [SHA-256 校验文件](https://github.com/Eleanor1018/lycoris/releases/download/android-20260906/Lycoris-production-20260906.apk.sha256) · [发布说明](https://github.com/Eleanor1018/lycoris/releases/tag/android-20260906)
+[下载 Lycoris 1.0.1 Android APK](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk) · [SHA-256 校验文件](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk.sha256) · [发布说明](https://github.com/Eleanor1018/lycoris/releases/tag/v1.0.1)
 
-本次测试版本为 **Lycoris 1.0.3（versionCode 2）**，支持 **Android 7.0 及以上**，包含 `arm64-v8a` 和 `x86_64` 架构。APK 使用新的 Release 签名，供真机侧载测试。
+本次版本为 **Lycoris 1.0.1（versionCode 3）**，支持 **Android 7.0 及以上**，包含 `arm64-v8a` 和 `x86_64` 架构。APK 沿用 2026-09-06 开始使用的 Release 签名，可在真机侧载安装。
 
 **旧 v1.0 或此前开发包无法被本包覆盖安装，需先卸载旧包。卸载会清除本机登录状态、设置等应用数据。**
+
+2026-09-06 使用同一证书的 **1.0.3 测试版（versionCode 2）可以直接覆盖更新**，无需卸载。本次显示版本为 1.0.1，Android 用于判断更新顺序的 `versionCode` 已由 2 递增至 3。
 
 APK 包含运行所需的 JavaScript 和文档资源，**不需要启动 Metro**；连接生产 API `https://api.lycoris.online`，地图和账号等在线功能需要网络。
 

@@ -14,11 +14,13 @@ Lycoris is available as a **web application** and a **React Native mobile applic
 
 ## Android APK download
 
-[Download the Lycoris 1.0.3 Android test APK](https://github.com/Eleanor1018/lycoris/releases/download/android-20260906/Lycoris-production-20260906.apk) · [SHA-256 checksum file](https://github.com/Eleanor1018/lycoris/releases/download/android-20260906/Lycoris-production-20260906.apk.sha256) · [Release notes](https://github.com/Eleanor1018/lycoris/releases/tag/android-20260906)
+[Download the Lycoris 1.0.1 Android APK](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk) · [SHA-256 checksum file](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk.sha256) · [Release notes](https://github.com/Eleanor1018/lycoris/releases/tag/v1.0.1)
 
-This test build is **Lycoris 1.0.3 (versionCode 2)** for **Android 7.0 and later**, with `arm64-v8a` and `x86_64` support. It uses a new release signing key and is intended for sideloading on devices.
+This release is **Lycoris 1.0.1 (versionCode 3)** for **Android 7.0 and later**, with `arm64-v8a` and `x86_64` support. It retains the release signing key introduced on 2026-09-06 and can be sideloaded on devices.
 
 **This APK cannot be installed over the old v1.0 or earlier development builds. Uninstall the old app first; uninstalling removes local sign-in state, settings, and other app data.**
+
+The **1.0.3 test build (versionCode 2) from 2026-09-06, signed with the same certificate, can be updated directly** without uninstalling. This release displays version 1.0.1, while the `versionCode` Android uses to determine update order has increased from 2 to 3.
 
 JavaScript and document assets are bundled, so **Metro is not required**. The APK connects to the production API at `https://api.lycoris.online`; online features such as maps and accounts require a network connection.
 

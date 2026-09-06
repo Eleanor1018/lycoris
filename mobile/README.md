@@ -82,6 +82,16 @@ npm run android
 2. 原生 `RuntimeConfig`：Android 来自 `BuildConfig`（`-PLY_*` / 系统环境变量 / `.env.mobile`）；iOS 来自构建时的 `ios/RuntimeConfig.local.json`
 3. 默认值（仅 `API_BASE_URL` 有默认；地图 key 默认空）
 
+## Android APK 下载
+
+[下载 Lycoris 1.0.1 Android APK](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk) · [SHA-256 校验文件](https://github.com/Eleanor1018/lycoris/releases/download/v1.0.1/Lycoris-v1.0.1.apk.sha256) · [发布说明](https://github.com/Eleanor1018/lycoris/releases/tag/v1.0.1)
+
+当前发布为 **Lycoris 1.0.1（versionCode 3）**，支持 **Android 7.0 及以上**，包含 `arm64-v8a` 和 `x86_64` 架构。APK 连接生产 API `https://api.lycoris.online`，已包含 JavaScript 和文档资源，**不需要启动 Metro**。
+
+本包沿用下方记录的 Release 证书，**可以直接覆盖更新 2026-09-06 的同签名 1.0.3 测试版（versionCode 2）**。本次显示版本为 1.0.1，Android 用于判断更新顺序的 `versionCode` 已由 2 递增至 3。
+
+**旧 v1.0 或此前开发包签名不同，需先卸载再安装。卸载会清除本机登录状态、设置等应用数据。**
+
 ## Android 正式签名（Release）
 
 从 2026-09-06 的 Android 1.0.3 测试发布开始使用新的 Release 证书，SHA-256 指纹为 `e0468f0e26aa5560b9e8869ed9ba9c2cb7bd76831f1e246aaa8b222decb7a757`。后续更新必须沿用这份密钥；旧 v1.0 和开发包签名不同，不能直接覆盖安装。
